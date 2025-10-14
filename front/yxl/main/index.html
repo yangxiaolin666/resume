@@ -57,109 +57,116 @@
                         </label>
                     </div>
                 </div>
+                
+                <!-- 语言掌握情况 -->
+                <div class="filter-section">
+                    <h3>语言掌握情况</h3>
+                    <div class="filter-options">
+                        <label v-for="lang in languageOptions" :key="lang">
+                            <input type="checkbox" v-model="selectedFilters.languages" :value="lang">
+                            {{ lang }}
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 计算机专业技术证书 -->
+                <div class="filter-section">
+                    <h3>计算机专业技术证书</h3>
+                    <div class="filter-options">
+                        <label v-for="cert in certificateOptions" :key="cert">
+                            <input type="checkbox" v-model="selectedFilters.certificates" :value="cert">
+                            {{ cert }}
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 专业实习次数 -->
+                <div class="filter-section">
+                    <h3>专业实习次数</h3>
+                    <div class="filter-options">
+                        <label v-for="intern in internshipOptions" :key="intern">
+                            <input type="checkbox" v-model="selectedFilters.internships" :value="intern">
+                            {{ intern }}
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 计算机专业掌握情况 -->
+                <div class="filter-section">
+                    <h3>计算机专业掌握情况</h3>
+                    <div class="filter-options">
+                        <label v-for="skill in computerSkillOptions" :key="skill">
+                            <input type="checkbox" v-model="selectedFilters.computerSkills" :value="skill">
+                            {{ skill }}
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 就业意向地区 -->
+                <div class="filter-section">
+                    <h3>就业意向地区</h3>
+                    <div class="filter-options">
+                        <label v-for="region in jobRegionOptions" :key="region">
+                            <input type="checkbox" v-model="selectedFilters.jobRegions" :value="region">
+                            {{ region }}
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- 就业岗位 -->
+                <div class="filter-section">
+                    <h3>就业岗位</h3>
+                    <div class="filter-options">
+                        <label v-for="position in jobPositionOptions" :key="position">
+                            <input type="checkbox" v-model="selectedFilters.jobPositions" :value="position">
+                            {{ position }}
+                        </label>
+                    </div>
+                </div>
 
                 <button class="reset-btn" @click="resetFilters">重置筛选</button>
             </aside>
 
-            <!-- 学生列表 -->
-            <section class="student-list">
-                <div class="list-header">
-                    <h2>符合条件的学生 ({{ filteredStudents.length }})</h2>
-                    <button class="add-student-btn" @click="showAddForm = true">添加学生</button>
-                </div>
-
-                <div class="students-grid" v-if="filteredStudents.length > 0">
-                    <div class="student-card" v-for="student in filteredStudents" :key="student.id">
-                        <div class="card-header">
-                            <h3>{{ student.name }}</h3>
-                            <span class="age">{{ student.age }}岁</span>
-                        </div>
-                        <div class="card-body">
-                            <p><strong>学历：</strong>{{ student.education }}</p>
-                            <p><strong>专业：</strong>{{ student.major }}</p>
-                            <p><strong>学校：</strong>{{ student.school }}</p>
-                            <p><strong>工作经验：</strong>{{ student.experience }}</p>
-                            
-                            <div class="skill-tags">
-                                <span class="tag" v-for="skill in student.skills" :key="skill">{{ skill }}</span>
-                            </div>
-                            
-                            <p class="bio">{{ student.bio }}</p>
-                        </div>
-                        <div class="card-footer">
-                            <button class="contact-btn">联系</button>
-                            <button class="view-detail-btn">查看详情</button>
-                        </div>
-                    </div>
+            <div class="student-list">
+                <div class="students-table-container" v-if="filteredStudents.length > 0">
+                    <table class="students-table">
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>专业</th>
+                                <th>学历</th>
+                                <th>工作经验</th>
+                                <th>技能</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="student in filteredStudents" :key="student.id">
+                                <td>{{ student.name }}</td>
+                                <td>{{ student.major }}</td>
+                                <td>{{ student.education }}</td>
+                                <td>{{ student.experience }}</td>
+                                <td>
+                                    <div class="skill-tags-small">
+                                        <span class="tag-small" v-for="skill in student.skills" :key="skill">{{ skill }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <button class="contact-btn" @click="viewStudentDetail(student)">详情</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 <div class="empty-state" v-else>
                     <p>没有找到符合条件的学生</p>
                     <button class="reset-btn" @click="resetFilters">重置筛选条件</button>
                 </div>
-            </section>
+            </div>
         </main>
 
-        <!-- 添加学生表单模态框 -->
-        <div class="modal" v-if="showAddForm">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>添加学生信息</h2>
-                    <span class="close-btn" @click="showAddForm = false">&times;</span>
-                </div>
-                <div class="modal-body">
-                    <form @submit.prevent="addStudent">
-                        <div class="form-group">
-                            <label for="name">姓名</label>
-                            <input type="text" id="name" v-model="newStudent.name" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="age">年龄</label>
-                            <input type="number" id="age" v-model="newStudent.age" min="18" max="60" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="education">学历</label>
-                            <select id="education" v-model="newStudent.education" required>
-                                <option value="">请选择学历</option>
-                                <option v-for="edu in educationOptions" :key="edu" :value="edu">{{ edu }}</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="major">专业</label>
-                            <input type="text" id="major" v-model="newStudent.major" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="school">学校</label>
-                            <input type="text" id="school" v-model="newStudent.school" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="experience">工作经验</label>
-                            <select id="experience" v-model="newStudent.experience" required>
-                                <option value="">请选择工作经验</option>
-                                <option v-for="exp in experienceOptions" :key="exp" :value="exp">{{ exp }}</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>技能标签</label>
-                            <div class="checkbox-group">
-                                <label v-for="skill in skillOptions" :key="skill">
-                                    <input type="checkbox" v-model="newStudent.skills" :value="skill">
-                                    {{ skill }}
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="bio">个人简介</label>
-                            <textarea id="bio" v-model="newStudent.bio" rows="4" required></textarea>
-                        </div>
-                        <div class="form-actions">
-                            <button type="submit" class="submit-btn">提交</button>
-                            <button type="button" class="cancel-btn" @click="showAddForm = false">取消</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
+        
     </div>
 
     <script src="app.js"></script>
