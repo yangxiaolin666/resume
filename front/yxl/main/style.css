@@ -19,7 +19,7 @@ body {
 
 /* 头部样式 */
 .header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background:#667EEA;
     color: white;
     padding: 2rem 0;
     text-align: center;
@@ -30,11 +30,6 @@ body {
     font-size: 2.5rem;
     margin-bottom: 0.5rem;
     font-weight: 600;
-}
-
-.header p {
-    font-size: 1.1rem;
-    opacity: 0.9;
 }
 
 /* 主容器 */
@@ -50,7 +45,7 @@ body {
 
 /* 筛选面板 */
 .filter-panel {
-    width: 300px;
+    width: 350px;
     background: white;
     padding: 1.5rem;
     border-radius: 10px;
@@ -58,6 +53,8 @@ body {
     height: fit-content;
     position: sticky;
     top: 2rem;
+    max-height: calc(100vh - 4rem);
+    overflow-y: auto;
 }
 
 .filter-panel h2 {
@@ -74,9 +71,9 @@ body {
 
 .filter-section h3 {
     font-size: 1rem;
-    margin-bottom: 0.8rem;
     color: #666;
     font-weight: 500;
+    margin: 0;
 }
 
 .filter-options {
@@ -123,165 +120,8 @@ body {
 .student-list {
     flex: 1;
     background: white;
-    padding: 1.5rem;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-}
-
-.list-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #eee;
-}
-
-.list-header h2 {
-    font-size: 1.5rem;
-    color: #333;
-}
-
-.add-student-btn {
-    padding: 0.8rem 1.5rem;
-    background-color: #667eea;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.2s;
-}
-
-.add-student-btn:hover {
-    background-color: #5a67d8;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
-}
-
-/* 学生卡片网格 */
-.students-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
-}
-
-.student-card {
-    border: 1px solid #eee;
-    border-radius: 8px;
-    padding: 1.5rem;
-    transition: all 0.3s;
-    cursor: pointer;
-    background: white;
-    display: flex;
-    flex-direction: column;
-    min-height: 400px; /* 设置最小高度确保卡片高度一致 */
-}
-
-.student-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    border-color: #667eea;
-}
-
-.card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.card-header h3 {
-    font-size: 1.3rem;
-    color: #333;
-}
-
-.age {
-    background-color: #f0f0f0;
-    padding: 0.2rem 0.6rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    color: #666;
-}
-
-.card-body {
-    flex: 1; /* 占据剩余空间，将底部按钮推到底部 */
-}
-
-.card-body p {
-    margin-bottom: 0.5rem;
-    font-size: 0.95rem;
-    color: #666;
-}
-
-.card-body p strong {
-    color: #333;
-}
-
-.skill-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    margin: 1rem 0;
-}
-
-.tag {
-    background-color: #e9ecef;
-    color: #495057;
-    padding: 0.2rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    transition: all 0.2s;
-}
-
-.tag:hover {
-    background-color: #667eea;
-    color: white;
-}
-
-.bio {
-    margin-top: 0.5rem;
-    color: #666;
-    font-size: 0.9rem;
-    line-height: 1.5;
-}
-
-.card-footer {
-    display: flex;
-    gap: 1rem;
-    margin-top: 1.5rem;
-    padding-top: 1rem;
-    border-top: 1px solid #eee;
-}
-
-.contact-btn, .view-detail-btn {
-    flex: 1;
-    padding: 0.6rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: all 0.2s;
-}
-
-.contact-btn {
-    background-color: #667eea;
-    color: white;
-}
-
-.contact-btn:hover {
-    background-color: #5a67d8;
-    transform: translateY(-1px);
-}
-
-.view-detail-btn {
-    background-color: #f0f0f0;
-    color: #333;
-}
-
-.view-detail-btn:hover {
-    background-color: #e0e0e0;
-    transform: translateY(-1px);
 }
 
 /* 空状态 */
@@ -296,144 +136,108 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* 模态框 */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
+
+/* 学生表格样式 */
+.students-table {
     width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    border-collapse: collapse;
+    font-size: 0.9rem; /* 略微减小字体大小 */
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    table-layout: fixed;
 }
 
-.modal-content {
-    background: white;
-    border-radius: 10px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    border-bottom: 1px solid #eee;
-}
-
-.modal-header h2 {
-    font-size: 1.5rem;
-    color: #333;
-}
-
-.close-btn {
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #999;
-    transition: color 0.2s;
-}
-
-.close-btn:hover {
-    color: #333;
-}
-
-.modal-body {
-    padding: 1.5rem;
-}
-
-/* 表单样式 */
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: 500;
-    color: #333;
-}
-
-.form-group input[type="text"],
-.form-group input[type="number"],
-.form-group select,
-.form-group textarea {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: border-color 0.2s;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: #667eea;
-}
-
-.checkbox-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 0.5rem;
-}
-
-.checkbox-group label {
-    display: flex;
-    align-items: center;
-    font-weight: normal;
-    cursor: pointer;
-}
-
-.checkbox-group input[type="checkbox"] {
-    margin-right: 0.5rem;
-}
-
-.form-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #eee;
-}
-
-.submit-btn, .cancel-btn {
-    padding: 0.8rem 1.5rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.2s;
-}
-
-.submit-btn {
-    background-color: #667eea;
+/* 表格头部样式 */
+.students-table thead {
+    background: #667EEA;
     color: white;
 }
 
-.submit-btn:hover {
+.students-table th {
+    padding: 0.75rem 1rem; /* 减小内边距 */
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.8rem; /* 略微减小字体大小 */
+    /* 为每一列设置固定宽度 */
+}
+
+/* 表格主体样式 */
+.students-table tbody tr {
+    border-bottom: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+    height: auto;
+}
+
+.students-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.students-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.students-table td {
+    padding: 0.75rem;
+    vertical-align: middle; /* 保持垂直居中 */
+    text-align: center;
+    word-break: break-word;
+}
+
+/* 小技能标签容器 */
+.skill-tags-small {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem; /* 减小标签间距 */
+    justify-content: center;
+    align-items: center;
+    min-height: 28px; /* 略微减小最小高度 */
+}
+
+/* 小技能标签样式 */
+.tag-small {
+    background-color: #667eea;
+    color: white;
+    padding: 0.2rem 0.6rem; /* 减小标签内边距 */
+    border-radius: 20px;
+    font-size: 0.75rem; /* 略微减小字体大小 */
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.tag-small:hover {
+    background-color: #764ba2;
+    transform: scale(1.05);
+}
+
+/* 操作按钮样式 */
+.students-table .contact-btn {
+    padding: 0.35rem 0.75rem; /* 减小按钮内边距 */
+    background-color: #667eea;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem; /* 减小按钮字体大小 */
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    line-height: 1.3;
+}
+
+.students-table .contact-btn:hover {
     background-color: #5a67d8;
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.cancel-btn {
-    background-color: #f0f0f0;
-    color: #333;
-}
-
-.cancel-btn:hover {
-    background-color: #e0e0e0;
-    transform: translateY(-1px);
-}
-
+/* 响应式布局 */
 @media (max-width: 1024px) {
     .main-container {
         flex-direction: column;
@@ -443,10 +247,6 @@ body {
         width: 100%;
         position: static;
     }
-    
-    .students-grid {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
 }
 
 @media (max-width: 768px) {
@@ -454,29 +254,40 @@ body {
         font-size: 2rem;
     }
     
-    .list-header {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch;
+    .students-table {
+        font-size: 0.9rem;
+        table-layout: fixed;
     }
     
-    .add-student-btn {
-        width: 100%;
+    .students-table th, .students-table td {
+        padding: 0.75rem 0.5rem;
     }
     
-    .students-grid {
-        grid-template-columns: 1fr;
+    .students-table th {
+        font-size: 0.75rem;
     }
     
-    .checkbox-group {
-        grid-template-columns: 1fr;
+    /* 响应式列宽 */
+    .students-table th:nth-child(1),
+    .students-table td:nth-child(1) { width: 15%; } /* 姓名 */
+    .students-table th:nth-child(2),
+    .students-table td:nth-child(2) { width: 18%; } /* 专业 */
+    .students-table th:nth-child(3),
+    .students-table td:nth-child(3) { width: 15%; } /* 学历 */
+    .students-table th:nth-child(4),
+    .students-table td:nth-child(4) { width: 15%; } /* 工作经验 */
+    .students-table th:nth-child(5),
+    .students-table td:nth-child(5) { width: 22%; } /* 技能 */
+    .students-table th:nth-child(6),
+    .students-table td:nth-child(6) { width: 15%; } /* 操作 */
+    
+    .tag-small {
+        padding: 0.2rem 0.5rem;
+        font-size: 0.7rem;
     }
     
-    .form-actions {
-        flex-direction: column;
-    }
-    
-    .submit-btn, .cancel-btn {
-        width: 100%;
+    .students-table .contact-btn {
+        padding: 0.4rem 0.75rem;
+        font-size: 0.8rem;
     }
 }
