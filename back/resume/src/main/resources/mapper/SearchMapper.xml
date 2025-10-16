@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resume.company.mapper.SearchMapper">
+    
+    <select id="selectStudentsByCondition" resultType="com.resume.model.entity.Student">
+        SELECT DISTINCT s.* 
+        FROM student s
+        LEFT JOIN stu_region sr ON s.id = sr.stu_id
+        LEFT JOIN stu_language sl ON s.id = sl.stu_id
+        LEFT JOIN stu_certificate sc ON s.id = sc.stu_id
+        LEFT JOIN stu_internship si ON s.id = si.stu_id
+        LEFT JOIN stu_speciality ss ON s.id = ss.stu_id
+        <where>
+            <if test="query.id != null">
+                OR s.id = #{query.id}
+            </if>
+            <if test="query.stuId != null">
+                OR s.stu_id = #{query.stuId}
+            </if>
+            <if test="query.name != null and query.name != ''">
+                OR s.name LIKE CONCAT('%', #{query.name}, '%')
+            </if>
+            <if test="query.minAge != null">
+                OR s.age >= #{query.minAge}
+            </if>
+            <if test="query.maxAge != null">
+                OR s.age &lt;= #{query.maxAge}
+            </if>
+            <if test="query.gender != null and query.gender != ''">
+                OR s.gender = #{query.gender}
+            </if>
+            <if test="query.nation != null and query.nation != ''">
+                OR s.nation LIKE CONCAT('%', #{query.nation}, '%')
+            </if>
+            <if test="query.major != null and query.major != ''">
+                OR s.major LIKE CONCAT('%', #{query.major}, '%')
+            </if>
+            <if test="query.degree != null and query.degree != ''">
+                OR s.degree = #{query.degree}
+            </if>
+            <if test="query.minGraduationYear != null">
+                OR s.graduation_year >= #{query.minGraduationYear}
+            </if>
+            <if test="query.maxGraduationYear != null">
+                OR s.graduation_year &lt;= #{query.maxGraduationYear}
+            </if>
+            <if test="query.minInternship != null">
+                OR s.internship >= #{query.minInternship}
+            </if>
+            <if test="query.maxInternship != null">
+                OR s.internship &lt;= #{query.maxInternship}
+            </if>
+            <if test="query.city != null and query.city != ''">
+                OR sr.city LIKE CONCAT('%', #{query.city}, '%')
+            </if>
+            <if test="query.province != null and query.province != ''">
+                OR sr.province LIKE CONCAT('%', #{query.province}, '%')
+            </if>
+            <if test="query.language != null and query.language != ''">
+                OR sl.language LIKE CONCAT('%', #{query.language}, '%')
+            </if>
+            <if test="query.languageLevel != null and query.languageLevel != ''">
+                OR sl.level LIKE CONCAT('%', #{query.languageLevel}, '%')
+            </if>
+            <if test="query.certName != null and query.certName != ''">
+                OR sc.cert_name LIKE CONCAT('%', #{query.certName}, '%')
+            </if>
+            <if test="query.certLevel != null and query.certLevel != ''">
+                OR sc.level LIKE CONCAT('%', #{query.certLevel}, '%')
+            </if>
+            <if test="query.internshipCompany != null and query.internshipCompany != ''">
+                OR si.company LIKE CONCAT('%', #{query.internshipCompany}, '%')
+            </if>
+            <if test="query.speciality != null and query.speciality != ''">
+                OR ss.speciality LIKE CONCAT('%', #{query.speciality}, '%')
+            </if>
+        </where>
+        ORDER BY s.id
+    </select>
+    
+</mapper>
