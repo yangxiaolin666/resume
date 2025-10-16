@@ -8,7 +8,6 @@
         LEFT JOIN stu_region sr ON s.id = sr.stu_id
         LEFT JOIN stu_language sl ON s.id = sl.stu_id
         LEFT JOIN stu_certificate sc ON s.id = sc.stu_id
-        LEFT JOIN stu_internship si ON s.id = si.stu_id
         LEFT JOIN stu_speciality ss ON s.id = ss.stu_id
         <where>
             <if test="query.id != null">
@@ -41,20 +40,32 @@
             <if test="query.internship != null">
                 AND s.internship >= #{query.internship}
             </if>
-            <if test="query.city != null and query.city != ''">
-                AND sr.city LIKE CONCAT('%', #{query.city}, '%')
+            <if test="query.cities != null and query.cities.size() > 0">
+                AND sr.city IN
+                <foreach collection="query.cities" item="city" open="(" separator="," close=")">
+                    #{city}
+                </foreach>
             </if>
-            <if test="query.province != null and query.province != ''">
-                AND sr.province LIKE CONCAT('%', #{query.province}, '%')
+            <if test="query.provinces != null and query.provinces.size() > 0">
+                AND sr.province IN
+                <foreach collection="query.provinces" item="province" open="(" separator="," close=")">
+                    #{province}
+                </foreach>
             </if>
-            <if test="query.language != null and query.language != ''">
-                AND sl.language LIKE CONCAT('%', #{query.language}, '%')
+            <if test="query.languages != null and query.languages.size() > 0">
+                AND sl.language IN
+                <foreach collection="query.languages" item="language" open="(" separator="," close=")">
+                    #{language}
+                </foreach>
             </if>
             <if test="query.languageLevel != null and query.languageLevel != ''">
                 AND sl.level LIKE CONCAT('%', #{query.languageLevel}, '%')
             </if>
-            <if test="query.certName != null and query.certName != ''">
-                AND sc.cert_name LIKE CONCAT('%', #{query.certName}, '%')
+            <if test="query.certNames != null and query.certNames.size() > 0">
+                AND sc.cert_name IN
+                <foreach collection="query.certNames" item="certName" open="(" separator="," close=")">
+                    #{certName}
+                </foreach>
             </if>
             <if test="query.certLevel != null and query.certLevel != ''">
                 AND sc.level LIKE CONCAT('%', #{query.certLevel}, '%')
@@ -62,8 +73,11 @@
             <if test="query.internshipCompany != null and query.internshipCompany != ''">
                 AND si.company LIKE CONCAT('%', #{query.internshipCompany}, '%')
             </if>
-            <if test="query.speciality != null and query.speciality != ''">
-                AND ss.speciality LIKE CONCAT('%', #{query.speciality}, '%')
+            <if test="query.specialities != null and query.specialities.size() > 0">
+                AND ss.speciality IN
+                <foreach collection="query.specialities" item="speciality" open="(" separator="," close=")">
+                    #{speciality}
+                </foreach>
             </if>
         </where>
         ORDER BY s.id

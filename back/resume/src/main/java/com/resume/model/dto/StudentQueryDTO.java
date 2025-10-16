@@ -1,6 +1,7 @@
 package com.resume.model.dto;
 
 import lombok.Data;
+import java.util.List;
 
 @Data
 public class StudentQueryDTO {
@@ -57,7 +58,7 @@ public class StudentQueryDTO {
     /**
      * 语言要求
      */
-    private String language;
+    private List<String> languages;
     
     /**
      * 语言等级
@@ -67,17 +68,17 @@ public class StudentQueryDTO {
     /**
      * 城市
      */
-    private String city;
+    private List<String> cities;
     
     /**
      * 省份
      */
-    private String province;
+    private List<String> provinces;
     
     /**
      * 证书名称
      */
-    private String certName;
+    private List<String> certNames;
     
     /**
      * 证书等级
@@ -92,7 +93,7 @@ public class StudentQueryDTO {
     /**
      * 专业技能
      */
-    private String speciality;
+    private List<String> specialities;
     
     /**
      * 当前页码
