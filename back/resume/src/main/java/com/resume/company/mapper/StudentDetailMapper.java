@@ -1,7 +1,7 @@
 package com.resume.company.mapper;
 
-import com.resume.model.StudentDetailDTO;
-import com.resume.model.StudentQueryDTO;
+import com.resume.model.dto.StudentDetailDTO;
+import com.resume.model.dto.StudentQueryDTO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;

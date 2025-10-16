@@ -1,9 +1,9 @@
 package com.resume.company.service;
 
 import com.github.pagehelper.PageInfo;
-import com.resume.model.StudentDetailDTO;
+import com.resume.model.dto.StudentDetailDTO;
 import com.resume.model.entity.Student;
-import com.resume.model.StudentQueryDTO;
+import com.resume.model.dto.StudentQueryDTO;
 
 public interface SearchService {
     

@@ -2,9 +2,10 @@ package com.resume.company.controller;
 
 import com.github.pagehelper.PageInfo;
 import com.resume.company.service.SearchService;
-import com.resume.model.StudentDetailDTO;
+import com.resume.model.dto.StudentDetailDTO;
 import com.resume.model.entity.Student;
-import com.resume.model.StudentQueryDTO;
+import com.resume.model.dto.StudentQueryDTO;
+import com.resume.model.result.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,8 +22,8 @@ public class SearchController {
      * @return 学生列表
      */
     @PostMapping("/search")
-    public PageInfo<Student> searchStudents(@RequestBody StudentQueryDTO queryDTO) {
-        return searchService.getStudentsByCondition(queryDTO);
+    public Result<PageInfo<Student>> searchStudents(@RequestBody StudentQueryDTO queryDTO) {
+        return Result.success(searchService.getStudentsByCondition(queryDTO));
     }
     
     /**
@@ -31,7 +32,7 @@ public class SearchController {
      * @return 学生详细信息列表
      */
     @PostMapping("/detailSearch")
-    public PageInfo<StudentDetailDTO> searchStudentDetails(@RequestBody StudentQueryDTO queryDTO) {
-        return searchService.getStudentDetailsByCondition(queryDTO);
+    public Result<PageInfo<StudentDetailDTO>> searchStudentDetails(@RequestBody StudentQueryDTO queryDTO) {
+        return Result.success(searchService.getStudentDetailsByCondition(queryDTO));
     }
 }

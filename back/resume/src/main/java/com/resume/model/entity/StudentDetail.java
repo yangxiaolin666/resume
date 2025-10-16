@@ -1,6 +1,6 @@
 package com.resume.model.entity;
 
-import com.resume.model.*;
+import com.resume.model.dto.*;
 import lombok.Data;
 import java.util.List;
 

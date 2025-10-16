@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.resume.company.mapper.StudentDetailMapper">
     
-    <resultMap id="StudentDetailMap" type="com.resume.model.StudentDetailDTO">
+    <resultMap id="StudentDetailMap" type="com.resume.model.dto.StudentDetailDTO">
         <id property="id" column="id"/>
         <result property="stuId" column="stu_id"/>
         <result property="name" column="name"/>
@@ -15,40 +15,40 @@
         <result property="internship" column="internship"/>
         
         <!-- 关联映射 -->
-        <association property="region" javaType="com.resume.model.RegionDTO">
+        <association property="region" javaType="com.resume.model.dto.RegionDTO">
             <result property="province" column="province"/>
             <result property="city" column="city"/>
         </association>
         
-        <association property="resume" javaType="com.resume.model.ResumeDTO">
+        <association property="resume" javaType="com.resume.model.dto.ResumeDTO">
             <result property="resume" column="resume_url"/>
         </association>
         
         <!-- 集合映射 -->
-        <collection property="languages" ofType="com.resume.model.LanguageDTO">
+        <collection property="languages" ofType="com.resume.model.dto.LanguageDTO">
             <result property="language" column="language"/>
             <result property="level" column="language_level"/>
             <result property="certNo" column="language_cert_no"/>
             <result property="issueDate" column="language_issue_date"/>
         </collection>
         
-        <collection property="certificates" ofType="com.resume.model.CertificateDTO">
+        <collection property="certificates" ofType="com.resume.model.dto.CertificateDTO">
             <result property="certName" column="cert_name"/>
             <result property="level" column="certificate_level"/>
             <result property="certNo" column="certificate_cert_no"/>
             <result property="issueDate" column="certificate_issue_date"/>
         </collection>
         
-        <collection property="internships" ofType="com.resume.model.InternshipDTO">
+        <collection property="internships" ofType="com.resume.model.dto.InternshipDTO">
             <result property="company" column="company"/>
             <result property="experience" column="experience"/>
         </collection>
         
-        <collection property="jobs" ofType="com.resume.model.JobDTO">
+        <collection property="jobs" ofType="com.resume.model.dto.JobDTO">
             <result property="post" column="post"/>
         </collection>
         
-        <collection property="specialities" ofType="com.resume.model.SpecialityDTO">
+        <collection property="specialities" ofType="com.resume.model.dto.SpecialityDTO">
             <result property="speciality" column="speciality"/>
         </collection>
     </resultMap>
@@ -98,11 +98,8 @@
             <if test="query.name != null and query.name != ''">
                 AND s.name LIKE CONCAT('%', #{query.name}, '%')
             </if>
-            <if test="query.minAge != null">
-                AND s.age >= #{query.minAge}
-            </if>
-            <if test="query.maxAge != null">
-                AND s.age &lt;= #{query.maxAge}
+            <if test="query.age != null">
+                AND s.age = #{query.age}
             </if>
             <if test="query.gender != null and query.gender != ''">
                 AND s.gender = #{query.gender}
@@ -116,17 +113,11 @@
             <if test="query.degree != null and query.degree != ''">
                 AND s.degree = #{query.degree}
             </if>
-            <if test="query.minGraduationYear != null">
-                AND s.graduation_year >= #{query.minGraduationYear}
+            <if test="query.graduationYear != null">
+                AND s.graduation_year >= #{query.graduationYear}
             </if>
-            <if test="query.maxGraduationYear != null">
-                AND s.graduation_year &lt;= #{query.maxGraduationYear}
-            </if>
-            <if test="query.minInternship != null">
-                AND s.internship >= #{query.minInternship}
-            </if>
-            <if test="query.maxInternship != null">
-                AND s.internship &lt;= #{query.maxInternship}
+            <if test="query.internship != null">
+                AND s.internship >= #{query.internship}
             </if>
             <if test="query.city != null and query.city != ''">
                 AND sr.city LIKE CONCAT('%', #{query.city}, '%')

@@ -1,7 +1,6 @@
-package com.resume.model;
+package com.resume.model.dto;
 
 import lombok.Data;
-import java.util.List;
 
 @Data
 public class StudentQueryDTO {
@@ -21,14 +20,9 @@ public class StudentQueryDTO {
     private String name;
     
     /**
-     * 最小年龄
+     * 年龄
      */
-    private Integer minAge;
-    
-    /**
-     * 最大年龄
-     */
-    private Integer maxAge;
+    private Integer age;
     
     /**
      * 性别
@@ -53,22 +47,12 @@ public class StudentQueryDTO {
     /**
      * 最小毕业年份
      */
-    private Integer minGraduationYear;
-    
+    private Integer graduationYear;
+
     /**
-     * 最大毕业年份
+     * 实习次数
      */
-    private Integer maxGraduationYear;
-    
-    /**
-     * 最小实习次数
-     */
-    private Integer minInternship;
-    
-    /**
-     * 最大实习次数
-     */
-    private Integer maxInternship;
+    private Integer internship;
     
     /**
      * 语言要求

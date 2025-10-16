@@ -1,4 +1,4 @@
-package com.resume.model;
+package com.resume.model.dto;
 
 import lombok.Data;
 import java.util.List;

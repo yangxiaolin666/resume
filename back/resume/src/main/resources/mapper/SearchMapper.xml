@@ -12,67 +12,58 @@
         LEFT JOIN stu_speciality ss ON s.id = ss.stu_id
         <where>
             <if test="query.id != null">
-                OR s.id = #{query.id}
+                AND s.id = #{query.id}
             </if>
             <if test="query.stuId != null">
-                OR s.stu_id = #{query.stuId}
+                AND s.stu_id = #{query.stuId}
             </if>
             <if test="query.name != null and query.name != ''">
-                OR s.name LIKE CONCAT('%', #{query.name}, '%')
+                AND s.name LIKE CONCAT('%', #{query.name}, '%')
             </if>
-            <if test="query.minAge != null">
-                OR s.age >= #{query.minAge}
-            </if>
-            <if test="query.maxAge != null">
-                OR s.age &lt;= #{query.maxAge}
+            <if test="query.age != null">
+                AND s.age = #{query.age}
             </if>
             <if test="query.gender != null and query.gender != ''">
-                OR s.gender = #{query.gender}
+                AND s.gender = #{query.gender}
             </if>
             <if test="query.nation != null and query.nation != ''">
-                OR s.nation LIKE CONCAT('%', #{query.nation}, '%')
+                AND s.nation LIKE CONCAT('%', #{query.nation}, '%')
             </if>
             <if test="query.major != null and query.major != ''">
-                OR s.major LIKE CONCAT('%', #{query.major}, '%')
+                AND s.major LIKE CONCAT('%', #{query.major}, '%')
             </if>
             <if test="query.degree != null and query.degree != ''">
-                OR s.degree = #{query.degree}
+                AND s.degree = #{query.degree}
             </if>
-            <if test="query.minGraduationYear != null">
-                OR s.graduation_year >= #{query.minGraduationYear}
+            <if test="query.graduationYear != null">
+                AND s.graduation_year >= #{query.graduationYear}
             </if>
-            <if test="query.maxGraduationYear != null">
-                OR s.graduation_year &lt;= #{query.maxGraduationYear}
-            </if>
-            <if test="query.minInternship != null">
-                OR s.internship >= #{query.minInternship}
-            </if>
-            <if test="query.maxInternship != null">
-                OR s.internship &lt;= #{query.maxInternship}
+            <if test="query.internship != null">
+                AND s.internship >= #{query.internship}
             </if>
             <if test="query.city != null and query.city != ''">
-                OR sr.city LIKE CONCAT('%', #{query.city}, '%')
+                AND sr.city LIKE CONCAT('%', #{query.city}, '%')
             </if>
             <if test="query.province != null and query.province != ''">
-                OR sr.province LIKE CONCAT('%', #{query.province}, '%')
+                AND sr.province LIKE CONCAT('%', #{query.province}, '%')
             </if>
             <if test="query.language != null and query.language != ''">
-                OR sl.language LIKE CONCAT('%', #{query.language}, '%')
+                AND sl.language LIKE CONCAT('%', #{query.language}, '%')
             </if>
             <if test="query.languageLevel != null and query.languageLevel != ''">
-                OR sl.level LIKE CONCAT('%', #{query.languageLevel}, '%')
+                AND sl.level LIKE CONCAT('%', #{query.languageLevel}, '%')
             </if>
             <if test="query.certName != null and query.certName != ''">
-                OR sc.cert_name LIKE CONCAT('%', #{query.certName}, '%')
+                AND sc.cert_name LIKE CONCAT('%', #{query.certName}, '%')
             </if>
             <if test="query.certLevel != null and query.certLevel != ''">
-                OR sc.level LIKE CONCAT('%', #{query.certLevel}, '%')
+                AND sc.level LIKE CONCAT('%', #{query.certLevel}, '%')
             </if>
             <if test="query.internshipCompany != null and query.internshipCompany != ''">
-                OR si.company LIKE CONCAT('%', #{query.internshipCompany}, '%')
+                AND si.company LIKE CONCAT('%', #{query.internshipCompany}, '%')
             </if>
             <if test="query.speciality != null and query.speciality != ''">
-                OR ss.speciality LIKE CONCAT('%', #{query.speciality}, '%')
+                AND ss.speciality LIKE CONCAT('%', #{query.speciality}, '%')
             </if>
         </where>
         ORDER BY s.id

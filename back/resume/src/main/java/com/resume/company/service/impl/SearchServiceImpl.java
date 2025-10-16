@@ -5,9 +5,9 @@ import com.github.pagehelper.PageInfo;
 import com.resume.company.mapper.SearchMapper;
 import com.resume.company.mapper.StudentDetailMapper;
 import com.resume.company.service.SearchService;
-import com.resume.model.StudentDetailDTO;
+import com.resume.model.dto.StudentDetailDTO;
 import com.resume.model.entity.Student;
-import com.resume.model.StudentQueryDTO;
+import com.resume.model.dto.StudentQueryDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
