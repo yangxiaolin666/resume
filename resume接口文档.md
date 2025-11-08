@@ -44,6 +44,7 @@ StudentQueryDTO {
 | :------- | :--- | :------- | :------- | :--- |
 | username | 是   | String   | 20230001 |      |
 | password | 是   | String   | 20230001 |      |
+| userType | 是   | String   | student  | 角色 |
 
 #### 响应数据
 
@@ -52,6 +53,25 @@ StudentQueryDTO {
 | code    | 状态码     | 200：请求成功<br/>40005：用户名或密码错误<br/>40006：账号已被禁用<br/>42901：登录尝试次数过多 |
 | data    | 返回的数据 | 登录成功返回用户信息和Token                                  |
 | message | 信息       | 成功/错误信息                                                |
+
+### 2.刷新token
+
+#### 基本信息
+
+- 请求路径：`/refresh-token`
+- 请求方式：`POST`
+
+#### 请求头
+
+Refresh-Token: {你的Refresh Token}
+
+#### 响应数据
+
+| 字段    | 说明       | 备注             |
+| ------- | ---------- | ---------------- |
+| code    | 状态码     | 200：请求成功    |
+| data    | 返回的数据 | 新的Access Token |
+| message | 信息       | 成功/错误信息    |
 
 ## 企业端("/com")
 
