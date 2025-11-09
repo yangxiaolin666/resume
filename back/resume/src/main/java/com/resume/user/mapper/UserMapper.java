@@ -18,4 +18,12 @@ public interface UserMapper {
      */
     @Select("SELECT user_id, username, password, user_type, create_time, update_time FROM user WHERE username = #{username}")
     User findByUsername(@Param("username") String username);
+    
+    /**
+     * 根据用户ID查询用户
+     * @param userId 用户ID
+     * @return 用户信息
+     */
+    @Select("SELECT user_id, username, password, user_type, create_time, update_time FROM user WHERE user_id = #{userId}")
+    User findByUserId(@Param("userId") Integer userId);
 }

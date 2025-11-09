@@ -23,3 +23,8 @@ knife4j:
 mybatis:
   mapper-locations: classpath:mapper/*.xml
   config-location: classpath:mybatis-config.xml
+
+# 文件上传配置
+file:
+  upload:
+    resume-path: uploads/resume/

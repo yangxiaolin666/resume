@@ -1,6 +1,6 @@
 # 接口文档
 
-
+用户表username对应学生学号
 
 ```
 StudentQueryDTO {
@@ -55,6 +55,8 @@ StudentQueryDTO {
 | message | 信息       | 成功/错误信息                                                |
 
 ### 2.刷新token
+
+这个接口由拦截器自动实现，也可手动刷新
 
 #### 基本信息
 

@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-@MapperScan({"com.resume.company.mapper", "com.resume.user.mapper"})
+@MapperScan({"com.resume.company.mapper", "com.resume.user.mapper", "com.resume.student.mapper"})
 public class ResumeApplication {
 
     public static void main(String[] args) {

@@ -45,17 +45,26 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public Result handleRuntimeException(RuntimeException e) {
         String message = e.getMessage();
+        
+        // 如果消息为空，打印堆栈并使用异常类名
+        if (message == null || message.trim().isEmpty()) {
+            e.printStackTrace();
+            return Result.error(500, "服务器内部错误: " + e.getClass().getSimpleName());
+        }
+        
         // 解析错误码和错误信息
-        if (message != null && message.contains(":")) {
+        if (message.contains(":")) {
             String[] parts = message.split(":", 2);
             try {
                 int code = Integer.parseInt(parts[0]);
                 String msg = parts[1];
                 return Result.error(code, msg);
             } catch (NumberFormatException ex) {
-                // 如果解析失败，返回默认错误
+                // 如果解析失败，返回原始消息
+                return Result.error(500, message);
             }
         }
+        
         // 默认错误
         return Result.error(500, "服务器内部错误: " + message);
     }
@@ -66,6 +75,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result handleException(Exception e) {
         e.printStackTrace();
-        return Result.error(500, "服务器内部错误");
+        String message = e.getMessage();
+        if (message == null || message.trim().isEmpty()) {
+            return Result.error(500, "服务器内部错误: " + e.getClass().getSimpleName());
+        }
+        return Result.error(500, "服务器内部错误: " + message);
     }
 }
