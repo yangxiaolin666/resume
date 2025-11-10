@@ -1,5 +1,6 @@
 package com.resume.common.config;
 
+import com.resume.common.interceptor.AdminInterceptor;
 import com.resume.common.interceptor.AuthInterceptor;
 import com.resume.common.interceptor.TokenRefreshInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class WebConfig implements WebMvcConfigurer {
     @Autowired
     private TokenRefreshInterceptor tokenRefreshInterceptor;
     
+    @Autowired
+    private AdminInterceptor adminInterceptor;
+    
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 第一层：Token刷新拦截器（先执行，检查是否需要刷新）
@@ -33,5 +37,10 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/com/**", "/stu/**", "/admin/**")
                 .excludePathPatterns("/login", "/refresh-token")
                 .order(2);
+        
+        // 第三层：管理员权限拦截器（最后执行，验证管理员权限）
+        registry.addInterceptor(adminInterceptor)
+                .addPathPatterns("/admin/**")
+                .order(3);
     }
 }

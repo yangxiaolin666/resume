@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resume.admin.mapper.AdminMapper">
+
+    <!-- ============ 学生相关操作 ============ -->
+    
+    <!-- 批量插入学生 -->
+    <insert id="batchInsertStudents" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO student (stu_id, name, age, gender, nation, major, degree, graduation_year, internship, user_id)
+        VALUES
+        <foreach collection="students" item="item" separator=",">
+            (#{item.stuId}, #{item.name}, #{item.age}, #{item.gender}, 
+             #{item.nation}, #{item.major}, #{item.degree}, #{item.graduationYear}, 
+             #{item.internship}, #{item.userId})
+        </foreach>
+    </insert>
+    
+    <!-- 根据学号查询学生 -->
+    <select id="selectStudentByStuId" resultType="com.resume.model.entity.Student">
+        SELECT id, stu_id as stuId, name, age, gender, nation, major, degree, 
+               graduation_year as graduationYear, internship, user_id as userId
+        FROM student
+        WHERE stu_id = #{stuId}
+    </select>
+    
+    <!-- 根据ID查询学生 -->
+    <select id="selectStudentById" resultType="com.resume.model.entity.Student">
+        SELECT id, stu_id as stuId, name, age, gender, nation, major, degree, 
+               graduation_year as graduationYear, internship, user_id as userId
+        FROM student
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 批量删除学生 -->
+    <delete id="batchDeleteStudents">
+        DELETE FROM student
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <!-- 更新学生信息 -->
+    <update id="updateStudent" parameterType="com.resume.model.entity.Student">
+        UPDATE student
+        <set>
+            <if test="stuId != null">stu_id = #{stuId},</if>
+            <if test="name != null">name = #{name},</if>
+            <if test="age != null">age = #{age},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="nation != null">nation = #{nation},</if>
+            <if test="major != null">major = #{major},</if>
+            <if test="degree != null">degree = #{degree},</if>
+            <if test="graduationYear != null">graduation_year = #{graduationYear},</if>
+            <if test="internship != null">internship = #{internship},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 分页查询学生 -->
+    <select id="selectStudentsByPage" resultType="com.resume.model.entity.Student">
+        SELECT id, stu_id as stuId, name, age, gender, nation, major, degree, 
+               graduation_year as graduationYear, internship, user_id as userId
+        FROM student
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+    
+    <!-- 统计学生总数 -->
+    <select id="countStudents" resultType="int">
+        SELECT COUNT(*)
+        FROM student
+        <where>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+        </where>
+    </select>
+
+    <!-- ============ 企业相关操作 ============ -->
+    
+    <!-- 批量插入企业 -->
+    <insert id="batchInsertCompanies" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO company (com_name, com_region, user_id)
+        VALUES
+        <foreach collection="companies" item="item" separator=",">
+            (#{item.comName}, #{item.comRegion}, #{item.userId})
+        </foreach>
+    </insert>
+    
+    <!-- 根据企业名称查询企业 -->
+    <select id="selectCompanyByName" resultType="com.resume.model.entity.Company">
+        SELECT id, com_name as comName, com_region as comRegion, user_id as userId
+        FROM company
+        WHERE com_name = #{comName}
+    </select>
+    
+    <!-- 根据ID查询企业 -->
+    <select id="selectCompanyById" resultType="com.resume.model.entity.Company">
+        SELECT id, com_name as comName, com_region as comRegion, user_id as userId
+        FROM company
+        WHERE id = #{id}
+    </select>
+    
+    <!-- 批量删除企业 -->
+    <delete id="batchDeleteCompanies">
+        DELETE FROM company
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+    
+    <!-- 更新企业信息 -->
+    <update id="updateCompany" parameterType="com.resume.model.entity.Company">
+        UPDATE company
+        <set>
+            <if test="comName != null">com_name = #{comName},</if>
+            <if test="comRegion != null">com_region = #{comRegion},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+    
+    <!-- 分页查询企业 -->
+    <select id="selectCompaniesByPage" resultType="com.resume.model.entity.Company">
+        SELECT id, com_name as comName, com_region as comRegion, user_id as userId
+        FROM company
+        <where>
+            <if test="comName != null and comName != ''">
+                AND com_name LIKE CONCAT('%', #{comName}, '%')
+            </if>
+        </where>
+        ORDER BY id DESC
+    </select>
+    
+    <!-- 统计企业总数 -->
+    <select id="countCompanies" resultType="int">
+        SELECT COUNT(*)
+        FROM company
+        <where>
+            <if test="comName != null and comName != ''">
+                AND com_name LIKE CONCAT('%', #{comName}, '%')
+            </if>
+        </where>
+    </select>
+
+</mapper>

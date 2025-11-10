@@ -8,6 +8,7 @@ import com.resume.user.mapper.UserMapper;
 import com.resume.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
@@ -25,7 +26,7 @@ public class UserServiceImpl implements UserService {
     private StringRedisTemplate redisTemplate;
     
     // BCrypt密码加密器
-    //private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     
     // 登录尝试次数限制key前缀
     private static final String LOGIN_ATTEMPT_PREFIX = "login_attempt:";
@@ -40,12 +41,12 @@ public class UserServiceImpl implements UserService {
         String password = loginDTO.getPassword();
         String userType = loginDTO.getUserType();
         
-//        // 检查登录尝试次数
-//        String attemptKey = LOGIN_ATTEMPT_PREFIX + username;
-//        String attemptCount = redisTemplate.opsForValue().get(attemptKey);
-//        if (attemptCount != null && Integer.parseInt(attemptCount) >= MAX_LOGIN_ATTEMPTS) {
-//            throw new RuntimeException("42901:登录尝试次数过多，请30分钟后再试");
-//        }
+        // 检查登录尝试次数
+        String attemptKey = LOGIN_ATTEMPT_PREFIX + username;
+        String attemptCount = redisTemplate.opsForValue().get(attemptKey);
+        if (attemptCount != null && Integer.parseInt(attemptCount) >= MAX_LOGIN_ATTEMPTS) {
+            throw new RuntimeException("42901:登录尝试次数过多，请30分钟后再试");
+        }
         
         // 查询用户
         User user = userMapper.findByUsername(username);
@@ -62,19 +63,19 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("401:用户身份不匹配，请选择正确的身份登录");
         }
         
-//        // 验证密码（使用BCrypt）
-//        if (!passwordEncoder.matches(password, user.getPassword())) {
-//            // 增加登录尝试次数
-//            incrementLoginAttempt(attemptKey);
-//            throw new RuntimeException("40005:用户名或密码错误");
-//        }
-
-        if(!password.equals(user.getPassword())){
-            throw new RuntimeException("40005:密码错误");
+        // 验证密码（使用BCrypt）
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            // 增加登录尝试次数
+            incrementLoginAttempt(attemptKey);
+            throw new RuntimeException("40005:用户名或密码错误");
         }
+
+//        if(!password.equals(user.getPassword())){
+//            throw new RuntimeException("40005:密码错误");
+//        }
         
-//        // 登录成功，清除登录尝试记录
-//        redisTemplate.delete(attemptKey);
+        // 登录成功，清除登录尝试记录
+        redisTemplate.delete(attemptKey);
         
         // 生成Access Token和Refresh Token
         String accessToken = JwtUtil.generateAccessToken(user.getUserId(), user.getUsername(), user.getUserType());

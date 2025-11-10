@@ -5,7 +5,6 @@ import com.resume.model.entity.*;
 import com.resume.student.mapper.StudentInfoMapper;
 import com.resume.student.service.StudentInfoService;
 import com.resume.user.mapper.UserMapper;
-import com.resume.user.service.impl.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

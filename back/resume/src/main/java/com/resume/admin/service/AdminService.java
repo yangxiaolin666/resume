@@ -1,0 +1,55 @@
+package com.resume.admin.service;
+
+import com.resume.model.dto.BatchOperationResultDTO;
+import com.resume.model.entity.Company;
+import com.resume.model.entity.Student;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 管理员服务接口
+ */
+public interface AdminService {
+    
+    /**
+     * 通过Excel导入学生数据
+     */
+    BatchOperationResultDTO importStudents(MultipartFile file);
+    
+    /**
+     * 通过Excel导入企业数据
+     */
+    BatchOperationResultDTO importCompanies(MultipartFile file);
+    
+    /**
+     * 批量删除学生
+     */
+    BatchOperationResultDTO deleteStudents(List<Integer> stuIds);
+    
+    /**
+     * 批量删除企业
+     */
+    BatchOperationResultDTO deleteCompanies(List<Integer> comIds);
+    
+    /**
+     * 批量更新学生
+     */
+    BatchOperationResultDTO updateStudents(List<Student> students);
+    
+    /**
+     * 批量更新企业
+     */
+    BatchOperationResultDTO updateCompanies(List<Company> companies);
+    
+    /**
+     * 分页查询学生
+     */
+    Map<String, Object> searchStudents(String name, Integer page, Integer pageSize);
+    
+    /**
+     * 分页查询企业
+     */
+    Map<String, Object> searchCompanies(String comName, Integer page, Integer pageSize);
+}
