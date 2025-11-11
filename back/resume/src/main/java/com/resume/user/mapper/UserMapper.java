@@ -1,6 +1,7 @@
 package com.resume.user.mapper;
 
 import com.resume.model.entity.User;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -43,4 +44,15 @@ public interface UserMapper {
      * 批量插入用户
      */
     int batchInsertUsers(@Param("users") List<User> users);
+    
+    /**
+     * 根据userId删除用户
+     */
+    @Delete("DELETE FROM user WHERE user_id = #{userId}")
+    int deleteByUserId(@Param("userId") Integer userId);
+    
+    /**
+     * 批量删除用户
+     */
+    int batchDeleteUsers(@Param("userIds") List<Integer> userIds);
 }

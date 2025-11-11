@@ -179,6 +179,7 @@ public class AdminServiceImpl implements AdminService {
         int failureCount = 0;
         
         List<Integer> validIds = new ArrayList<>();
+        List<Integer> userIds = new ArrayList<>();
         
         for (Integer id : stuIds) {
             Student student = adminMapper.selectStudentById(id);
@@ -188,11 +189,20 @@ public class AdminServiceImpl implements AdminService {
                 failureCount++;
             } else {
                 validIds.add(id);
+                if (student.getUserId() != null) {
+                    userIds.add(student.getUserId());
+                }
             }
         }
         
         if (!validIds.isEmpty()) {
+            // 先删除student表数据
             successCount = adminMapper.batchDeleteStudents(validIds);
+            
+            // 再删除user表数据
+            if (!userIds.isEmpty()) {
+                userMapper.batchDeleteUsers(userIds);
+            }
         }
         
         return new BatchOperationResultDTO(successCount, failureCount, errors);
@@ -206,6 +216,7 @@ public class AdminServiceImpl implements AdminService {
         int failureCount = 0;
         
         List<Integer> validIds = new ArrayList<>();
+        List<Integer> userIds = new ArrayList<>();
         
         for (Integer id : comIds) {
             Company company = adminMapper.selectCompanyById(id);
@@ -215,11 +226,20 @@ public class AdminServiceImpl implements AdminService {
                 failureCount++;
             } else {
                 validIds.add(id);
+                if (company.getUserId() != null) {
+                    userIds.add(company.getUserId());
+                }
             }
         }
         
         if (!validIds.isEmpty()) {
+            // 先删除company表数据
             successCount = adminMapper.batchDeleteCompanies(validIds);
+            
+            // 再删除user表数据
+            if (!userIds.isEmpty()) {
+                userMapper.batchDeleteUsers(userIds);
+            }
         }
         
         return new BatchOperationResultDTO(successCount, failureCount, errors);

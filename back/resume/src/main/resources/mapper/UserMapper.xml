@@ -11,5 +11,14 @@
             (#{item.username}, #{item.password}, #{item.userType}, NOW(), NOW())
         </foreach>
     </insert>
+    
+    <!-- 批量删除用户 -->
+    <delete id="batchDeleteUsers">
+        DELETE FROM user
+        WHERE user_id IN
+        <foreach collection="userIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
 
 </mapper>

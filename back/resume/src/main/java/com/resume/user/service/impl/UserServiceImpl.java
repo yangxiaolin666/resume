@@ -40,10 +40,11 @@ public class UserServiceImpl implements UserService {
         String username = loginDTO.getUsername();
         String password = loginDTO.getPassword();
         String userType = loginDTO.getUserType();
-        
+
         // 检查登录尝试次数
         String attemptKey = LOGIN_ATTEMPT_PREFIX + username;
         String attemptCount = redisTemplate.opsForValue().get(attemptKey);
+        //redisTemplate.delete(attemptKey);
         if (attemptCount != null && Integer.parseInt(attemptCount) >= MAX_LOGIN_ATTEMPTS) {
             throw new RuntimeException("42901:登录尝试次数过多，请30分钟后再试");
         }
@@ -62,7 +63,7 @@ public class UserServiceImpl implements UserService {
         if (!user.getUserType().equals(userType)) {
             throw new RuntimeException("401:用户身份不匹配，请选择正确的身份登录");
         }
-        
+        System.out.println(passwordEncoder.encode(password));
         // 验证密码（使用BCrypt）
         if (!passwordEncoder.matches(password, user.getPassword())) {
             // 增加登录尝试次数
