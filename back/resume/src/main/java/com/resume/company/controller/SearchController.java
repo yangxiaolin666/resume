@@ -24,7 +24,7 @@ public class SearchController {
     @PostMapping("/search")
     public Result<PageInfo<Student>> searchStudents(@RequestBody StudentQueryDTO queryDTO) {
         return Result.success(searchService.getStudentsByCondition(queryDTO));
-    }
+}
     
     /**
      * 根据条件查询学生详细信息列表
