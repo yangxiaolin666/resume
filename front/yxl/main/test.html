@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demo</title>
+  <!-- 请勿在项目正式环境中引用该 layui.css 地址 -->
+  <link href="//unpkg.com/layui@2.13.0/dist/css/layui.css" rel="stylesheet">
+</head>
+<body>
+<ul class="layui-nav">
+  <li class="layui-nav-item layui-this"><a href="">选中</a></li>
+  <li class="layui-nav-item">
+    <a href="javascript:;">常规</a>
+  </li>
+  <li class="layui-nav-item"><a href="">导航</a></li>
+  <li class="layui-nav-item">
+    <a href="javascript:;">子级</a>
+    <dl class="layui-nav-child">
+      <dd><a href="">菜单1</a></dd>
+      <dd><a href="">菜单2</a></dd>
+      <dd><a href="">菜单3</a></dd>
+    </dl>
+  </li>
+  <li class="layui-nav-item">
+    <a href="javascript:;">选项</a>
+    <dl class="layui-nav-child">
+      <dd><a href="">选项1</a></dd>
+      <dd class="layui-this"><a href="">选项2</a></dd>
+      <dd><a href="">选项3</a></dd>
+    </dl>
+  </li>
+  <li class="layui-nav-item"><a href="">演示</a></li>
+</ul>
+  
+<!-- 请勿在项目正式环境中引用该 layui.js 地址 -->
+<script src="//unpkg.com/layui@2.13.0/dist/layui.js"></script>
+ 
+</body>
+</html>

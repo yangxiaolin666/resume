@@ -19,26 +19,63 @@ body {
 
 /* 头部样式 */
 .header {
-    background:#667EEA;
+    background: #667EEA;
     color: white;
-    padding: 2rem 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
     text-align: center;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: fixed;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1000;
 }
 
+.header .one svg {
+    fill: none;
+    stroke: white;
+    stroke-width: 90;
+}
+
+.header .one svg:hover {
+    animation: move .9s;
+}
+@keyframes move {
+    0% {
+        stroke-dasharray: 0 3000;
+    }
+
+    100% {
+        stroke-dasharray: 3000 0;
+    }
+}
+@keyframes jump {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-5px);
+    }
+    
+}
 .header h1 {
     font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    padding: 1.7rem 0rem;
     font-weight: 600;
 }
 
+.header .icons-right .icon:hover{
+    animation: jump .2s linear forwards;
+}
 /* 主容器 */
 .main-container {
     flex: 1;
     display: flex;
     gap: 2rem;
     max-width: 1400px;
-    margin: 2rem auto;
+    margin: 180px auto 2rem;
     padding: 0 1rem;
     width: 100%;
 }
@@ -49,7 +86,7 @@ body {
     background: white;
     padding: 1.5rem;
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     height: fit-content;
     position: sticky;
     top: 2rem;
@@ -121,9 +158,19 @@ body {
     flex: 1;
     background: white;
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
+@keyframes Up {
+    0%{
+        transform: translateY(1000px);
+        
+    }
+    100%{
+        transform: translateY(0px);
+        opacity: 1;
+    }
+}
 /* 空状态 */
 .empty-state {
     text-align: center;
@@ -141,7 +188,8 @@ body {
 .students-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.9rem; /* 略微减小字体大小 */
+    font-size: 0.9rem;
+    /* 略微减小字体大小 */
     background-color: white;
     border-radius: 8px;
     overflow: hidden;
@@ -156,19 +204,23 @@ body {
 }
 
 .students-table th {
-    padding: 0.75rem 1rem; /* 减小内边距 */
+    padding: 0.75rem 1rem;
+    /* 减小内边距 */
     text-align: center;
     font-weight: 600;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    font-size: 0.8rem; /* 略微减小字体大小 */
+    font-size: 0.8rem;
+    /* 略微减小字体大小 */
     /* 为每一列设置固定宽度 */
 }
 
 /* 表格主体样式 */
-.students-table tbody tr {
-    border-bottom: 1px solid #f0f0f0;
-    transition: all 0.3s ease;
+.students-table tbody tr[data-student-id]{
+    /* 使用attr()函数获取data-student-id属性的值 */
+    opacity: 0;
+    animation: Up .5s calc(attr(data-student-id number) * 0.1s) forwards;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
     height: auto;
 }
 
@@ -184,7 +236,8 @@ body {
 
 .students-table td {
     padding: 0.75rem;
-    vertical-align: middle; /* 保持垂直居中 */
+    vertical-align: middle;
+    /* 保持垂直居中 */
     text-align: center;
     word-break: break-word;
 }
@@ -193,19 +246,23 @@ body {
 .skill-tags-small {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.3rem; /* 减小标签间距 */
+    gap: 0.3rem;
+    /* 减小标签间距 */
     justify-content: center;
     align-items: center;
-    min-height: 28px; /* 略微减小最小高度 */
+    min-height: 28px;
+    /* 略微减小最小高度 */
 }
 
 /* 小技能标签样式 */
 .tag-small {
     background-color: #667eea;
     color: white;
-    padding: 0.2rem 0.6rem; /* 减小标签内边距 */
+    padding: 0.2rem 0.6rem;
+    /* 减小标签内边距 */
     border-radius: 20px;
-    font-size: 0.75rem; /* 略微减小字体大小 */
+    font-size: 0.75rem;
+    /* 略微减小字体大小 */
     font-weight: 500;
     transition: all 0.2s ease;
 }
@@ -217,13 +274,15 @@ body {
 
 /* 操作按钮样式 */
 .students-table .contact-btn {
-    padding: 0.35rem 0.75rem; /* 减小按钮内边距 */
+    padding: 0.35rem 0.75rem;
+    /* 减小按钮内边距 */
     background-color: #667eea;
     color: white;
     border: none;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 0.8rem; /* 减小按钮字体大小 */
+    font-size: 0.8rem;
+    /* 减小按钮字体大小 */
     font-weight: 500;
     transition: all 0.3s ease;
     text-decoration: none;
@@ -242,7 +301,7 @@ body {
     .main-container {
         flex-direction: column;
     }
-    
+
     .filter-panel {
         width: 100%;
         position: static;
@@ -253,39 +312,64 @@ body {
     .header h1 {
         font-size: 2rem;
     }
-    
+
     .students-table {
         font-size: 0.9rem;
         table-layout: fixed;
     }
-    
-    .students-table th, .students-table td {
+
+    .students-table th,
+    .students-table td {
         padding: 0.75rem 0.5rem;
     }
-    
+
     .students-table th {
         font-size: 0.75rem;
     }
-    
+
     /* 响应式列宽 */
     .students-table th:nth-child(1),
-    .students-table td:nth-child(1) { width: 15%; } /* 姓名 */
+    .students-table td:nth-child(1) {
+        width: 15%;
+    }
+
+    /* 姓名 */
     .students-table th:nth-child(2),
-    .students-table td:nth-child(2) { width: 18%; } /* 专业 */
+    .students-table td:nth-child(2) {
+        width: 18%;
+    }
+
+    /* 专业 */
     .students-table th:nth-child(3),
-    .students-table td:nth-child(3) { width: 15%; } /* 学历 */
+    .students-table td:nth-child(3) {
+        width: 15%;
+    }
+
+    /* 学历 */
     .students-table th:nth-child(4),
-    .students-table td:nth-child(4) { width: 15%; } /* 工作经验 */
+    .students-table td:nth-child(4) {
+        width: 15%;
+    }
+
+    /* 工作经验 */
     .students-table th:nth-child(5),
-    .students-table td:nth-child(5) { width: 22%; } /* 技能 */
+    .students-table td:nth-child(5) {
+        width: 22%;
+    }
+
+    /* 技能 */
     .students-table th:nth-child(6),
-    .students-table td:nth-child(6) { width: 15%; } /* 操作 */
-    
+    .students-table td:nth-child(6) {
+        width: 15%;
+    }
+
+    /* 操作 */
+
     .tag-small {
         padding: 0.2rem 0.5rem;
         font-size: 0.7rem;
     }
-    
+
     .students-table .contact-btn {
         padding: 0.4rem 0.75rem;
         font-size: 0.8rem;

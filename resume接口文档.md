@@ -35,7 +35,7 @@ StudentQueryDTO {
 
 #### 基本信息
 
-- 请求路径：`/login`
+- 请求路径：`http://81.70.199.174:8081/login`
 - 请求方式：`POST`
 
 #### 请求参数(body)
