@@ -27,7 +27,7 @@ public class AdminController {
      */
     @Operation(summary = "导入学生数据")
     @PostMapping("/addStu")
-    public Result<?> importStudents(@RequestParam("stuFile") MultipartFile stuFile) {
+    public Result<? > importStudents(@RequestParam("stuFile") MultipartFile stuFile) {
         try {
             // 验证文件
             if (stuFile.isEmpty()) {
