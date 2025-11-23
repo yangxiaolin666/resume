@@ -1,9 +1,37 @@
 body {
     margin: 0;
     padding: 0;
+    overflow: hidden;
 }
 
 :root {
     --color-background: #667EFF;
-    --color-white: #FFFFFF;
+
+    --font-color: #1a1a1a;
+}
+
+
+.un {
+    -webkit-user-select: none;
+    /* Firefox */
+    -moz-user-select: none;
+    /* IE 10+ */
+    -ms-user-select: none;
+    /* 标准属性 */
+    user-select: none;
+}
+
+.hide {
+    visibility: hidden;
+}
+
+
+@font-face {
+    font-family: '思源黑体';
+    font-display: swap;
+    src: url("/font//SourceHanSansCN-VF-2.otf") format('opentype');;
+}
+
+* {
+    font-family: '思源黑体', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
 }
