@@ -8,7 +8,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/resume
     username: root
-    password: 123456
+    password: Wangtianye123
   data:
     redis:
       host: localhost
