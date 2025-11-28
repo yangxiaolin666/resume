@@ -44,7 +44,7 @@ const handleClose = () => {
     showSelector.value = false;
     setTimeout(() => {
         showText.value = false;
-    }, 100);
+    }, 120);
 }
 const handleOpen = () => {
     showSelector.value = true;
@@ -57,7 +57,7 @@ const handleOpen = () => {
 
 
 <!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
- <!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
 
 
 <template>
@@ -81,13 +81,16 @@ const handleOpen = () => {
 </template>
 
 <!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
- <!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
+<!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
 
 <style scoped>
 
 .slot-container {
     overflow-y: auto;
-    padding: 2px;
+    /* padding: 2px; */
+    display: flex;
+    flex-direction: column;
+    max-height: 79vh;
 }
 
 .selector-fixed {
@@ -106,16 +109,17 @@ const handleOpen = () => {
 
 .btn-container {
     position: absolute;
-    bottom: 30px;
-    border-top: #c1c1c1 solid 2px;
+    bottom: 20px;
+    border-top: #e0e0e0 solid 2px;
+    margin-top: 5px;
     /* padding: 10px; */
     width: 96%;
-
+    background-color: #ffffff;
     display: flex;
     justify-content: center;
     padding: 5px 0;
     gap: 30px;
-
+    z-index: 5;
 }
 .confirm-btn {
     background-color: #409EFF;

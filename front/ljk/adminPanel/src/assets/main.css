@@ -71,3 +71,39 @@ button {
     border: none;
     cursor: pointer;
 }
+
+
+/* 滚动条的宽度和背景 */
+::-webkit-scrollbar {
+    display: none;
+  width: 6px;
+  height: 6px;
+  background-color: #f5f5f5; /* 滚动条轨道背景色 */
+}
+
+/* 滚动条轨道 */
+::-webkit-scrollbar-track {
+  border-radius: 10px;
+  background-color: #f5f5f5;
+}
+
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: #c1c1c1;
+  transition: background-color 0.3s ease;
+}
+
+/* 滑块悬停效果 */
+::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+}
+
+/* 滚动条的上下箭头 */
+::-webkit-scrollbar-button {
+  display: none;
+}
+/* 角落的交汇部分 */
+::-webkit-scrollbar-corner {
+  background-color: #f5f5f5;
+}
