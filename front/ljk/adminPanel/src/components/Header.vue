@@ -44,7 +44,7 @@ const menuItemClick = (index) => {
 
     </div>
     <div class="header-container">
-        <div class="img-container un"><img src="/logo.png" alt="大连民族大学校徽" ></div>
+        <div class="img-container un hide"><img src="/logo.png" alt="大连民族大学校徽" ></div>
         <div class="title-container">后台管理系统</div>
 
         <div class="menu-container">
@@ -94,7 +94,6 @@ img {
     margin-left: 6px;
     font-size: 24px;
     font-weight: bold;
-    color: var(--font-color);
 }
 .logout-container {
     position: absolute;

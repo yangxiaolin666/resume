@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Header from '../components/Header.vue'
+import SelectorFixed from '../components/SelectorFixed.vue'
 
 const menuSelect = ref(1); // 1: 学生信息, 2: 企业信息
 const handleMenuSelect = (index) => {
@@ -11,6 +12,8 @@ const handleMenuSelect = (index) => {
 const handleLogout = () => {
   console.log("退出登录");
 }
+
+
 
 </script>
 
@@ -24,7 +27,7 @@ const handleLogout = () => {
     <div class="content-container">
       <div class="student-container" v-if="menuSelect === 1">
         <div class="selector-container">
-
+          <SelectorFixed title="筛选" :show="false"></SelectorFixed>
         </div>
       </div>
       <div class="" v-if="menuSelect === 2">
