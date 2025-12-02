@@ -31,11 +31,12 @@ const handleConfirm = () => {
     emit('confirm', {...filterValues});
 }
 const handleReset = () => {
+    console.log(2);
     Object.keys(filterValues).forEach(key => {
         filterValues[key] = '';
     });
     emit('reset');
-    emit('update:modelValue', { ...filterValues });
+    // emit('update:modelValue', { ...filterValues });
 }
 
 const showSelector = ref(true);
@@ -65,14 +66,14 @@ const handleOpen = () => {
         <div v-if="showText">
         <div class="header">
             <div class="title-container">{{ title }}</div>
-            <div class="close-btn clickable un" @click="handleClose"><img class="close-img" src="/close.svg"></div>
+            <div class="close-btn clickable un" @click="handleClose"><img class="close-img" src="/close.svg" alt="收起"></div>
         </div>
         <div class="slot-container">
             <slot></slot>
         </div>
         <div class="btn-container">
-            <button class="confirm-btn" @click="handleConfirm">应用筛选</button>
-            <button class="reset-btn" @click="handleReset">重置</button>
+            <button class="confirm-btn un" @click="handleConfirm">应用筛选</button>
+            <button class="reset-btn un" @click="handleReset">重置</button>
         </div>
         </div>
     </div>
@@ -87,21 +88,23 @@ const handleOpen = () => {
 
 .slot-container {
     overflow-y: auto;
-    /* padding: 2px; */
     display: flex;
     flex-direction: column;
-    max-height: 79vh;
+    max-height: calc(100vh - var(--height-header) - 52px - 80px);
+    padding: 8px 0;
 }
 
 .selector-fixed {
-    background-color: #fff;
+    background-color: var(--bg-primary);
     height: calc(100vh - var(--height-header));
-    width: 250px;
+    width: 260px;
     position: relative;
-    box-shadow: 0 0 1px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-light);
     z-index: 2;
-    padding: 5px;
-    transition: width 0.3s ease-in-out;
+    padding: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border-right: 1px solid var(--border-color-light);
+    overflow: hidden;
 }
 .selector-fixed.hidden {
     display: none;
@@ -109,81 +112,121 @@ const handleOpen = () => {
 
 .btn-container {
     position: absolute;
-    bottom: 20px;
-    border-top: #e0e0e0 solid 2px;
-    margin-top: 5px;
-    /* padding: 10px; */
-    width: 96%;
-    background-color: #ffffff;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-top: 1px solid var(--border-color-light);
+    background-color: var(--bg-primary);
     display: flex;
-    justify-content: center;
-    padding: 5px 0;
-    gap: 30px;
+    justify-content: flex-end;
+    padding: 16px;
+    gap: 12px;
     z-index: 5;
 }
 .confirm-btn {
-    background-color: #409EFF;
-    width: 125px;
-    height: 40px;
-    border-radius: 4px;
-    /* margin-left: 15px; */
-    /* margin-right: 10px; */
-
+    background-color: var(--primary-color);
+    min-width: 80px;
+    height: 36px;
+    border-radius: var(--border-radius-base);
     color: #ffffff;
-
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .confirm-btn:hover {
-    background-color: #3b93eb;
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(24, 144, 255, 0.3);
+}
+
+.confirm-btn:active {
+    transform: translateY(0);
+    box-shadow: var(--shadow-light);
 }
 .reset-btn {
-    background-color: #ececec;
-    height: 40px;
-    width: 60px;
-    border-radius: 4px;
-
-    color: #666666;
+    background-color: var(--bg-secondary);
+    min-width: 60px;
+    height: 36px;
+    border-radius: var(--border-radius-base);
+    color: var(--text-regular);
+    font-size: 14px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .reset-btn:hover {
-    background-color: #e6e6e6;
+    background-color: #e8e8e8;
+    transform: translateY(-1px);
+}
+
+.reset-btn:active {
+    transform: translateY(0);
 }
 
 .header {
     width: 100%;
-    border-bottom: #c1c1c1 solid 2px;
+    border-bottom: 1px solid var(--border-color-light);
     display: flex;
-    height: 41px;
+    align-items: center;
+    height: 52px;
+    padding: 0 16px;
 }
 .close-btn {
-    width: 30px;
-    height: 41px;
-    right: 15px;
-    position: absolute;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.close-btn:hover {
+    background-color: var(--bg-secondary);
+}
+
+.close-btn:active {
+    transform: scale(0.9);
+}
+
+.close-img {
+    width: 16px;
+    height: 16px;
 }
 
 .title-container {
-    font-size: 20px;
+    font-size: 16px;
     font-weight: 600;
-    margin: 5px 10px;
+    color: var(--text-primary);
+    flex: 1;
 }
 
 .open-btn {
     position: absolute;
-    border-radius: 0 20px 20px 0;
+    border-radius: 0 var(--border-radius-lg) var(--border-radius-lg) 0;
     top: 100px;
     height: 40px;
-    width: 45px;
-    background-color: #ffffff;
+    width: 32px;
+    background-color: var(--bg-primary);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-light);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+}
+
+.open-btn:hover {
+    background-color: var(--bg-secondary);
+    transform: translateX(2px);
+}
+
+.open-btn:active {
+    transform: translateX(0) scale(0.95);
 }
 .open-img {
-    width: 26px;
-    height: 26px;
+    width: 18px;
+    height: 18px;
 }
 
 </style>

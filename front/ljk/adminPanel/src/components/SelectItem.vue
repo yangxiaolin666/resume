@@ -58,19 +58,22 @@ const handleCheckboxChange = () => {
     <div class="select-item">
         <div class="select-header">
             <div class="section-title">{{ title }}</div>
-            <div class="reset-btn" @click="handleReset">清除</div>
+            <div class="reset-btn un" @click="handleReset">清除</div>
         </div>
         <div class="select-body">
-            <div class="select-list" v-for="(item, index) in label" :key="index">
-                <el-checkbox 
-                    v-model="selectedValue" 
-                    :label="item.value" 
-                    @change="handleCheckboxChange"
-                    class="item-text"
-                >
-                    {{ item.text }}
-                </el-checkbox>
-            </div>
+            <el-checkbox-group 
+        v-model="selectedValue" 
+        @change="handleCheckboxChange"
+      >
+        <div class="select-list" v-for="(item, index) in label" :key="index">
+          <el-checkbox 
+            :label="item.value" 
+            class="item-text"
+          >
+            {{ item.text }}
+          </el-checkbox>
+        </div>
+      </el-checkbox-group>
         </div>
     </div>
 </template>
@@ -82,28 +85,54 @@ const handleCheckboxChange = () => {
 .select-item {
     display: flex;
     flex-direction: column;
-    padding: 10px 15px;
-    
-    border-bottom: #e2e2e2 solid 1px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color-light);
 }
 .select-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
 }
 .section-title {
     font-weight: 600;
+    color: var(--text-primary);
+    font-size: 14px;
 }
 .reset-btn {
-    color: #3498db;
+    /* color: var(--text-secondary); */
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: var(--border-radius-sm);
+    transition: all 0.3s ease;
     cursor: pointer;
+}
+
+.reset-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--bg-secondary);
     font-size: 12px;
 }
 :deep(.el-checkbox__label) {
   font-size: 14px;
+  font-weight: 400;
+  color: var(--text-regular);
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.select-list {
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
 }
 
 .select-list:hover {
     background-color: #f0f7ff;
-} 
+}
+
+.select-body {
+    margin-top: 8px;
+}
 
 </style>

@@ -44,7 +44,7 @@ const menuItemClick = (index) => {
 
     </div>
     <div class="header-container">
-        <div class="img-container un hide"><img src="/logo.png" alt="大连民族大学校徽" ></div>
+        <div class="img-container un"><img src="/logo.png" alt="大连民族大学校徽" ></div>
         <div class="title-container">后台管理系统</div>
 
         <div class="menu-container">
@@ -56,7 +56,7 @@ const menuItemClick = (index) => {
 
         <div class="logout-container" @click="openConfirm">
             <div class="logout-icon">
-                <el-tooltip class="item" effect="dark" content="退出登录" placement="bottom">
+                <el-tooltip class="item" effect="light" content="退出登录" placement="bottom">
                     <img class="un" src="/logout.svg" alt="退出登录">
                 </el-tooltip>
             </div>
@@ -66,9 +66,7 @@ const menuItemClick = (index) => {
 
 <style scoped>
 
-* {
-    color: var(--font-color);
-}
+/* 头部组件样式 */
 img {
     width: 100%;
     height: 100%;
@@ -77,54 +75,57 @@ img {
     position: relative;
     display: flex;
     align-items: center;
-    /* padding: 4px; */
-    height: 70px;
-    background-color: #ffffff;
-    width: calc(100%);
+    padding: 0 24px;
+    height: var(--height-header);
+    background-color: var(--bg-primary);
+    width: 100%;
     margin: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, .12), 0 0 6px rgba(0, 0, 0, .04)
+    box-shadow: var(--shadow-light);
+    z-index: 100;
 }
 .img-container {
-    width: 60px;
-    height: 60px;
-    margin: 0px 20px;
-    /* background-color: #eeeeee; */
+    width: 40px;
+    height: 40px;
+    margin-right: 16px;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
 }
 .title-container {
-    margin-left: 6px;
-    font-size: 24px;
-    font-weight: bold;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
 }
 .logout-container {
     position: absolute;
-    top: auto;
-    right: 25px;
-    width: 50px;
-    height: 50px;
+    top: 50%;
+    right: 24px;
+    width: 40px;
+    height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-direction: column;
-    cursor: pointer;
+    transform: translateY(-50%);
+    border-radius: var(--border-radius-base);
+    transition: all 0.3s ease;
+}
+
+.logout-container:hover {
+    background-color: var(--bg-secondary);
 }
 /* .logout-container:hover {
 
 } */
 .logout-icon {
-    width: 36px;
-    height: 36px;
+    width: 24px;
+    height: 24px;
 }
 
 .menu-container {
-    width: auto;
-    height: 100%;
-
     display: flex;
-    gap: 10px;
-
+    gap: 16px;
     align-items: center;
-    justify-content: center;
-
-    margin-left: 45px;
+    margin-left: 32px;
+    height: 100%;
 }
 </style>

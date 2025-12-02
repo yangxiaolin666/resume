@@ -5,6 +5,8 @@ import Header from '../components/Header.vue'
 import SelectorFixed from '../components/SelectorFixed.vue'
 import SelectItem from '../components/SelectItem.vue'
 
+import { stu_options } from '../staticData/student_options.js'
+
 const menuSelect = ref(1); // 1: 学生信息, 2: 企业信息
 const handleMenuSelect = (index) => {
   menuSelect.value = index;
@@ -13,10 +15,11 @@ const handleMenuSelect = (index) => {
 const handleLogout = () => {
   console.log("退出登录");
 }
-const selectedStatus = ref('');
+const selectedStatus = ref([]);
 
 const handleChange = (value) => {
-  console.log('筛选状态变化：', value);
+  console.log('筛选：', value);
+  console.log('筛选条件：', selectedStatus.value);
 };
 
 
@@ -37,13 +40,41 @@ const handleChange = (value) => {
             <SelectItem
               title="学历"
               filter-key="status"
-              :label="[
-                { text: '本科', value: 'Undergraduate' },
-                { text: '硕士研究生', value: 'Master' },
-                { text: '博士研究生', value: 'Doctor' }
-                ]"
+              :label="stu_options.education"
                 :options="[]"
-                :v-model="selectedStatus"
+                v-model="selectedStatus.education"
+                @change="handleChange"
+            ></SelectItem>
+            <SelectItem
+              title="性别"
+              filter-key="status"
+              :label="stu_options.gender"
+                :options="[]"
+                v-model="selectedStatus.gender"
+                @change="handleChange"
+            ></SelectItem>
+            <SelectItem
+              title="专业"
+              filter-key="status"
+              :label="stu_options.major"
+                :options="[]"
+                v-model="selectedStatus.major"
+                @change="handleChange"
+            ></SelectItem>
+            <SelectItem
+              title="实习次数"
+              filter-key="status"
+              :label="stu_options.internshipCnt"
+                :options="[]"
+                v-model="selectedStatus"
+                @change="handleChange"
+            ></SelectItem>
+            <SelectItem
+              title="语言"
+              filter-key="status"
+              :label="stu_options.language"
+                :options="[]"
+                v-model="selectedStatus"
                 @change="handleChange"
             ></SelectItem>
           </SelectorFixed>
@@ -76,7 +107,7 @@ const handleChange = (value) => {
 
 .main-container {
   display: flex;
-  height: calc(100vh - 70px);
+  height: calc(100vh - var(--height-header));
 }
 .menu-container {
   height: 100vh;

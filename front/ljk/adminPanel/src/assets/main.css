@@ -5,13 +5,45 @@ body {
 }
 
 :root {
-    --color-background: #667EFF;
-
-    --font-color: #1a1a1a;
-
-
-
-    --height-header: 70px;
+    /* 主题色 */
+    --primary-color: #1890ff;
+    --primary-hover: #40a9ff;
+    --primary-active: #096dd9;
+    
+    /* 功能色 */
+    --success-color: #52c41a;
+    --warning-color: #faad14;
+    --error-color: #f5222d;
+    --info-color: #1890ff;
+    
+    /* 中性色 */
+    --text-primary: #262626;
+    --text-regular: #595959;
+    --text-secondary: #8c8c8c;
+    --text-placeholder: #bfbfbf;
+    
+    /* 背景色 */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #fafafa;
+    --bg-disabled: #f5f5f5;
+    
+    /* 边框色 */
+    --border-color-base: #d9d9d9;
+    --border-color-light: #f0f0f0;
+    --border-color-lighter: #fafafa;
+    --border-color-extra-light: #f5f5f5;
+    
+    /* 阴影 */
+    --shadow-base: 0 2px 8px rgba(0, 0, 0, 0.15);
+    --shadow-light: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --shadow-lighter: 0 1px 2px rgba(0, 0, 0, 0.05);
+    
+    /* 尺寸变量 */
+    --height-header: 64px;
+    --border-radius-base: 4px;
+    --border-radius-sm: 2px;
+    --border-radius-lg: 6px;
 }
 
 /* 不可拖动 */
@@ -63,47 +95,176 @@ img {
 }
 
 * {
-    font-family: '思源黑体', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    color: #212c37;
+    font-family: '思源黑体', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+
+/* 标题样式 */
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.35;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+h1 {
+    font-size: 24px;
+}
+
+h2 {
+    font-size: 20px;
+}
+
+h3 {
+    font-size: 18px;
+}
+
+h4 {
+    font-size: 16px;
+}
+
+h5 {
+    font-size: 14px;
+}
+
+h6 {
+    font-size: 12px;
+}
+
+/* 段落样式 */
+p {
+    margin-bottom: 16px;
+    line-height: 1.6;
+    color: var(--text-regular);
+}
+
+/* 链接样式 */
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+a:hover {
+    color: var(--primary-hover);
+    text-decoration: underline;
 }
 
 button {
     border: none;
     cursor: pointer;
+    outline: none;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 通用动画类 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-enter-from {
+  transform: translateX(-100%);
+}
+
+.slide-leave-to {
+  transform: translateX(-100%);
+}
+
+/* 微交互效果 */
+.clickable {
+  transition: all 0.2s ease;
+}
+
+.clickable:active {
+  transform: scale(0.98);
+}
+
+/* 平滑滚动 */
+* {
+  scroll-behavior: smooth;
+}
+
+/* 焦点样式优化 */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* 禁用状态样式 */
+:disabled {
+  opacity: 0.6;
+  cursor: not-allowed !important;
+}
+
+/* 加载动画 */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* 脉冲动画 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 
-/* 滚动条的宽度和背景 */
+/* 滚动条样式优化 */
 ::-webkit-scrollbar {
-    display: none;
   width: 6px;
   height: 6px;
-  background-color: #f5f5f5; /* 滚动条轨道背景色 */
+  background-color: var(--bg-tertiary);
 }
 
-/* 滚动条轨道 */
 ::-webkit-scrollbar-track {
-  border-radius: 10px;
-  background-color: #f5f5f5;
+  border-radius: var(--border-radius-sm);
+  background-color: var(--bg-tertiary);
 }
 
-/* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  border-radius: 10px;
-  background-color: #c1c1c1;
+  border-radius: var(--border-radius-sm);
+  background-color: var(--border-color-base);
   transition: background-color 0.3s ease;
 }
 
-/* 滑块悬停效果 */
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #a8a8a8;
+  background-color: #bfbfbf;
 }
 
-/* 滚动条的上下箭头 */
 ::-webkit-scrollbar-button {
   display: none;
 }
-/* 角落的交汇部分 */
+
 ::-webkit-scrollbar-corner {
-  background-color: #f5f5f5;
+  background-color: var(--bg-tertiary);
 }
