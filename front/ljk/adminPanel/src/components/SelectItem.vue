@@ -85,14 +85,14 @@ const handleCheckboxChange = () => {
 .select-item {
     display: flex;
     flex-direction: column;
-    padding: 16px;
+    padding: 12px 16px;
     border-bottom: 1px solid var(--border-color-light);
 }
 .select-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
 }
 .section-title {
     font-weight: 600;
@@ -113,16 +113,26 @@ const handleCheckboxChange = () => {
     background-color: var(--bg-secondary);
     font-size: 12px;
 }
+:deep(.el-checkbox) {
+  line-height: 24px;
+  height: 24px;
+}
+
 :deep(.el-checkbox__label) {
   font-size: 14px;
   font-weight: 400;
   color: var(--text-regular);
   cursor: pointer;
   transition: color 0.3s ease;
+  line-height: 24px;
+}
+
+:deep(.el-checkbox__input) {
+  line-height: 24px;
 }
 
 .select-list {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
     display: flex;
     align-items: center;
 }
@@ -132,7 +142,7 @@ const handleCheckboxChange = () => {
 }
 
 .select-body {
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 </style>

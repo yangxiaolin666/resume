@@ -165,11 +165,12 @@ const handleOpen = () => {
 
 .header {
     width: 100%;
-    border-bottom: 1px solid var(--border-color-light);
+    /* border-bottom: 1px solid var(--border-color-light); */
     display: flex;
     align-items: center;
     height: 52px;
     padding: 0 16px;
+    box-shadow: var(--shadow-light);
 }
 .close-btn {
     width: 32px;
