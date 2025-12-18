@@ -33,10 +33,10 @@ const handleConfirm = () => {
 const handleReset = () => {
     console.log(2);
     Object.keys(filterValues).forEach(key => {
-        filterValues[key] = '';
+        filterValues[key] = [];
     });
     emit('reset');
-    // emit('update:modelValue', { ...filterValues });
+    emit('update:modelValue', { ...filterValues });
 }
 
 const showSelector = ref(true);
@@ -45,7 +45,7 @@ const handleClose = () => {
     showSelector.value = false;
     setTimeout(() => {
         showText.value = false;
-    }, 120);
+    }, 100);
 }
 const handleOpen = () => {
     showSelector.value = true;
@@ -66,7 +66,7 @@ const handleOpen = () => {
         <div v-if="showText">
         <div class="header">
             <div class="title-container">{{ title }}</div>
-            <div class="close-btn clickable un" @click="handleClose"><img class="close-img" src="/close.svg" alt="收起"></div>
+            <div class="close-btn clickable un" @click="handleClose"><img class="close-img clickable" src="/close.svg" alt="收起"></div>
         </div>
         <div class="slot-container">
             <slot></slot>
@@ -78,7 +78,9 @@ const handleOpen = () => {
         </div>
     </div>
     
-    <div class="open-btn clickable un"><img class="open-img un" src="/open.svg" @click="handleOpen" v-if="!showSelector"></div>
+    <div class="open-btn clickable un"  @click="handleOpen"><img class="open-img un clickable" src="/open.svg" v-if="!showSelector"></div>
+    <!-- 占用左侧纵向一部分宽度的空间，避免信息被展开按钮遮挡 -->
+    <div class="space" v-if="!showSelector"></div>
 </template>
 
 <!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
@@ -102,7 +104,7 @@ const handleOpen = () => {
     box-shadow: var(--shadow-light);
     z-index: 2;
     padding: 0;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-right: 1px solid var(--border-color-light);
     overflow: hidden;
 }
@@ -229,5 +231,9 @@ const handleOpen = () => {
     width: 18px;
     height: 18px;
 }
+.space {
+    width: 50px;
+}
+
 
 </style>

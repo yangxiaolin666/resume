@@ -4,6 +4,8 @@ import { useRouter } from 'vue-router'
 import Header from '../components/Header.vue'
 import SelectorFixed from '../components/SelectorFixed.vue'
 import SelectItem from '../components/SelectItem.vue'
+import Student_item from '../components/Student_item.vue'
+import { Student } from '../types/student.js'
 
 import { stu_options } from '../staticData/student_options.js'
 
@@ -15,13 +17,42 @@ const handleMenuSelect = (index) => {
 const handleLogout = () => {
   console.log("退出登录");
 }
-const selectedStatus = ref([]);
+const selectedStatus = ref({});
 
 const handleChange = (value) => {
   console.log('筛选：', value);
   console.log('筛选条件：', selectedStatus.value);
 };
 
+const handleReset = () => {
+  selectedStatus.value = {};
+  console.log('已重置筛选条件');
+};
+
+
+const tempStudent = new Student({
+  id: 1,
+  stuId: '20230001',
+  name: '张三',
+  age: 22,
+  gender: '男',
+  nation: '汉族',
+  major: '计算机科学与技术',
+  degree: '本科',
+  graduationYear: 2023,
+  internship: 2,
+  languages: ['英语', '日语'],
+  languageLevel: '六级',
+  cities: ['北京', '上海'],
+  provinces: ['广东', '江苏'],
+  certNames: ['AWS', 'PMP'],
+  certLevel: '高级',
+  internshipCompany: '腾讯',
+  specialities: ['Java', 'Python'],
+  education: '本科',
+  internshipCnt: 1,
+  language: '中文',
+})
 
 </script>
 
@@ -36,7 +67,7 @@ const handleChange = (value) => {
       <!-- 学生信息 -->
       <div class="page student-container" v-if="menuSelect === 1">
         <div class="selector-container">
-          <SelectorFixed title="筛选">
+          <SelectorFixed title="筛选" @reset="handleReset">
             <SelectItem
               title="学历"
               filter-key="status"
@@ -66,7 +97,7 @@ const handleChange = (value) => {
               filter-key="status"
               :label="stu_options.internshipCnt"
                 :options="[]"
-                v-model="selectedStatus"
+                v-model="selectedStatus.internshipCnt"
                 @change="handleChange"
             ></SelectItem>
             <SelectItem
@@ -74,10 +105,17 @@ const handleChange = (value) => {
               filter-key="status"
               :label="stu_options.language"
                 :options="[]"
-                v-model="selectedStatus"
+                v-model="selectedStatus.language"
                 @change="handleChange"
             ></SelectItem>
           </SelectorFixed>
+        </div> <!-- selector-container -->
+        <div class="student-list-container">
+          <Student_item class="student-header" :isHeader="true"></Student_item>
+          <div class="student-container">
+            <!-- <Student_item v-for="item in stuList"
+              :studentInfo="item"></Student_item> -->
+          </div>
         </div>
       </div>
       <!-- 企业信息 -->
