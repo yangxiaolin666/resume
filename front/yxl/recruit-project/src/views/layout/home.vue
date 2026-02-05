@@ -1,978 +1,650 @@
-<script>
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import {
+  Search,
+  User,
+  Document,
+  House,
+  SwitchButton
+} from '@element-plus/icons-vue'
+
 import IconSchool from '@/components/IconSchool.vue'
 import { useUserStore } from '@/stores/user'
-import { User, Document, House, SwitchButton } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
-export default {
-  components: { IconSchool, User, Document, House, SwitchButton },
-  data() {
-    return {
-      userType: useUserStore().userType,
-      students: [
-        {
-          id: 1,
-          name: '杨潇林',
-          age: 19,
-          education: '本科',
-          major: '计算机科学与技术',
-          school: '大连民族大学',
-          experience: '应届毕业生',
-          skills: ['JavaScript', 'Vue', 'HTML/CSS'],
-          languages: ['英语四级'],
-          certificates: ['软件设计师'],
-          internships: 0,
-          computerSkills: ['Java'],
-          jobRegions: ['辽宁省大连市'],
-          jobPositions: ['软件开发'],
-          bio: '热爱前端开发，有多个项目经验，熟悉现代前端框架。',
-          contactInfo: { phone: '13800138001', email: 'yangxl@example.com' },
-          photo: ''
-        },
-        {
-          id: 2,
-          name: '刘世鹏',
-          age: 19,
-          education: '研究生',
-          major: '软件工程',
-          school: '大连民族大学',
-          experience: '1年经验',
-          skills: ['React', 'TypeScript', 'Node.js'],
-          languages: ['英语四级', '日语N2'],
-          certificates: ['程序员'],
-          internships: 1,
-          computerSkills: ['Java'],
-          jobRegions: ['辽宁省大连市'],
-          jobPositions: ['软件开发', '软件技术服务'],
-          bio: '有1年全栈开发经验，擅长React生态系统，对后端也有一定了解。',
-          contactInfo: { phone: '13800138002', email: 'liusp@example.com' },
-          photo: ''
-        },
-        {
-          id: 3,
-          name: '范茂阳',
-          age: 19,
-          education: '本科',
-          major: '软件工程',
-          school: '大连民族大学',
-          experience: '应届毕业生',
-          skills: ['Python', 'C++', '机器学习'],
-          languages: ['英语四级'],
-          certificates: [],
-          internships: 0,
-          computerSkills: [],
-          jobRegions: [],
-          jobPositions: [],
-          bio: '对人工智能和机器学习有浓厚兴趣，参与过相关项目开发。',
-          contactInfo: { phone: '13800138003', email: 'fanmy@example.com' },
-          photo: ''
-        },
-        {
-          id: 4,
-          name: '人机',
-          age: 19,
-          education: '本科',
-          major: '人工智能',
-          school: '大连民族大学',
-          experience: '2年经验',
-          skills: ['Java', 'Spring Boot', 'MySQL'],
-          languages: ['英语四级', '日语N1'],
-          certificates: ['网络管理员'],
-          internships: 1,
-          computerSkills: ['Java'],
-          jobRegions: ['辽宁省大连市'],
-          jobPositions: ['软件开发', '网络安全维护'],
-          bio: '后端开发工程师，有扎实的Java基础，熟悉主流框架和数据库。',
-          contactInfo: { phone: '13800138004', email: 'renji@example.com' },
-          photo: ''
-        },
-        {
-          id: 5,
-          name: '网络',
-          age: 19,
-          education: '本科',
-          major: '网络工程',
-          school: '大连民族大学',
-          experience: '应届毕业生',
-          skills: ['UI设计', 'Photoshop', 'Figma'],
-          languages: ['英语四级', '韩语TOPIK I'],
-          certificates: [],
-          internships: 0,
-          computerSkills: [],
-          jobRegions: [],
-          jobPositions: ['软件技术服务'],
-          bio: 'UI设计师，有良好的美学素养和用户体验意识，熟练使用设计工具。',
-          contactInfo: { phone: '13800138005', email: 'wangluo@example.com' },
-          photo: ''
-        }
-      ],
-      // 筛选选项
-      educationOptions: ['本科', '研究生'],
-      skillOptions: [
-        'JavaScript',
-        'Vue',
-        'React',
-        'TypeScript',
-        'Node.js',
-        'Python',
-        'C++',
-        'Java',
-        'Spring Boot',
-        'MySQL',
-        'HTML/CSS',
-        'UI设计',
-        'Photoshop',
-        'Figma',
-        '机器学习'
-      ],
-      experienceOptions: ['应届毕业生', '1年经验', '2年经验', '3年以上'],
-      languageOptions: [
-        '英语四级',
-        '日语N1',
-        '日语N2',
-        '韩语TOPIK I',
-        '韩语TOPIK II'
-      ],
-      certificateOptions: ['软件设计师', '程序员', '网络管理员'],
-      internshipOptions: ['0次', '1次', '2次及以上'],
-      computerSkillOptions: ['Java'],
-      jobRegionOptions: ['辽宁省大连市'],
-      jobPositionOptions: ['网络安全维护', '软件开发', '软件技术服务'],
-      // 自定义标签相关
-      customLanguage: '',
-      customCertificate: '',
-      customComputerSkill: '',
-      customJobRegion: '',
-      customJobPosition: '',
-      // 选中的筛选条件
-      selectedFilters: {
-        education: '',
-        majors: [],
-        skills: [],
-        experience: [],
-        languages: [],
-        certificates: [],
-        internships: [],
-        computerSkills: [],
-        jobRegions: [],
-        jobPositions: []
-      },
-      // 原始专业选项
-      originalMajorOptions: [
-        '计算机科学与技术',
-        '软件工程',
-        '网络工程',
-        '人工智能'
-      ],
-      // 研究生专业选项
-      postgraduateMajorOptions: ['计算机科学与技术', '人工智能'],
-      // 当前查看详情的学生
-      currentStudent: null,
-      activeIndex: 1
-    }
-  },
-  computed: {
-    // 根据筛选条件过滤学生并添加动画索引
-    filteredStudents() {
-      return this.students.filter((student) => {
-        // 学历筛选
-        if (
-          this.selectedFilters.education &&
-          this.selectedFilters.education !== student.education
-        ) {
-          return false
-        }
-        // 专业筛选
-        if (
-          this.selectedFilters.majors.length > 0 &&
-          !this.selectedFilters.majors.includes(student.major)
-        ) {
-          return false
-        }
-        // 技能筛选
-        if (this.selectedFilters.skills.length > 0) {
-          const hasSkill = this.selectedFilters.skills.some((skill) =>
-            student.skills.includes(skill)
-          )
-          if (!hasSkill) {
-            return false
-          }
-        }
-        // 工作经验筛选
-        if (
-          this.selectedFilters.experience.length > 0 &&
-          !this.selectedFilters.experience.includes(student.experience)
-        ) {
-          return false
-        }
-        // 语言掌握情况筛选
-        if (this.selectedFilters.languages.length > 0) {
-          const hasLanguage = this.selectedFilters.languages.some((lang) =>
-            student.languages.includes(lang)
-          )
-          if (!hasLanguage) {
-            return false
-          }
-        }
-        // 证书筛选
-        if (this.selectedFilters.certificates.length > 0) {
-          const hasCertificate = this.selectedFilters.certificates.some(
-            (cert) => student.certificates.includes(cert)
-          )
-          if (!hasCertificate) {
-            return false
-          }
-        }
-        // 实习次数筛选
-        if (this.selectedFilters.internships.length > 0) {
-          let matchesInternship = false
-          if (
-            this.selectedFilters.internships.includes('0次') &&
-            student.internships === 0
-          ) {
-            matchesInternship = true
-          }
-          if (
-            this.selectedFilters.internships.includes('1次') &&
-            student.internships === 1
-          ) {
-            matchesInternship = true
-          }
-          if (
-            this.selectedFilters.internships.includes('2次及以上') &&
-            student.internships >= 2
-          ) {
-            matchesInternship = true
-          }
-          if (!matchesInternship) {
-            return false
-          }
-        }
-        // 计算机专业技能筛选
-        if (this.selectedFilters.computerSkills.length > 0) {
-          const hasComputerSkill = this.selectedFilters.computerSkills.some(
-            (skill) => student.computerSkills.includes(skill)
-          )
-          if (!hasComputerSkill) {
-            return false
-          }
-        }
-        // 就业意向地区筛选
-        if (this.selectedFilters.jobRegions.length > 0) {
-          const hasJobRegion = this.selectedFilters.jobRegions.some((region) =>
-            student.jobRegions.includes(region)
-          )
-          if (!hasJobRegion) {
-            return false
-          }
-        }
-        // 就业岗位筛选
-        if (this.selectedFilters.jobPositions.length > 0) {
-          const hasJobPosition = this.selectedFilters.jobPositions.some(
-            (position) => student.jobPositions.includes(position)
-          )
-          if (!hasJobPosition) {
-            return false
-          }
-        }
-        return true
-      })
+import { useStudentsStore } from '@/stores/students'
+import {
+  generateFilterOptions,
+  getDefaultFilters,
+  getFilteredAndPaginatedStudents
+} from '@/utils/filterUtils'
+
+const router = useRouter()
+const userStore = useUserStore()
+const studentsStore = useStudentsStore()
+
+// 响应式数据
+const activeIndex = ref('1')
+const currentStudent = ref(null)
+const searchQuery = ref('')
+const currentPage = ref(1)
+const pageSize = ref(10)
+
+// 筛选条件
+const filters = ref(getDefaultFilters())
+
+// 筛选选项（从学生数据生成）
+const filterOptions = computed(() => {
+  return generateFilterOptions(studentsStore.allStudents)
+})
+
+// 计算属性：筛选和分页后的学生数据
+const paginatedStudents = computed(() => {
+  const result = getFilteredAndPaginatedStudents(
+    studentsStore.allStudents,
+    {
+      ...filters.value,
+      name: searchQuery.value
     },
-    // 根据选择的学历动态决定显示的专业选项
-    majorOptions() {
-      if (this.selectedFilters.education === '研究生') {
-        return this.postgraduateMajorOptions
-      }
-      return this.originalMajorOptions
-    },
-    // 计算已选择的筛选条件数量
-    appliedFilters() {
-      let count = 0
-      Object.values(this.selectedFilters).forEach((filter) => {
-        if (Array.isArray(filter)) {
-          count += filter.length
-        } else if (filter) {
-          count++
-        }
-      })
-      return count
-    }
-  },
-  created() { },
-  methods: {
-    resetFilters() {
-      this.selectedFilters = {
-        education: '',
-        majors: [],
-        skills: [],
-        experience: [],
-        languages: [],
-        certificates: [],
-        internships: [],
-        computerSkills: [],
-        jobRegions: [],
-        jobPositions: []
-      }
-    },
-    // 处理学历选择变化，清空已选专业
-    handleEducationChange() {
-      this.selectedFilters.majors = []
-      // 更新动画版本号，强制重新渲染动画
-      this.triggerAnimation()
-    },
-    // 触发动画重新渲染
-    triggerAnimation() {
-      // 先移除所有行的动画类
-      this.animationKey++
-    },
-    goToUser() {
-      this.$router.push(`/${this.userType}`)
-    },
-    // 重置新学生表单
-    resetNewStudentForm() {
-      this.newStudent = {
-        name: '',
-        age: '',
-        education: '',
-        major: '',
-        school: '',
-        experience: '',
-        skills: [],
-        languages: [],
-        certificates: [],
-        internships: 0,
-        computerSkills: [],
-        jobRegions: [],
-        jobPositions: [],
-        bio: '',
-        contactInfo: {
-          phone: '',
-          email: ''
-        },
-        photo: null
-      }
-      // 清空自定义标签输入框
-      this.customLanguage = ''
-      this.customCertificate = ''
-      this.customComputerSkill = ''
-      this.customJobRegion = ''
-      this.customJobPosition = ''
-      // 清空文件输入框
-      const fileInput = document.getElementById('photo-upload')
-      if (fileInput) {
-        fileInput.value = ''
-      }
-    },
-    logOut() {
-      const userStore = useUserStore()
-      userStore.setAll('', '', '')
-      ElMessage({
-        message: '退出登录成功',
-        type: 'success',
-        duration: 1000
-      })
-      setTimeout(() => this.$router.push('/login'), 1100)
-    }
-  }
+    currentPage.value,
+    pageSize.value
+  )
+  return result
+})
+
+// 处理筛选条件变化
+const handleFilterChange = (key, value) => {
+  filters.value[key] = value
+  currentPage.value = 1 // 重置到第一页
 }
+
+// 处理多值筛选变化
+const handleMultiValueChange = (key, value) => {
+  filters.value[key] = value
+  currentPage.value = 1
+}
+
+// 重置筛选条件
+const resetFilters = () => {
+  filters.value = getDefaultFilters()
+  searchQuery.value = ''
+  currentPage.value = 1
+}
+
+// 查看学生详情
+const viewStudentDetail = (student) => {
+  currentStudent.value = student
+  studentsStore.setSelectedStudent(student)
+  // 这里可以添加路由跳转或弹窗显示详情
+  console.log('查看学生详情:', student)
+}
+
+// 跳转到用户页面
+const goToUser = () => {
+  router.push(`/${userStore.userType}`)
+}
+
+// 退出登录
+const logOut = () => {
+  userStore.setAll('', '', '')
+  ElMessage({
+    message: '退出登录成功',
+    type: 'success',
+    duration: 1000
+  })
+  setTimeout(() => router.push('/login'), 1100)
+}
+
+// 处理分页变化
+const handlePageChange = (page) => {
+  currentPage.value = page
+}
+
+// 组件挂载时初始化
+onMounted(() => {
+  // 如果需要从API加载数据，可以在这里调用
+  console.log('Home component mounted')
+})
 </script>
+
 <template>
-  <div id="app">
-    <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal"
-      style="display: flex; justify-content: space-between; height: 80px">
-      <div style="display: flex; align-items: center">
+  <div class="home-container">
+    <!-- 顶部导航栏 -->
+    <el-menu :default-active="activeIndex" class="home-nav" mode="horizontal" :ellipsis="false">
+      <div class="nav-left">
         <IconSchool />
-        <h1>
-          <p>学生招聘平台</p>
-        </h1>
+        <h1>学生招聘平台</h1>
       </div>
 
-      <div style="display: flex; align-items: center">
-        <el-sub-menu index="2">
-          <template #title> 我的工作台 </template>
-          <el-menu-item index="2-1"> 选项一 </el-menu-item>
-          <el-menu-item index="2-2"> 选项二 </el-menu-item>
-          <el-menu-item index="2-3"> 选项三 </el-menu-item>
-          <el-sub-menu index="2-4">
-            <template #title> 选项四 </template>
-            <el-menu-item index="2-4-1"> 选项一 </el-menu-item>
-            <el-menu-item index="2-4-2"> 选项二 </el-menu-item>
-            <el-menu-item index="2-4-3"> 选项三 </el-menu-item>
-          </el-sub-menu>
-        </el-sub-menu>
+      <div class="nav-right">
         <el-menu-item index="3">
-          <el-icon class="icon" style="font-size: 40px">
+          <el-icon class="nav-icon">
             <Document />
           </el-icon>
         </el-menu-item>
         <el-menu-item index="4">
-          <el-popover :offset="10" placement="bottom-end">
+          <el-popover placement="bottom-end" width="200">
             <template #reference>
-              <div style="
-                  display: flex;
-                  flex-direction: column;
-                  align-items: center;
-                ">
-                <el-icon class="icon" style="font-size: 40px">
-                  <User />
-                </el-icon>
-              </div>
+              <el-icon class="nav-icon">
+                <User />
+              </el-icon>
             </template>
-            <div class="pop-box" @click="goToUser">
-              <el-icon style="font-size: 25px">
-                <House />
-              </el-icon>
-              <span style="font-size: 18px; padding-left: 25px">个人主页</span>
-            </div>
-            <div class="pop-box" style="margin-top: 12px" @click="logOut">
-              <el-icon style="font-size: 25px">
-                <SwitchButton />
-              </el-icon>
-              <span style="font-size: 18px; padding-left: 25px">退出登录</span>
+            <div class="user-menu">
+              <div class="menu-item" @click="goToUser">
+                <el-icon>
+                  <House />
+                </el-icon>
+                <span>个人主页</span>
+              </div>
+              <div class="menu-item" @click="logOut">
+                <el-icon>
+                  <SwitchButton />
+                </el-icon>
+                <span>退出登录</span>
+              </div>
             </div>
           </el-popover>
         </el-menu-item>
       </div>
     </el-menu>
-    <main class="main-container">
-      <aside class="filter-panel">
-        <h2>筛选条件</h2>
 
-        <div class="filter-section">
-          <h3>学历</h3>
-          <div class="filter-options">
-            <label v-for="edu in educationOptions" :key="edu">
-              <input v-model="selectedFilters.education" type="radio" :value="edu" @change="handleEducationChange">
-              {{ edu }}
-            </label>
+    <!-- 主要内容区域 -->
+    <main class="main-content">
+      <!-- 筛选面板 -->
+      <aside class="filter-sidebar">
+        <el-card class="filter-card">
+          <template #header>
+            <div class="filter-header">
+              <span>筛选条件</span>
+              <el-button type="text" @click="resetFilters"> 重置 </el-button>
+            </div>
+          </template>
+
+          <!-- 搜索框 -->
+          <div class="filter-section">
+            <el-input v-model="searchQuery" placeholder="搜索学生姓名..." clearable style="margin-bottom: 16px"
+              @input="currentPage = 1">
+              <template #prefix>
+                <el-icon>
+                  <Search />
+                </el-icon>
+              </template>
+            </el-input>
           </div>
-        </div>
 
-        <div class="filter-section">
-          <h3>专业</h3>
-          <div class="filter-options">
-            <label v-for="major in majorOptions" :key="major">
-              <input v-model="selectedFilters.majors" type="checkbox" :value="major">
-              {{ major }}
-            </label>
+          <!-- 学位筛选 -->
+          <div class="filter-section">
+            <h4>学位</h4>
+            <el-radio-group v-model="filters.degree" size="small"
+              @change="(value) => handleFilterChange('degree', value)">
+              <el-radio-button label=""> 全部 </el-radio-button>
+              <el-radio-button v-for="degree in filterOptions.degrees" :key="degree" :label="degree">
+                {{ degree }}
+              </el-radio-button>
+            </el-radio-group>
           </div>
-        </div>
 
-        <div class="filter-section">
-          <h3>技能标签</h3>
-          <div class="filter-options">
-            <label v-for="skill in skillOptions" :key="skill">
-              <input v-model="selectedFilters.skills" type="checkbox" :value="skill">
-              {{ skill }}
-            </label>
+          <!-- 专业筛选 -->
+          <div class="filter-section">
+            <h4>专业</h4>
+            <el-select v-model="filters.major" placeholder="选择专业" clearable style="width: 100%" size="small"
+              @change="(value) => handleFilterChange('major', value)">
+              <el-option label="全部专业" value="" />
+              <el-option v-for="major in filterOptions.majors" :key="major" :label="major" :value="major" />
+            </el-select>
           </div>
-        </div>
 
-        <div class="filter-section">
-          <h3>工作经验</h3>
-          <div class="filter-options">
-            <label v-for="exp in experienceOptions" :key="exp">
-              <input v-model="selectedFilters.experience" type="checkbox" :value="exp">
-              {{ exp }}
-            </label>
+          <!-- 专业技能筛选 -->
+          <div class="filter-section">
+            <h4>专业技能</h4>
+            <el-select v-model="filters.specialities" placeholder="选择技能" multiple clearable style="width: 100%"
+              size="small" @change="(value) => handleMultiValueChange('specialities', value)">
+              <el-option v-for="skill in filterOptions.specialities" :key="skill" :label="skill" :value="skill" />
+            </el-select>
           </div>
-        </div>
 
-        <!-- 语言掌握情况 -->
-        <div class="filter-section">
-          <h3>语言掌握情况</h3>
-          <div class="filter-options">
-            <label v-for="lang in languageOptions" :key="lang">
-              <input v-model="selectedFilters.languages" type="checkbox" :value="lang">
-              {{ lang }}
-            </label>
+          <!-- 语言筛选 -->
+          <div class="filter-section">
+            <h4>语言能力</h4>
+            <el-select v-model="filters.languages" placeholder="选择语言" multiple clearable style="width: 100%"
+              size="small" @change="(value) => handleMultiValueChange('languages', value)">
+              <el-option v-for="lang in filterOptions.languages" :key="lang" :label="lang" :value="lang" />
+            </el-select>
           </div>
-        </div>
 
-        <!-- 计算机专业技术证书 -->
-        <div class="filter-section">
-          <h3>计算机专业技术证书</h3>
-          <div class="filter-options">
-            <label v-for="cert in certificateOptions" :key="cert">
-              <input v-model="selectedFilters.certificates" type="checkbox" :value="cert">
-              {{ cert }}
-            </label>
+          <!-- 实习次数筛选 -->
+          <div class="filter-section">
+            <h4>实习经验</h4>
+            <el-select v-model="filters.internship" placeholder="选择实习次数" clearable style="width: 100%" size="small"
+              @change="(value) => handleFilterChange('internship', value)">
+              <el-option label="不限" :value="null" />
+              <el-option label="无实习经验" :value="0" />
+              <el-option label="1次实习" :value="1" />
+              <el-option label="2次及以上" :value="2" />
+            </el-select>
           </div>
-        </div>
 
-        <!-- 专业实习次数 -->
-        <div class="filter-section">
-          <h3>专业实习次数</h3>
-          <div class="filter-options">
-            <label v-for="intern in internshipOptions" :key="intern">
-              <input v-model="selectedFilters.internships" type="checkbox" :value="intern">
-              {{ intern }}
-            </label>
+          <!-- 毕业年份筛选 -->
+          <div class="filter-section">
+            <h4>毕业年份</h4>
+            <el-select v-model="filters.graduationYear" placeholder="选择毕业年份" clearable style="width: 100%" size="small"
+              @change="(value) => handleFilterChange('graduationYear', value)">
+              <el-option label="不限" :value="null" />
+              <el-option label="2023年及以后" :value="2023" />
+              <el-option label="2024年及以后" :value="2024" />
+              <el-option label="2025年及以后" :value="2025" />
+            </el-select>
           </div>
-        </div>
 
-        <!-- 计算机专业掌握情况 -->
-        <div class="filter-section">
-          <h3>计算机专业掌握情况</h3>
-          <div class="filter-options">
-            <label v-for="skill in computerSkillOptions" :key="skill">
-              <input v-model="selectedFilters.computerSkills" type="checkbox" :value="skill">
-              {{ skill }}
-            </label>
+          <!-- 城市筛选 -->
+          <div class="filter-section">
+            <h4>城市</h4>
+            <el-select v-model="filters.cities" placeholder="选择城市" multiple clearable style="width: 100%" size="small"
+              @change="(value) => handleMultiValueChange('cities', value)">
+              <el-option v-for="city in filterOptions.cities" :key="city" :label="city" :value="city" />
+            </el-select>
           </div>
-        </div>
 
-        <!-- 就业意向地区 -->
-        <div class="filter-section">
-          <h3>就业意向地区</h3>
-          <div class="filter-options">
-            <label v-for="region in jobRegionOptions" :key="region">
-              <input v-model="selectedFilters.jobRegions" type="checkbox" :value="region">
-              {{ region }}
-            </label>
+          <!-- 证书筛选 -->
+          <div class="filter-section">
+            <h4>证书</h4>
+            <el-select v-model="filters.certNames" placeholder="选择证书" multiple clearable style="width: 100%"
+              size="small" @change="(value) => handleMultiValueChange('certNames', value)">
+              <el-option v-for="cert in filterOptions.certNames" :key="cert" :label="cert" :value="cert" />
+            </el-select>
           </div>
-        </div>
-
-        <!-- 就业岗位 -->
-        <div class="filter-section">
-          <h3>就业岗位</h3>
-          <div class="filter-options">
-            <label v-for="position in jobPositionOptions" :key="position">
-              <input v-model="selectedFilters.jobPositions" type="checkbox" :value="position">
-              {{ position }}
-            </label>
-          </div>
-        </div>
-
-        <button class="reset-btn" @click="resetFilters">重置筛选</button>
+        </el-card>
       </aside>
 
-      <div class="student-list">
-        <div v-if="filteredStudents.length > 0" class="students-table-container">
-          <table class="students-table">
-            <thead>
-              <tr>
-                <th>姓名</th>
-                <th>专业</th>
-                <th>学历</th>
-                <th>工作经验</th>
-                <th>技能</th>
-                <th>详情</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(student, index) in filteredStudents" :key="index" class="student-box"
-                :data-student-id="index">
-                <td>{{ student.name }}</td>
-                <td>{{ student.major }}</td>
-                <td>{{ student.education }}</td>
-                <td>{{ student.experience }}</td>
-                <td>
-                  <div class="skill-tags-small">
-                    <span v-for="skill in student.skills" :key="skill" class="tag-small">{{ skill }}</span>
-                  </div>
-                </td>
-                <td>
-                  <button class="contact-btn" @click="viewStudentDetail(student)">
-                    详情
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- 学生列表 -->
+      <div class="student-content">
+        <el-card class="student-card">
+          <template #header>
+            <div class="student-header">
+              <span>学生列表</span>
+              <span class="student-count">
+                共 {{ paginatedStudents.total }} 名学生
+              </span>
+            </div>
+          </template>
 
-        <div v-else class="empty-state">
-          <p>没有找到符合条件的学生</p>
-          <button class="reset-btn" @click="resetFilters">重置筛选条件</button>
-        </div>
+          <div v-if="paginatedStudents.data.length > 0" class="student-grid">
+            <el-row :gutter="16">
+              <el-col v-for="student in paginatedStudents.data" :key="student.id" :xs="24" :sm="12" :md="8">
+                <el-card class="student-item" shadow="hover">
+                  <template #header>
+                    <div class="student-item-header">
+                      <span class="student-name">{{ student.name }}</span>
+                      <el-tag :type="student.internship === 0 ? 'info' : 'success'" size="small">
+                        {{
+                          student.internship === 0
+                            ? '应届生'
+                            : student.internship + '次实习'
+                        }}
+                      </el-tag>
+                    </div>
+                  </template>
+
+                  <div class="student-info">
+                    <div class="info-row">
+                      <span class="label">学号：</span>
+                      <span>{{ student.stuId }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="label">专业：</span>
+                      <span>{{ student.major }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="label">学位：</span>
+                      <span>{{ student.degree }}</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="label">年龄：</span>
+                      <span>{{ student.age }}岁</span>
+                    </div>
+                    <div class="info-row">
+                      <span class="label">毕业年份：</span>
+                      <span>{{ student.graduationYear }}</span>
+                    </div>
+
+                    <!-- 技能标签 -->
+                    <div class="skills-section">
+                      <h5>专业技能</h5>
+                      <div class="skills-tags">
+                        <el-tag v-for="skill in student.specialities.slice(0, 3)" :key="skill" type="primary"
+                          size="small" class="skill-tag">
+                          {{ skill }}
+                        </el-tag>
+                        <el-tag v-if="student.specialities.length > 3" size="small">
+                          +{{ student.specialities.length - 3 }}
+                        </el-tag>
+                      </div>
+                    </div>
+
+                    <!-- 语言能力 -->
+                    <div v-if="student.languages.length > 0" class="languages-section">
+                      <h5>语言能力</h5>
+                      <div class="languages-tags">
+                        <el-tag v-for="lang in student.languages" :key="lang" type="warning" size="small">
+                          {{ lang }} {{ student.languageLevel }}
+                        </el-tag>
+                      </div>
+                    </div>
+
+                    <!-- 证书 -->
+                    <div v-if="student.certNames.length > 0" class="certificates-section">
+                      <h5>证书</h5>
+                      <div class="certificates-tags">
+                        <el-tag v-for="cert in student.certNames.slice(0, 2)" :key="cert" type="success" size="small">
+                          {{ cert }}
+                        </el-tag>
+                        <el-tag v-if="student.certNames.length > 2" size="small">
+                          +{{ student.certNames.length - 2 }}
+                        </el-tag>
+                      </div>
+                    </div>
+
+                    <!-- 实习公司 -->
+                    <div v-if="student.internshipCompany" class="internship-section">
+                      <h5>实习公司</h5>
+                      <p class="internship-company">
+                        {{ student.internshipCompany }}
+                      </p>
+                    </div>
+
+                    <!-- 意向城市 -->
+                    <div v-if="student.cities.length > 0" class="cities-section">
+                      <h5>意向城市</h5>
+                      <div class="cities-tags">
+                        <el-tag v-for="city in student.cities.slice(0, 2)" :key="city" type="info" size="small">
+                          {{ city }}
+                        </el-tag>
+                        <el-tag v-if="student.cities.length > 2" size="small">
+                          +{{ student.cities.length - 2 }}
+                        </el-tag>
+                      </div>
+                    </div>
+                  </div>
+
+                  <template #footer>
+                    <div class="student-actions">
+                      <el-button type="primary" size="small" @click="viewStudentDetail(student)">
+                        查看详情
+                      </el-button>
+                      <el-button type="success" size="small">
+                        收藏简历
+                      </el-button>
+                    </div>
+                  </template>
+                </el-card>
+              </el-col>
+            </el-row>
+
+            <!-- 分页 -->
+            <div class="pagination-container">
+              <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" :page-sizes="[10, 20, 50]"
+                layout="total, sizes, prev, pager, next, jumper" :total="paginatedStudents.total"
+                @size-change="(size) => (pageSize = size)" @current-change="handlePageChange" />
+            </div>
+          </div>
+
+          <div v-else class="empty-state">
+            <el-empty description="没有找到符合条件的学生">
+              <el-button type="primary" @click="resetFilters">
+                重置筛选条件
+              </el-button>
+            </el-empty>
+          </div>
+        </el-card>
       </div>
     </main>
   </div>
 </template>
-<style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
 
-body {
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue',
-    Arial, sans-serif;
-  line-height: 1.6;
-  color: #333;
-  background-color: #f5f5f5;
-}
-
-#app {
+<style scoped>
+.home-container {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background-color: #f5f7fa;
 }
 
-/* 头部样式 */
-.header {
-  background: var(--main-blue);
-  color: white;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  text-align: center;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+/* 导航栏样式 */
+.home-nav {
+  background-color: #fff;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  height: 80px;
   position: fixed;
   top: 0;
-  right: 0;
   left: 0;
+  right: 0;
   z-index: 1000;
 }
 
-@keyframes move {
-  0% {
-    stroke-dasharray: 0 3000;
-  }
-
-  100% {
-    stroke-dasharray: 3000 0;
-  }
-}
-
-@keyframes jump {
-  0% {
-    transform: translateY(0);
-  }
-
-  100% {
-    transform: translateY(-5px);
-  }
-}
-
-.header h1 {
-  font-size: 2.2rem;
-  padding: 1.3rem 0rem;
-  font-weight: 600;
-}
-
-.header .icons-right .icon:hover {
-  animation: jump 0.2s linear forwards;
-}
-
-.pop-box {
+.nav-left {
   display: flex;
-  flex-direction: row;
   align-items: center;
+  gap: 16px;
+}
+
+.nav-left h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+}
+
+.nav-icon {
+  font-size: 24px;
   cursor: pointer;
-  color: black;
+  transition: all 0.3s;
 }
 
-.pop-box:hover {
-  color: var(--main-blue);
+.nav-icon:hover {
+  color: #409eff;
+  transform: scale(1.1);
 }
 
-/* 主容器 */
-.main-container {
+.user-menu {
+  padding: 8px 0;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.menu-item:hover {
+  background-color: #f5f7fa;
+  color: #409eff;
+}
+
+.menu-item span {
+  margin-left: 12px;
+  font-size: 14px;
+}
+
+/* 主要内容样式 */
+.main-content {
   flex: 1;
   display: flex;
-  gap: 2rem;
-  max-width: 1400px;
-  margin: 40px auto 2rem;
-  padding: 0 1rem;
-  width: 100%;
+  gap: 20px;
+  padding: 20px;
+  margin-top: 80px;
 }
 
-/* 筛选面板 */
-.filter-panel {
-  width: 350px;
-  background: white;
-  padding: 1.5rem;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  height: fit-content;
-  position: sticky;
-  top: 2rem;
-  max-height: calc(100vh - 4rem);
-  overflow-y: auto;
+.filter-sidebar {
+  width: 280px;
+  flex-shrink: 0;
 }
 
-.filter-panel h2 {
-  font-size: 1.3rem;
-  margin-bottom: 1.5rem;
-  color: #333;
-  border-bottom: 2px solid var(--main-blue);
-  padding-bottom: 0.5rem;
+.filter-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .filter-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 20px;
 }
 
-.filter-section h3 {
-  font-size: 1rem;
-  color: #666;
-  font-weight: 500;
-  margin: 0;
-}
-
-.filter-options {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.filter-options label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: color 0.2s;
-}
-
-.filter-options label:hover {
-  color: var(--main-blue);
-}
-
-.filter-options input[type='checkbox'] {
-  margin-right: 0.5rem;
-  cursor: pointer;
-}
-
-.reset-btn {
-  width: 100%;
-  padding: 0.8rem;
-  background-color: #f0f0f0;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s;
-  margin-top: 1rem;
-}
-
-.reset-btn:hover {
-  background-color: #e0e0e0;
-  transform: translateY(-1px);
-}
-
-/* 学生列表 */
-.student-list {
-  flex: 1;
-  background: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-@keyframes Up {
-  0% {
-    transform: translateY(1000px);
-  }
-
-  100% {
-    transform: translateY(0px);
-    opacity: 1;
-  }
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 4rem 1rem;
-  color: #999;
-}
-
-.empty-state p {
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-}
-
-/* 学生表格样式 */
-.students-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.9rem;
-  /* 略微减小字体大小 */
-  background-color: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  table-layout: fixed;
-}
-
-/* 表格头部样式 */
-.students-table thead {
-  background: var(--main-blue);
-  color: white;
-}
-
-.students-table th {
-  padding: 0.75rem 1rem;
-  /* 减小内边距 */
-  text-align: center;
+.filter-section h4 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
-  font-size: 0.8rem;
-  /* 略微减小字体大小 */
-  /* 为每一列设置固定宽度 */
+  color: #606266;
 }
 
-/* 表格主体样式 */
-.students-table tbody tr[data-student-id] {
-  /* 使用attr()函数获取data-student-id属性的值 */
-  opacity: 0;
-  animation: Up 0.5s calc(attr(data-student-id number) * 0.1s) forwards;
-  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.08);
-  height: auto;
+/* 学生列表样式 */
+.student-content {
+  flex: 1;
 }
 
-.students-table tbody tr:hover {
-  background-color: #f8f9fa;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+.student-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #fff;
 }
 
-.students-table tbody tr:last-child {
-  border-bottom: none;
+.student-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.students-table td {
-  padding: 0.75rem;
-  vertical-align: middle;
-  /* 保持垂直居中 */
-  text-align: center;
-  word-break: break-word;
+.student-count {
+  font-size: 14px;
+  color: #909399;
 }
 
-/* 小技能标签容器 */
-.skill-tags-small {
+.student-grid {
+  margin-top: 20px;
+}
+
+.student-item {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s;
+  background-color: #fff;
+  margin-bottom: 20px;
+}
+
+.student-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.15);
+}
+
+.student-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.student-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.student-info {
+  margin-top: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.label {
+  font-weight: 500;
+  color: #606266;
+}
+
+.skills-section,
+.languages-section,
+.certificates-section,
+.internship-section,
+.cities-section {
+  margin-top: 16px;
+}
+
+.skills-section h5,
+.languages-section h5,
+.certificates-section h5,
+.internship-section h5,
+.cities-section h5 {
+  margin: 0 0 8px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #606266;
+}
+
+.skills-tags,
+.languages-tags,
+.certificates-tags,
+.cities-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  /* 减小标签间距 */
+  gap: 4px;
+}
+
+.skill-tag {
+  margin-bottom: 4px;
+}
+
+.internship-company {
+  margin: 0;
+  font-size: 13px;
+  color: #606266;
+}
+
+.student-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.pagination-container {
+  margin-top: 30px;
+  display: flex;
   justify-content: center;
-  align-items: center;
-  min-height: 28px;
-  /* 略微减小最小高度 */
 }
 
-/* 小技能标签样式 */
-.tag-small {
-  background-color: var(--main-blue);
-  color: white;
-  padding: 0.2rem 0.6rem;
-  /* 减小标签内边距 */
-  border-radius: 20px;
-  font-size: 0.75rem;
-  /* 略微减小字体大小 */
-  font-weight: 500;
-  transition: all 0.2s ease;
+/* 空状态样式 */
+.empty-state {
+  padding: 60px 0;
+  text-align: center;
 }
 
-.tag-small:hover {
-  background-color: #764ba2;
-  transform: scale(1.05);
-}
-
-/* 操作按钮样式 */
-.students-table .contact-btn {
-  padding: 0.35rem 0.75rem;
-  /* 减小按钮内边距 */
-  background-color: var(--main-blue);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  /* 减小按钮字体大小 */
-  font-weight: 500;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  line-height: 1.3;
-}
-
-.students-table .contact-btn:hover {
-  background-color: var(--main-blue);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-}
-
-/* 响应式布局 */
-@media (max-width: 1024px) {
-  .main-container {
-    flex-direction: column;
-  }
-
-  .filter-panel {
-    width: 100%;
-    position: static;
-  }
-}
-
+/* 响应式设计 */
 @media (max-width: 768px) {
-  .header h1 {
-    font-size: 2rem;
+  .main-content {
+    flex-direction: column;
+    padding: 10px;
   }
 
-  .students-table {
-    font-size: 0.9rem;
-    table-layout: fixed;
+  .filter-sidebar {
+    width: 100%;
   }
 
-  .students-table th,
-  .students-table td {
-    padding: 0.75rem 0.5rem;
-  }
-
-  .students-table th {
-    font-size: 0.75rem;
-  }
-
-  /* 响应式列宽 */
-  .students-table th:nth-child(1),
-  .students-table td:nth-child(1) {
-    width: 15%;
-  }
-
-  /* 姓名 */
-  .students-table th:nth-child(2),
-  .students-table td:nth-child(2) {
-    width: 18%;
-  }
-
-  /* 专业 */
-  .students-table th:nth-child(3),
-  .students-table td:nth-child(3) {
-    width: 15%;
-  }
-
-  /* 学历 */
-  .students-table th:nth-child(4),
-  .students-table td:nth-child(4) {
-    width: 15%;
-  }
-
-  /* 工作经验 */
-  .students-table th:nth-child(5),
-  .students-table td:nth-child(5) {
-    width: 22%;
-  }
-
-  /* 技能 */
-  .students-table th:nth-child(6),
-  .students-table td:nth-child(6) {
-    width: 15%;
-  }
-
-  /* 操作 */
-
-  .tag-small {
-    padding: 0.2rem 0.5rem;
-    font-size: 0.7rem;
-  }
-
-  .students-table .contact-btn {
-    padding: 0.4rem 0.75rem;
-    font-size: 0.8rem;
+  .nav-left h1 {
+    font-size: 16px;
   }
 }
 </style>
