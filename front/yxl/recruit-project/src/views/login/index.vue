@@ -4,23 +4,24 @@ import IconSchool from '@/components/IconSchool.vue'
 import { User, Lock, OfficeBuilding, Setting } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { loginToR } from '@/api/login'
+import { useUserStore } from '@/stores/user'
+import { useRouter } from 'vue-router'
 const username = ref('')
 const password = ref('')
-const userType = ref('student')
+const userType = ref('admin')
+const userStore = useUserStore()
+const router = useRouter()
 const loginTo = async () => {
-  console.log(username.value, password.value, userType.value)
-  const res = await loginToR(username.value, password.value, userType.value)
-  console.log(res)
+  const {
+    data: { data }
+  } = await loginToR(username.value, password.value, userType.value)
+  userStore.setAll(data.username, data.userType, data.token)
   ElMessage({
     message: '登录成功',
-    type: 'success'
+    type: 'success',
+    duration: 1000
   })
-}
-const registerTo = () => {
-  ElMessage({
-    message: '注册成功',
-    type: 'success'
-  })
+  setTimeout(() => router.push('/home'), 1100)
 }
 </script>
 
@@ -29,11 +30,12 @@ const registerTo = () => {
     <div class="login-box">
       <!-- 左侧导航栏 -->
       <div class="login-sidebar">
-        <IconSchool style="margin-left: 40px" />
+        <IconSchool style="margin-left: 40px;width:120px;height: 120px;" />
         <div class="logo">
           招聘系统
         </div>
-        <el-menu :default-active="userType" class="login-menu" @select="(key) => (userType = key)">
+        <el-menu :default-active="userType" class="login-menu" @select="(key) => {userType = key;console.log(userType);
+        }">
           <el-menu-item index="student">
             <el-icon>
               <User />
@@ -78,11 +80,6 @@ const registerTo = () => {
             <el-form-item @click="loginTo">
               <el-button type="primary" style="width: 300px; height: 45px">
                 登录
-              </el-button>
-            </el-form-item>
-            <el-form-item @click="registerTo">
-              <el-button type="default" style="width: 300px; height: 45px">
-                注册
               </el-button>
             </el-form-item>
           </el-form>
@@ -146,8 +143,8 @@ const registerTo = () => {
 }
 
 .login-form h2 {
-  font-size: 35px;
-  margin-bottom: 80px;
+  font-size: 40px;
+  margin-bottom: 95px;
   color: #303133;
 }
 

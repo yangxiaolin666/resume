@@ -1,9 +1,13 @@
 <script>
 import IconSchool from '@/components/IconSchool.vue'
+import { useUserStore } from '@/stores/user'
+import { User, Document, House, SwitchButton } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 export default {
-  components: { IconSchool },
+  components: { IconSchool, User, Document, House, SwitchButton },
   data() {
     return {
+      userType: useUserStore().userType,
       students: [
         {
           id: 1,
@@ -163,10 +167,7 @@ export default {
       postgraduateMajorOptions: ['计算机科学与技术', '人工智能'],
       // 当前查看详情的学生
       currentStudent: null,
-      // 动画版本号，用于强制重新渲染动画
-      animationVersion: 0,
-      // 用于触发动画的key
-      animationKey: 0
+      activeIndex: 1
     }
   },
   computed: {
@@ -296,6 +297,7 @@ export default {
       return count
     }
   },
+  created() { },
   methods: {
     resetFilters() {
       this.selectedFilters = {
@@ -321,6 +323,9 @@ export default {
     triggerAnimation() {
       // 先移除所有行的动画类
       this.animationKey++
+    },
+    goToUser() {
+      this.$router.push(`/${this.userType}`)
     },
     // 重置新学生表单
     resetNewStudentForm() {
@@ -356,54 +361,78 @@ export default {
       if (fileInput) {
         fileInput.value = ''
       }
+    },
+    logOut() {
+      const userStore = useUserStore()
+      userStore.setAll('', '', '')
+      ElMessage({
+        message: '退出登录成功',
+        type: 'success',
+        duration: 1000
+      })
+      setTimeout(() => this.$router.push('/login'), 1100)
     }
   }
 }
 </script>
 <template>
   <div id="app">
-    <header class="header">
-      <div class="one" style="display: flex; flex-direction: row">
+    <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal"
+      style="display: flex; justify-content: space-between; height: 80px">
+      <div style="display: flex; align-items: center">
         <IconSchool />
         <h1>
           <p>学生招聘平台</p>
         </h1>
       </div>
 
-      <div class="icons-right" style="
-          width: 100px;
-          display: flex;
-          justify-content: space-between;
-          margin-top: 30px;
-          margin-right: 80px;
-        ">
-        <div style="display: flex; flex-direction: column">
-          <svg class="icon loginHead" t="1763469640639" viewBox="0 0 1024 1024" version="1.1"
-            xmlns="http://www.w3.org/2000/svg" p-id="2286" width="40" height="40"
-            @click="$router.push('/updateResume')">
-            <path
-              d="M618.666667 288a32 32 0 0 1 0 64H320a32 32 0 0 1 0-64h298.666667zM704 480a32 32 0 0 1 0 64H320a32 32 0 0 1 0-64h384zM533.333333 672a32 32 0 0 1 0 64H320a32 32 0 0 1 0-64h213.333333z"
-              fill="#ffffff" p-id="2287" />
-            <path
-              d="M768 85.333333a128 128 0 0 1 128 128v597.333334a128 128 0 0 1-128 128H256a128 128 0 0 1-128-128V213.333333a128 128 0 0 1 128-128h512z m0 64H256a64 64 0 0 0-64 64v597.333334a64 64 0 0 0 64 64h512a64 64 0 0 0 64-64V213.333333a64 64 0 0 0-64-64z"
-              fill="#ffffff" p-id="2288" />
-          </svg>
-          <p>简历</p>
-        </div>
-        <div style="display: flex; flex-direction: column" @click="$router.push('/login')">
-          <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" t="1763469466651"
-            viewBox="0 0 1024 1024" version="1.1" p-id="3498" width="40" height="40" class="icon">
-            <path
-              d="M896 448h-128a32 32 0 0 0 0 64h128a32 32 0 0 0 0-64M896 320h-128a32 32 0 0 0 0 64h128a32 32 0 0 0 0-64M768 256h128a32 32 0 0 0 0-64h-128a32 32 0 0 0 0 64"
-              fill="#fff" p-id="3499" />
-            <path
-              d="M781.76 640c-5.12-2.272-97.216-42.56-198.72-62.752 11.808-9.632 22.144-20.928 31.104-33.248a174.88 174.88 0 0 0 33.792-103.2v-104.768A176.32 176.32 0 0 0 576 194.336 174.368 174.368 0 0 0 472.192 160c-96.928 0-175.776 78.976-175.776 176.032v104.768c0 56.544 26.88 106.816 68.384 139.072-96.48 20.832-181.344 57.824-185.536 59.712C150.016 651.328 128 684.192 128 716v131.712l1.728 5.024c9.504 27.904 35.136 46.624 63.776 46.624h572.992c33.28 0 60.832-24.864 64.96-56.96l0.544-126.4c0-15.232-5.184-30.72-13.664-44-9.088-14.272-21.952-26.016-36.576-32"
-              fill="#fff" p-id="3500" />
-            /> /> />
-          </svg>登录
-        </div>
+      <div style="display: flex; align-items: center">
+        <el-sub-menu index="2">
+          <template #title> 我的工作台 </template>
+          <el-menu-item index="2-1"> 选项一 </el-menu-item>
+          <el-menu-item index="2-2"> 选项二 </el-menu-item>
+          <el-menu-item index="2-3"> 选项三 </el-menu-item>
+          <el-sub-menu index="2-4">
+            <template #title> 选项四 </template>
+            <el-menu-item index="2-4-1"> 选项一 </el-menu-item>
+            <el-menu-item index="2-4-2"> 选项二 </el-menu-item>
+            <el-menu-item index="2-4-3"> 选项三 </el-menu-item>
+          </el-sub-menu>
+        </el-sub-menu>
+        <el-menu-item index="3">
+          <el-icon class="icon" style="font-size: 40px">
+            <Document />
+          </el-icon>
+        </el-menu-item>
+        <el-menu-item index="4">
+          <el-popover :offset="10" placement="bottom-end">
+            <template #reference>
+              <div style="
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                ">
+                <el-icon class="icon" style="font-size: 40px">
+                  <User />
+                </el-icon>
+              </div>
+            </template>
+            <div class="pop-box" @click="goToUser">
+              <el-icon style="font-size: 25px">
+                <House />
+              </el-icon>
+              <span style="font-size: 18px; padding-left: 25px">个人主页</span>
+            </div>
+            <div class="pop-box" style="margin-top: 12px" @click="logOut">
+              <el-icon style="font-size: 25px">
+                <SwitchButton />
+              </el-icon>
+              <span style="font-size: 18px; padding-left: 25px">退出登录</span>
+            </div>
+          </el-popover>
+        </el-menu-item>
       </div>
-    </header>
+    </el-menu>
     <main class="main-container">
       <aside class="filter-panel">
         <h2>筛选条件</h2>
@@ -619,13 +648,25 @@ body {
 }
 
 .header h1 {
-  font-size: 2.5rem;
-  padding: 1.7rem 0rem;
+  font-size: 2.2rem;
+  padding: 1.3rem 0rem;
   font-weight: 600;
 }
 
 .header .icons-right .icon:hover {
   animation: jump 0.2s linear forwards;
+}
+
+.pop-box {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  cursor: pointer;
+  color: black;
+}
+
+.pop-box:hover {
+  color: var(--main-blue);
 }
 
 /* 主容器 */
@@ -634,7 +675,7 @@ body {
   display: flex;
   gap: 2rem;
   max-width: 1400px;
-  margin: 180px auto 2rem;
+  margin: 40px auto 2rem;
   padding: 0 1rem;
   width: 100%;
 }
@@ -657,7 +698,7 @@ body {
   font-size: 1.3rem;
   margin-bottom: 1.5rem;
   color: #333;
-  border-bottom: 2px solid var(--main-blue);;
+  border-bottom: 2px solid var(--main-blue);
   padding-bottom: 0.5rem;
 }
 
@@ -687,7 +728,7 @@ body {
 }
 
 .filter-options label:hover {
-  color:var(--main-blue);
+  color: var(--main-blue);
 }
 
 .filter-options input[type='checkbox'] {

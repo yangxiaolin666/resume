@@ -5,8 +5,8 @@ export default {}
   <svg
     xmlns="http://www.w3.org/2000/svg"
     version="1.0"
-    width="120px"
-    height="120px"
+    width="100px"
+    height="100px"
     viewBox="0 0 800.000000 800.000000"
     preserveAspectRatio="xMidYMid meet"
   >
@@ -146,8 +146,8 @@ export default {}
 <style scoped>
 svg {
   fill: none;
-  stroke: white;
-  stroke-width: 90;
+  stroke: black;
+  stroke-width: 50;
 }
 
 svg:hover {
