@@ -1,10 +1,30 @@
 <script setup>
+import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+
+const router = useRouter()
 const { item } = defineProps({
   item: {
     type: Object,
     required: true
   }
 })
+const isLike = ref(!item.isLike || true)
+const toggleLike = () => {
+  isLike.value = !isLike.value
+  if (isLike.value) {
+    ElMessage({
+      message: '已取消收藏',
+      type: 'info'
+    })
+  } else {
+    ElMessage({
+      message: '收藏成功',
+      type: 'success'
+    })
+  }
+}
 </script>
 <template>
   <el-card class="box-card">
@@ -29,24 +49,37 @@ const { item } = defineProps({
     <div class="skill">
       <h4>技能水平</h4>
       <div class="tag-box">
-        <el-tag size="small" type="primary" 
-        class="tag" v-for="(specialitie,index) in item.specialities" 
-        :key="index">{{ specialitie }}</el-tag>    
-             
+        <el-tag v-for="(specialitie, index) in item.specialities" :key="index" size="small" type="primary" class="tag">
+          {{ specialitie }}
+        </el-tag>
       </div>
     </div>
     <div class="skill">
       <h4>语言水平</h4>
       <div class="tag-box">
-        <el-tag size="small" type="warning" 
-        class="tag" v-for="(language,index) in item.languages" 
-        :key="index">{{ language }}</el-tag>    
+        <el-tag v-for="(language, index) in item.languages" :key="index" size="small" type="warning" class="tag">
+          {{ language }}
+        </el-tag>
       </div>
     </div>
     <template #footer>
-      <div style="display: flex;justify-content: space-between;">
-        <el-button type="primary">查看简历</el-button>
-        <el-button type="success">收藏简历</el-button>
+      <div style="display: flex; justify-content: space-between">
+        <el-button type="primary" @click="
+          router.push({
+            path: '/studentDetail',
+            query: {
+              id: item.id
+            }
+          })
+          ">
+          查看简历
+        </el-button>
+        <el-button type="success" v-if="isLike" @click="toggleLike" >
+          收藏简历
+        </el-button>
+        <el-button type="info" v-else @click="toggleLike">
+          已收藏
+        </el-button>
       </div>
     </template>
   </el-card>
@@ -57,18 +90,20 @@ const { item } = defineProps({
   justify-content: space-between;
   align-items: center;
 }
-.box-card{
-  min-height: 400px;
+
+.box-card {
+  min-height: 520px;
 }
+
 .text {
-  font-size: 14px;
+  font-size: 18px;
 }
 
 .item {
   display: flex;
   justify-content: space-between;
   padding: 10px;
-  border-bottom: 1px solid #e4e7ed;
+  border-bottom: 1px solid var(--el-border-color);
 }
 
 .box-card {
@@ -79,13 +114,15 @@ const { item } = defineProps({
 .skill {
   padding: 5px;
   font-size: 15px;
-  h4{
+
+  h4 {
     margin: 10px 0;
   }
+
   .tag-box {
     display: flex;
     justify-content: flex-start;
-    gap:10px;
+    gap: 10px;
     flex-wrap: wrap;
   }
 }

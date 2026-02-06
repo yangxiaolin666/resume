@@ -8,6 +8,7 @@ import Student from '@/views/user/student.vue'
 import Company from '@/views/user/company/index.vue'
 import CompanyChange from '@/views/user/company/change.vue'
 import CompanyLike from '@/views/user/company/like.vue'
+import studentDetail from '@/views/studentDetail/index.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -58,6 +59,12 @@ const router = createRouter({
       path: '/student',
       name: 'Student',
       component: Student
+    },
+    {
+      path: '/studentDetail',
+      name: 'StudentDetail',
+      component: studentDetail,
+      props:true
     }
   ]
 })

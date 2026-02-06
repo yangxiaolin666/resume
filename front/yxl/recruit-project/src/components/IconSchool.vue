@@ -146,11 +146,20 @@ export default {}
 <style scoped>
 svg {
   fill: none;
-  stroke: black;
-  stroke-width: 50;
+  stroke: var(--el-text-color-primary);
+  stroke-width: 100;
 }
 
 svg:hover {
   animation: move 0.9s;
+}
+@keyframes move {
+    0% {
+        stroke-dasharray: 0 3000;
+    }
+
+    100% {
+        stroke-dasharray: 3000 0;
+    }
 }
 </style>
