@@ -33,6 +33,7 @@
     "oxlint": "~1.41.0",
     "pinia-plugin-persistedstate": "^4.7.1",
     "prettier": "3.8.1",
+    "sass": "^1.97.3",
     "unplugin-auto-import": "^21.0.0",
     "unplugin-vue-components": "^31.0.0",
     "vite": "^7.3.1",
