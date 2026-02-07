@@ -36,5 +36,6 @@ public class PasswordUtil {
         System.out.println("20230001: " + encode("20230001"));
         System.out.println("company01: " + encode("company01"));
         System.out.println("admin123: " + encode("admin123"));
+
     }
 }
