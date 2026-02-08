@@ -7,7 +7,6 @@ export const getStudentById = (id) => {
 }
 
 export const completeInfo = ({
-  id,
   stuId,
   name,
   age,
@@ -17,17 +16,11 @@ export const completeInfo = ({
   degree,
   graduationYear,
   internship,
-  languages,
-  languageLevel,
-  cities,
-  provinces,
-  certNames,
-  certLevel,
-  internshipCompany,
+  //languages,
+  //languageLevel,
   specialities
 }) => {
   return request.put('/stu/completeInfo', {
-    id,
     stuId,
     name,
     age,
@@ -37,13 +30,20 @@ export const completeInfo = ({
     degree,
     graduationYear,
     internship,
-    languages,
-    languageLevel,
-    cities,
-    provinces,
-    certNames,
-    certLevel,
-    internshipCompany,
+    //languages,
+    //languageLevel,
     specialities
   })
 }
+
+export const updateResume=((resumeFile)=>{
+  const formData = new FormData()
+  formData.append('resumeFile', resumeFile)
+  return request.post('/stu/uploadResume',
+    formData
+  )
+})
+
+export const getResume=(()=>{
+  return request.get('/uploads/resume')
+})

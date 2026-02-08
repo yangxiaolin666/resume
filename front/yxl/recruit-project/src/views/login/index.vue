@@ -8,20 +8,24 @@ import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 const username = ref('')
 const password = ref('')
-const userType = ref('admin')
+const userType = ref('student')
 const userStore = useUserStore()
 const router = useRouter()
 const loginTo = async () => {
   const {
     data: { data }
   } = await loginToR(username.value, password.value, userType.value)
-  userStore.setAll(data.username, data.userType, data.token)
+  userStore.setAll(data.userid,data.username, data.userType, data.token)
   ElMessage({
     message: '登录成功',
     type: 'success',
     duration: 1000
   })
-  setTimeout(() => router.push('/home'), 1100)
+  setTimeout(() => {
+    console.log('跳转');
+    
+    router.push('/home')
+  }, 1100)
 }
 </script>
 
@@ -34,7 +38,8 @@ const loginTo = async () => {
         <div class="logo">
           招聘系统
         </div>
-        <el-menu :default-active="userType" class="login-menu" @select="(key) => {userType = key;console.log(userType);
+        <el-menu :default-active="userType" class="login-menu"
+         @select="(key) => {userType = key;console.log(userType);
         }">
           <el-menu-item index="student">
             <el-icon>

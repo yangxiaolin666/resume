@@ -33,7 +33,7 @@ onMounted(async () => {
     </div>
 
     <div style="display: flex; align-items: center">
-      <el-menu-item @click="router.go(-1)">
+      <el-menu-item @click="router.go(-1)" index="1">
         返回
         <el-icon>
           <ArrowRightBold />
@@ -49,6 +49,10 @@ onMounted(async () => {
         </h1>
         <h4>2024-2028</h4>
         <div class="s-line">
+          <h4>学号:</h4>
+          <span>{{ student.stuId }}</span>
+        </div>
+        <div class="s-line">
           <h4>性别:</h4>
           <span>{{ student.gender }}</span>
         </div>
@@ -57,8 +61,8 @@ onMounted(async () => {
           <span>{{ student.age }}</span>
         </div>
         <div class="s-line">
-          <h4>联系方式:</h4>
-          <span>130xxxxxxxxx</span>
+          <h4>民族:</h4>
+          <span>{{ student.nation }}</span>
         </div>
         <div class="s-line">
           <h4>专业:</h4>
@@ -69,20 +73,12 @@ onMounted(async () => {
           <span>{{ student.degree }}</span>
         </div>
         <div class="s-line">
-          <h4>学号:</h4>
-          <span>{{ student.stuId }}</span>
-        </div>
-        <div class="s-line">
           <h4>毕业年份</h4>
           <span>{{ student.graduationYear }}</span>
         </div>
         <div class="s-line">
           <h4>实习次数:</h4>
           <span>{{ student.internship }}</span>
-        </div>
-        <div class="s-line">
-          <h4>民族:</h4>
-          <span>{{ student.nation }}</span>
         </div>
         <div class="s-line">
           <div class="skill">

@@ -32,7 +32,7 @@
 
 <template>
   <div class="home-container">
-    <el-menu :default-active="activeIndex" class="el-menu-demo" mode="horizontal" style="
+    <el-menu class="el-menu-demo" mode="horizontal" style="
         display: flex;
         justify-content: space-between;
         height: 80px;
@@ -45,7 +45,7 @@
         </h1>
       </div>
       <div style="display: flex; align-items: center">
-        <el-menu-item @click="router.push('/updateResume')">
+        <el-menu-item @click="router.push('/updateResume')" index="3">
           <el-icon>
             <Document />
           </el-icon>
@@ -80,7 +80,7 @@
           <template #header>
             <div class="filter-header">
               <span>筛选条件</span>
-              <el-button type="text">
+              <el-button link>
                 重置
               </el-button>
             </div>
@@ -101,17 +101,17 @@
           <div class="filter-section">
             <h4>学位</h4>
             <el-radio-group size="small">
-              <el-radio-button label="">
+              <el-radio-button value="">
                 全部
               </el-radio-button>
-              <el-radio-button />
             </el-radio-group>
           </div>
         </el-card>
       </aside>
       <div>
         <el-row>
-          <el-col v-for="item in students" :key="item.id" :xs="24" :sm="12" :md="8" :lg="8">
+          <el-col v-for="item in students" 
+          :key="item.id" :xs="24" :sm="12" :md="8" :lg="8">
             <studentCard :item="item" />
           </el-col>
         </el-row>
