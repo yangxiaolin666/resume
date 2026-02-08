@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.resume.company.mapper.StuLikeMapper">
+
+    <resultMap id="BaseResultMap" type="com.resume.model.entity.ComLikeStu">
+        <result property="stuId" column="stu_id"/>
+        <result property="comId" column="com_id"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <insert id="insertLikeStudent" parameterType="java.util.List">
+        INSERT INTO com_like_stu (stu_id, com_id, create_time)
+        <if test="list != null and list.size() > 0">
+            VALUES
+            <foreach collection="list" item="item" separator=",">
+                (#{item.stuId}, #{item.comId}, #{item.createTime})
+            </foreach>
+        </if>
+    </insert>
+
+    <select id="existsStudentById" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM student WHERE id = #{id}
+    </select>
+
+    <select id="existsCompanyById" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM company WHERE id = #{id}
+    </select>
+
+
+
+
+    <delete id="deleteLikeStudent" parameterType="java.util.List">
+        DELETE FROM com_like_stu
+        WHERE (stu_id, com_id) IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            (#{item.stuId}, #{item.comId})
+        </foreach>
+    </delete>
+
+
+
+    <select id="searchLikeStudents" parameterType="com.resume.model.dto.ComLikeStuDTO" resultType="com.resume.model.entity.ComLikeStu">
+        SELECT *
+        FROM com_like_stu
+        WHERE (stu_id, com_id) IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            (#{item.stuId}, #{item.comId})
+        </foreach>
+    </select>
+
+
+
+    <!-- 查找企业收藏列表 返回需要的信息（所有学生的列表）  -->
+    <!--  返回字段
+            姓名 性别 专业  学位 技能水平 语言水平 是否收藏  -->
+    <!-- 如果需要学生详细信息 -->
+    <select id="searchCompaniesLike" resultType="com.resume.model.entity.ComLikeStu" parameterType="com.resume.model.dto.ComLikeStuDTO" resultMap="comLikeStuDetailsMap">
+        SELECT
+            cls.id,
+            cls.com_id,
+            cls.stu_id,
+            cls.create_time,
+            s.name as student_name,
+            s.gender
+        FROM com_like_stu cls
+                 LEFT JOIN student s ON cls.stu_id = s.id
+        WHERE cls.com_id = #{com_id}
+        ORDER BY cls.create_time DESC
+    </select>
+
+    <resultMap id="comLikeStuDetailsMap" type="com.resume.model.dto.ComLikeStuWithDetailsDTO">
+        <id property="id" column="id"/>
+        <result property="comId" column="com_id"/>
+        <result property="stuId" column="stu_id"/>
+        <result property="createTime" column="create_time"/>
+
+        <!-- 学生基本信息 -->
+        <association property="student" javaType="com.resume.model.entity.Student">
+            <id property="id" column="student_id"/>
+            <result property="name" column="student_name"/>
+            <result property="gender" column="gender"/>
+            <result property="major" column="major"/>
+            <result property="degree" column="degree"/>
+        </association>
+
+        <!-- 语言列表（单独查询） -->
+        <collection
+                property="languages"
+                ofType="string"
+                select="selectLanguagesByStudentId"
+                column="stu_id"/>
+
+        <!-- 特长列表（单独查询） -->
+        <collection
+                property="specialities"
+                ofType="string"
+                select="selectSpecialitiesByStudentId"
+                column="stu_id"/>
+    </resultMap>
+
+    <select id="selectLanguagesByStudentId" resultType="string">
+        SELECT language
+        FROM stu_language
+        WHERE stu_id = #{stu_id}
+    </select>
+
+    <select id="selectSpecialitiesByStudentId" resultType="string">
+        SELECT speciality
+        FROM stu_speciality
+        WHERE stu_id = #{stu_id}
+    </select>
+
+
+
+</mapper>

@@ -45,9 +45,9 @@ public class UserServiceImpl implements UserService {
         String attemptKey = LOGIN_ATTEMPT_PREFIX + username;
         String attemptCount = redisTemplate.opsForValue().get(attemptKey);
         //redisTemplate.delete(attemptKey);
-        if (attemptCount != null && Integer.parseInt(attemptCount) >= MAX_LOGIN_ATTEMPTS) {
-            throw new RuntimeException("42901:登录尝试次数过多，请30分钟后再试");
-        }
+//        if (attemptCount != null && Integer.parseInt(attemptCount) >= MAX_LOGIN_ATTEMPTS) {
+//            throw new RuntimeException("42901:登录尝试次数过多，请30分钟后再试");
+//        }
         
         // 查询用户
         User user = userMapper.findByUsername(username);

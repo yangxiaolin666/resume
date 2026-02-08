@@ -1,0 +1,16 @@
+:root {
+  --main-blue:#409EFF
+}
+
+/* 设置全局页面背景色为Element UI的偏灰色 */
+body {
+  background-color: var(--el-bg-color-page, #f0f0f0);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* 确保所有页面容器都能正确显示背景色 */
+#app {
+  min-height: 100vh;
+}
