@@ -4,10 +4,14 @@ import com.resume.common.interceptor.AdminInterceptor;
 import com.resume.common.interceptor.AuthInterceptor;
 import com.resume.common.interceptor.TokenRefreshInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.io.File;
 
 /**
  * Web配置类
@@ -45,6 +49,18 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addInterceptor(adminInterceptor)
                 .addPathPatterns("/admin/**")
                 .order(3);
+    }
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 映射 /resume/uploads/** 到文件系统路径
+        registry.addResourceHandler("/resume/uploads/**")
+                .addResourceLocations("file:/resume/uploads/")
+                .setCachePeriod(3600)
+                .resourceChain(true);
+
+        // 如果还需要其他路径的映射
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:/resume/uploads/");
     }
 
     //跨域
