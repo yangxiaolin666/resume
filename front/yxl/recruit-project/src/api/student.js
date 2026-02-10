@@ -5,37 +5,61 @@ export const getStudentById = (id) => {
     id
   })
 }
-
-export const completeInfo = ({
-  stuId,
-  name,
-  age,
-  gender,
-  nation,
-  major,
-  degree,
-  graduationYear,
-  internship,
-  //languages,
-  //languageLevel,
-  specialities
-}) => {
-  return request.put('/stu/completeInfo', {
-    stuId,
-    name,
-    age,
-    gender,
-    nation,
-    major,
-    degree,
-    graduationYear,
-    internship,
-    //languages,
-    //languageLevel,
-    specialities
+export const getStudentDetailById = (id) => {
+  return request.post('/com/detailSearch', {
+    id
   })
 }
-
+export const getAllStudent=()=>{
+  return request.post('/com/detailSearch', {
+  })
+}
+const completeObj={
+  "age": 40,
+  "gender": "男",
+  "nation": "汉族",
+  "major": "计算机科学与技术",
+  "degree": "本科生",
+  "graduationYear": 2027,
+  "internship": 1,
+  "languages": [
+    {
+      "language": "英语",
+      "level": "四级"
+    }
+  ],
+  "cities": [
+    "大连","北京"
+  ],
+  "provinces": [
+    "辽宁","广东"
+  ],
+  "certificates": [
+    {
+      "certName": "计算机",
+      "level": "二级"
+    }
+  ],
+  "internships": [
+    {
+      "company": "腾讯",
+      "experience": "游戏后端开发"
+    },
+    {
+      "company": "阿里",
+      "experience": "游戏后端开发"
+    },
+  ],
+  "specialities": [
+    "Java","C++","Python"
+  ],
+  "jobs": [
+    "后端开发","前端开发"
+  ]
+}
+export const completeInfo = (data) => {
+  return request.put('/stu/completeInfo',data)
+}
 export const updateResume=((resumeFile)=>{
   const formData = new FormData()
   formData.append('resumeFile', resumeFile)

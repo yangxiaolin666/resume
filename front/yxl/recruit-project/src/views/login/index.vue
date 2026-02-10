@@ -15,12 +15,14 @@ const loginTo = async () => {
   const {
     data: { data }
   } = await loginToR(username.value, password.value, userType.value)
-  userStore.setAll(data.userid,data.username, data.userType, data.token)
+  userStore.setAll(data.userId,data.username, data.userType, data.token)
   ElMessage({
     message: '登录成功',
     type: 'success',
     duration: 1000
   })
+  console.log(data)
+  
   setTimeout(() => {
     console.log('跳转');
     
@@ -61,8 +63,6 @@ const loginTo = async () => {
           </el-menu-item>
         </el-menu>
       </div>
-
-      <!-- 右侧登录表单 -->
       <div class="login-form-container">
         <div class="login-form">
           <h2>

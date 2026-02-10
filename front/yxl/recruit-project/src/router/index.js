@@ -1,14 +1,16 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/layout/home.vue'
-import UpdateResume from '@/views/layout/updateResume.vue'
+import UpdateResume from '@/views/user/student/updateResume.vue'
 import Login from '@/views/login/index.vue'
 import { useUserStore } from '@/stores/user'
 import Admin from '@/views/user/admin.vue'
-import Student from '@/views/user/student.vue'
+import Student from '@/views/user/student/index.vue'
 import Company from '@/views/user/company/index.vue'
 import CompanyChange from '@/views/user/company/change.vue'
 import CompanyLike from '@/views/user/company/like.vue'
 import studentDetail from '@/views/studentDetail/index.vue'
+import SelfMessage from '@/views/user/student/selfMessage.vue'
+import Test from '@/views/test/test.vue'
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -23,14 +25,14 @@ const router = createRouter({
       component: Home
     },
     {
-      path: '/updateResume',
-      name: 'updateResume',
-      component: UpdateResume
-    },
-    {
       path: '/login',
       name: 'Login',
       component: Login
+    },
+    {
+      path: '/test',
+      name: 'Test',
+      component: Test
     },
     {
       path: '/company',
@@ -58,7 +60,20 @@ const router = createRouter({
     {
       path: '/student',
       name: 'Student',
-      component: Student
+      component: Student,
+      redirect:'/selfMessage',
+      children:[
+        {
+          path:'/selfMessage',
+          name:'SelfMessage',
+          component:SelfMessage
+        },
+        {
+          path: '/updateResume',
+          name: 'updateResume',
+          component: UpdateResume
+        },
+      ]
     },
     {
       path: '/studentDetail',

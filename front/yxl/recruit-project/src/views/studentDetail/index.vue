@@ -8,6 +8,9 @@ const router = useRouter()
 const route = useRoute()
 const studentId = route.query.id
 const student = ref('')
+const allLanguage = ref([])
+const allSpeciality = ref([])
+const pdfURL=ref()
 onMounted(async () => {
   const {
     data: {
@@ -16,7 +19,12 @@ onMounted(async () => {
   } = await getStudentById(studentId)
   console.log(list[0])
   student.value = list[0]
+  pdfURL.value="http://81.70.199.174:8081"+list[0].resume.resume
+  console.log(pdfURL.value)
+  allLanguage.value = list[0].languages.map(item => item.language+item.level)
+  allSpeciality.value = list[0].specialities.map(item => item.speciality)
 })
+
 </script>
 <template>
   <el-menu class="el-menu-demo" mode="horizontal" style="
@@ -80,33 +88,55 @@ onMounted(async () => {
           <h4>实习次数:</h4>
           <span>{{ student.internship }}</span>
         </div>
-        <div class="s-line">
+        <div class="s-line" v-if="student.internshipCompany && student.internshipCompany.length>0">
           <div class="skill">
-            <h4>技能水平</h4>
+            <h4>实习公司</h4>
             <div class="tag-box">
-              <el-tag size="large" type="primary" class="tag"> Java </el-tag>
-              <el-tag size="large" type="primary" class="tag"> C++ </el-tag>
-              <el-tag size="large" type="primary" class="tag"> Python </el-tag>
-              <el-tag size="large" type="primary" class="tag"> GoLang </el-tag>
-              <el-tag size="large" type="primary" class="tag"> Redis </el-tag>
-              <el-tag size="large" type="primary" class="tag"> Java </el-tag>
-              <el-tag size="large" type="primary" class="tag"> C++ </el-tag>
-              <el-tag size="large" type="primary" class="tag"> Python </el-tag>
+              <el-tag v-for="item in student.internshipCompany" :key="item" size="large" type="info" class="tag"> {{item}} </el-tag>
             </div>
           </div>
         </div>
-        <div class="s-line">
+        <div class="s-line" v-if="student.cities && student.cities.length>0">
+          <div class="skill">
+            <h4>意向工作城市</h4>
+            <div class="tag-box">
+              <el-tag v-for="item in student.cities" :key="item" size="large" type="success" class="tag"> {{item}} </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line" v-if="student.provinces && student.provinces.length>0">
+          <div class="skill">
+            <h4>意向工作省份</h4>
+            <div class="tag-box">
+              <el-tag v-for="item in student.provinces" :key="item" size="large" type="success" class="tag"> {{item}} </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line" v-if="student.certNames && student.certNames.length>0">
+          <div class="skill">
+            <h4>证书名称</h4>
+            <div class="tag-box">
+              <el-tag v-for="item in student.certNames" :key="item" size="large" type="primary" class="tag"> {{item}} </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line" v-if="student.certLevel">
+          <h4>证书等级:</h4>
+          <span>{{ student.certLevel }}</span>
+        </div>
+        <div class="s-line" v-if="allSpeciality.length>0">
+          <div class="skill">
+            <h4>技能水平</h4>
+            <div class="tag-box">
+              <el-tag v-for="item in allSpeciality" :key="item" size="large" type="primary" class="tag"> {{item}} </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line" v-if="allLanguage.length>0">
           <div class="skill">
             <h4>语言水平</h4>
             <div class="tag-box">
-              <el-tag size="large" type="warning" class="tag"> 英语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 日语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 德语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 汉语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 西班牙语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 德语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 汉语 </el-tag>
-              <el-tag size="large" type="warning" class="tag"> 西班牙语 </el-tag>
+              <el-tag v-for="item in allLanguage" :key="item" size="large" type="warning" class="tag"> {{item}} </el-tag>
             </div>
           </div>
         </div>
@@ -125,13 +155,17 @@ onMounted(async () => {
       </div>
     </el-splitter-panel>
     <el-splitter-panel>
-      <div class="demo-panel">
-        <img src="@/assents/简历(3)_01.png" alt="" />
+      <div class="pdf-viewer">
+        <embed 
+          :src="pdfURL"
+          type="application/pdf" 
+          width="100%" 
+          height="1250" />
       </div>
     </el-splitter-panel>
   </el-splitter>
-  <div style="font-size: 50px;text-align:center;padding:200px" v-else>
-    暂无学生信息
+  <div style="padding:100px" v-else>
+    <el-empty image-size="250" description="暂无学生信息,请报告给管理员" />
   </div>
 </template>
 
@@ -173,5 +207,12 @@ h4 {
     gap: 10px;
     flex-wrap: wrap;
   }
+}
+.pdf-viewer {
+  border: 1px solid var(--el-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 </style>

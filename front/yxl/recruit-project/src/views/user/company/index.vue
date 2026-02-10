@@ -1,9 +1,19 @@
 <script setup>
-import { ref } from 'vue'
+import { ref,onMounted,watch } from 'vue'
 import { User, Document, ArrowRightBold } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 const router = useRouter()
-const activeIndex = ref('1')
+const route=useRoute()
+const activeIndex = ref('/like')
+const updateActiveIndex = () => {
+  activeIndex.value = route.path 
+}
+onMounted(()=>{
+  updateActiveIndex()
+})
+watch(()=>route.path,()=>{
+  updateActiveIndex()
+})
 </script>
 <template>
   <el-menu :router="true" :default-active="activeIndex" class="el-menu-demo" mode="horizontal" style="
@@ -32,7 +42,7 @@ const activeIndex = ref('1')
         </el-icon>
         修改密码
       </el-menu-item>
-      <el-menu-item @click="router.push('/home')">
+      <el-menu-item @click="router.push('/home')" index="/home">
         返回
         <el-icon class="icon">
           <ArrowRightBold />

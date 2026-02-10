@@ -11,6 +11,8 @@ const { item } = defineProps({
   }
 })
 const isLike = ref(!item.isLike || true)
+const allLanguage = ref(item.languages.map(item => item.language+item.level))
+const allSpeciality = ref(item.specialities.map(item => item.speciality))
 const toggleLike = () => {
   isLike.value = !isLike.value
   if (isLike.value) {
@@ -49,15 +51,10 @@ const toggleLike = () => {
     <div class="skill">
       <h4>技能水平</h4>
       <div class="tag-box">
-        <el-tag v-for="(specialitie, index) in item.specialities" :key="index" size="small" type="primary" class="tag">
-          {{ specialitie }}
+        <el-tag v-for="(speciality, index) in allSpeciality" :key="index" size="small" type="primary" class="tag">
+          {{ speciality }}
         </el-tag>
-      </div>
-    </div>
-    <div class="skill">
-      <h4>语言水平</h4>
-      <div class="tag-box">
-        <el-tag v-for="(language, index) in item.languages" :key="index" size="small" type="warning" class="tag">
+        <el-tag v-for="(language, index) in allLanguage" :key="index" size="small" type="warning" class="tag">
           {{ language }}
         </el-tag>
       </div>
@@ -89,10 +86,14 @@ const toggleLike = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  h3{
+    margin: 3px;
+  }
 }
 
 .box-card {
-  min-height: 520px;
+  min-height: 420px;
+  min-width:300px;
 }
 
 .text {

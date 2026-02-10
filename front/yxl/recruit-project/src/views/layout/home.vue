@@ -45,18 +45,15 @@
         </h1>
       </div>
       <div style="display: flex; align-items: center">
-        <el-menu-item @click="router.push('/updateResume')" index="3">
-          <el-icon>
-            <Document />
-          </el-icon>
-          简历修改
-        </el-menu-item>
         <el-menu-item index="4">
           <el-popover placement="bottom-end">
             <template #reference>
-              <el-icon class="nav-icon">
-                <User />
-              </el-icon>
+                <div style="display: flex; align-items: center;">
+                  <el-icon class="nav-icon">
+                    <User />
+                  </el-icon>
+                  <span>{{userStore.userType}}</span>
+                </div>
             </template>
             <div class="menu-item" @click="goToUser">
               <el-icon>
