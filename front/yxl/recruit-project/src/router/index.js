@@ -25,7 +25,7 @@ const router = createRouter({
       path: '/layout',
       name: 'Layout',
       component: LayOut,
-      redirect:'/home',
+      redirect:'/showData',
       children:[
         {
           path: '/home',

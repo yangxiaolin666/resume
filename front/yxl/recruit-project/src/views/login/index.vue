@@ -26,7 +26,7 @@ const loginTo = async () => {
   setTimeout(() => {
     console.log('跳转');
     
-    router.push('/home')
+    router.push('/showData')
   }, 1100)
 }
 </script>

@@ -22,7 +22,7 @@ const logOut = () => {
   })
   setTimeout(() => router.push('/login'), 1100)
 }
-const activeIndex = ref('/home')
+const activeIndex = ref('/showData')
 const route = useRoute()
 const updateActiveIndex = () => {
   activeIndex.value = route.path
@@ -49,17 +49,17 @@ const userStore = useUserStore()
       </h1>
     </div>
     <div style="display: flex; align-items: center">
-      <el-menu-item index="/home">
-        <el-icon>
-          <Discount />
-        </el-icon>
-        应届生列表
-      </el-menu-item>
       <el-menu-item index="/showData">
         <el-icon>
           <PieChart />
         </el-icon>
         应届生数据
+      </el-menu-item>
+      <el-menu-item index="/home" v-if="userStore.userType === 'company'">
+        <el-icon>
+          <Discount />
+        </el-icon>
+        应届生列表
       </el-menu-item>
       <el-menu-item>
         <el-popover placement="bottom-end">

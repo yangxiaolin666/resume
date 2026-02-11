@@ -323,7 +323,7 @@ const updateChange = async () => {
     type: 'success',
     duration: 1000
   })
-  setTimeout(() => router.push('/home'), 1100)
+  setTimeout(() => router.push('/selfMessage'), 1100)
 }
 </script>
 <template>

@@ -41,7 +41,7 @@ watch(()=>route.path,()=>{
         </el-icon>
         简历修改
       </el-menu-item>
-      <el-menu-item @click="router.push('/home')" index="/home">
+      <el-menu-item index="/showData">
         返回
         <el-icon class="icon">
           <ArrowRightBold />

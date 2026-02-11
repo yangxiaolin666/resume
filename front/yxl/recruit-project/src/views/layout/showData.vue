@@ -1,10 +1,18 @@
 <template>
   <div class="charts-container">
-    <div class="chart-wrapper">
-      <v-chart class="chart" :option="pieOption" />
+    <div style="display: flex;flex-direction: row;gap:15px">
+      <div class="chart-wrapper" style="width:48%">
+        <v-chart class="chart" :option="radarOption" />
+      </div>
+      <div class="chart-wrapper" style="width:48%">
+        <v-chart class="chart" :option="pieOptionJobs" />
+      </div>
     </div>
     <div class="chart-wrapper">
       <v-chart class="chart" :option="barOption" />
+    </div>
+    <div class="chart-wrapper">
+      <v-chart class="chart" :option="pieOptionSpecialities" />
     </div>
     <div class="chart-wrapper">
       <v-chart class="chart" :option="areaOption" />
@@ -15,7 +23,7 @@
 <script>
 import { use } from "echarts/core";
 import { CanvasRenderer } from "echarts/renderers";
-import { PieChart, BarChart, LineChart } from "echarts/charts";
+import { PieChart, BarChart, LineChart, RadarChart } from "echarts/charts";
 import {
   TitleComponent,
   TooltipComponent,
@@ -30,6 +38,7 @@ use([
   PieChart,
   BarChart,
   LineChart,
+  RadarChart,
   TitleComponent,
   TooltipComponent,
   LegendComponent,
@@ -45,9 +54,147 @@ export default defineComponent({
     [THEME_KEY]: "light"
   },
   setup: () => {
-    const pieOption = ref({
+    const a = {
+      "languages": [
+        {
+          "value": 130,
+          "language": "英语",
+          "level": "四级"
+        },
+        {
+          "value": 50,
+          "language": "韩语",
+          "level": "六级"
+        },
+        {
+          "value": 56,
+          "language": "汉语",
+          "level": "六级"
+        },
+        {
+          "value": 136,
+          "language": "法语",
+          "level": "六级"
+        },
+        {
+          "value": 53,
+          "language": "日语",
+          "level": "六级"
+        },
+      ],
+      "cities": [
+        {
+          "value": 35,
+          "name": "北京"
+        },
+        {
+          "value": 39,
+          "name": "大连"
+        },
+        {
+          "value": 135,
+          "name": "上海"
+        },
+        {
+          "value": 79,
+          "name": "沈阳"
+        },
+        {
+          "value": 45,
+          "name": "杭州"
+        },
+      ],
+      "internships": [
+        {
+          "value": 101,
+          "company": "腾讯",
+          "experience": "游戏后端开发"
+        },
+        {
+          "value": 79,
+          "company": "阿里",
+          "experience": "游戏后端开发"
+        },
+        {
+          "value": 232,
+          "company": "腾讯天美",
+          "experience": "游戏后端开发"
+        },
+        {
+          "value": 382,
+          "company": "阿里淘天",
+          "experience": "游戏后端开发"
+        },
+      ],
+      "specialities": [
+        {
+          "value": 500,
+          "name": "Java"
+        },
+        {
+          "value": 370,
+          "name": "Python"
+        },
+        {
+          "value": 100,
+          "name": "C++"
+        },
+        {
+          "value": 380,
+          "name": "SpringBoot"
+        },
+        {
+          "value": 200,
+          "name": "Vue2"
+        },
+        {
+          "value": 200,
+          "name": "Vue3"
+        },
+      ],
+      "jobs": [
+        {
+          "value": 56,
+          "name": "后端开发"
+        },
+        {
+          "value": 179,
+          "name": "前端开发"
+        },
+        {
+          "value": 210,
+          "name": "客户端开发"
+        },
+        {
+          "value": 170,
+          "name": "大模型算法"
+        },
+      ]
+    }
+    const radarOption = ref({
       title: {
-        text: "Traffic Sources",
+        text: "应届生技能水平雷达图",
+        left: "center"
+      },
+      tooltip: {},
+      radar: {
+        indicator: a.specialities.map(item=>({
+          name:item.name,
+          value:item.value
+        }))
+      },
+      series: [{
+        type: "radar",
+        data: [{
+          value: a.specialities.map(item => item.value),
+          name: "技能水平",
+          areaStyle: {}
+        }]
+      }]
+    });
+    const pieOptionSpecialities = ref({
+      title: {
+        text: "应届生实习经历",
         left: "center"
       },
       tooltip: {
@@ -57,7 +204,7 @@ export default defineComponent({
       legend: {
         orient: "vertical",
         left: "left",
-        data: ["Direct", "Email", "Ad Networks", "Video Ads", "Search Engines"]
+        data: a.internships.map(item => item.company)
       },
       series: [
         {
@@ -65,13 +212,44 @@ export default defineComponent({
           type: "pie",
           radius: "55%",
           center: ["50%", "60%"],
-          data: [
-            { value: 335, name: "Direct" },
-            { value: 310, name: "Email" },
-            { value: 234, name: "Ad Networks" },
-            { value: 135, name: "Video Ads" },
-            { value: 1548, name: "Search Engines" }
-          ],
+          data: a.internships.map(item => ({
+            value: item.value,
+            name: item.company
+          })),
+          emphasis: {
+            itemStyle: {
+              shadowBlur: 10,
+              shadowOffsetX: 0,
+              shadowColor: "rgba(0,0, 0, 0.5)"
+            }
+          }
+        }
+      ]
+    });
+    const pieOptionJobs = ref({
+      title: {
+        text: "应届生意向工作分布",
+        left: "center"
+      },
+      tooltip: {
+        trigger: "item",
+        formatter: "{a} <br/>{b} : {c} ({d}%)"
+      },
+      legend: {
+        orient: "vertical",
+        left: "left",
+        data: a.jobs.map(item => item.name)
+      },
+      series: [
+        {
+          name: "Traffic Sources",
+          type: "pie",
+          radius: "55%",
+          center: ["50%", "60%"],
+          data: a.jobs.map(item => ({
+            value: item.value,
+            name: item.name
+          })),
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
@@ -82,10 +260,9 @@ export default defineComponent({
         }
       ]
     });
-
     const barOption = ref({
       title: {
-        text: "月度销售数据",
+        text: "应届生意向就业城市",
         left: "center"
       },
       tooltip: {
@@ -95,7 +272,7 @@ export default defineComponent({
         }
       },
       legend: {
-        data: ["销量"],
+        data: ["意向人数"],
         top: "10%"
       },
       grid: {
@@ -106,23 +283,22 @@ export default defineComponent({
       },
       xAxis: {
         type: "category",
-        data: ["衬衫", "羊毛衫", "雪纺衫", "裤子", "高跟鞋", "袜子"]
+        data: a.cities.map(item => item.name)
       },
       yAxis: {
         type: "value"
       },
       series: [
         {
-          name: "销量",
+          name: "意向人数",
           type: "bar",
-          data: [120, 200, 150, 80, 70, 110],
+          data: a.cities.map(item => item.value),
           itemStyle: {
             color: "#5470c6"
           }
         }
       ]
     });
-
     const areaOption = ref({
       title: {
         text: "网站访问趋势",
@@ -216,78 +392,9 @@ export default defineComponent({
         }
       ]
     });
-
-    return { pieOption, barOption, areaOption };
+    return { pieOptionSpecialities, pieOptionJobs, barOption, areaOption, radarOption };
   }
 });
-const AllStudent = {
-  "languages": [
-    {
-      "language": "英语",
-      "level": "四级",
-      "length": 3
-    },
-    {
-      "language": "英语",
-      "level": "六级",
-      "length": 5
-    },
-  ],
-  "cities": [
-    {
-      "name": "北京",
-      "length": 3
-    },
-    {
-      "name": "大连",
-      "length": 3
-    },
-    {
-      "name": "上海",
-      "length": 3
-    },
-  ],
-  "internships": [
-    {
-      "company": "腾讯",
-      "experience": "游戏后端开发",
-      "length": 3
-    },
-    {
-      "company": "阿里",
-      "experience": "游戏后端开发",
-      "length": 3
-    },
-  ],
-  "specialities": [
-    {
-      "name": "Java",
-      "length": 5
-    },
-    {
-      "name": "Python",
-      "length": 7
-    },
-    {
-      "name": "C++",
-      "length": 10
-    },
-  ],
-  "jobs": [
-    {
-      "name": "后端开发",
-      "length": 5
-    },
-    {
-      "name": "前端开发",
-      "length": 7
-    },
-    {
-      "name": "客户端开发",
-      "length": 10
-    },
-  ]
-}
 </script>
 
 <style scoped>
@@ -299,7 +406,7 @@ const AllStudent = {
 }
 
 .chart-wrapper {
-  width: 100%;
+  width: 97%;
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   padding: 20px;
