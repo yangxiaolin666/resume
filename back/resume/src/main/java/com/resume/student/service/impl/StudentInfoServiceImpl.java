@@ -463,4 +463,20 @@ public class StudentInfoServiceImpl implements StudentInfoService {
         
         return detail;
     }
+
+
+
+
+    @Override
+    public StudentStatisticsVO getAllStudentStatistics() {
+        StudentStatisticsVO vo = new StudentStatisticsVO();
+
+        vo.setLanguages(studentInfoMapper.selectLanguageStats());
+        vo.setCities(studentInfoMapper.selectCityStats());
+        vo.setInternships(studentInfoMapper.selectInternshipStats());
+        vo.setSpecialities(studentInfoMapper.selectSpecialityStats());
+        vo.setJobs(studentInfoMapper.selectJobStats());
+
+        return vo;
+    }
 }

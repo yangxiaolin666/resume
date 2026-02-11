@@ -30,14 +30,14 @@ public class WebConfig implements WebMvcConfigurer {
         // 第一层：Token刷新拦截器（先执行，检查是否需要刷新）
         registry.addInterceptor(tokenRefreshInterceptor)
                 .addPathPatterns("/com/**", "/stu/**", "/admin/**")
-                .excludePathPatterns("/login", "/refresh-token")
+                .excludePathPatterns("/login", "/refresh-token","stu/statistics")
                 .excludePathPatterns("/swagger-ui.html", "/swagger-resources/**", "/v2/api-docs", "/webjars/**") // 如果有Swagger也排除
                 .order(1);
 
         // 第二层：认证拦截器（后执行，验证Token有效性）
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/com/**", "/stu/**", "/admin/**")
-                .excludePathPatterns("/login", "/refresh-token")
+                .excludePathPatterns("/login", "/refresh-token", "/stu/statistics")
                 .excludePathPatterns("/swagger-ui.html", "/swagger-resources/**", "/v2/api-docs", "/webjars/**")
                 .order(2);
 

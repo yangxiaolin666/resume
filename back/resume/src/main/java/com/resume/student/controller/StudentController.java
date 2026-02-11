@@ -23,7 +23,8 @@ public class StudentController {
     
     @Autowired
     private StudentInfoService studentInfoService;
-    
+    private StudentController StudentInfoMapper;
+
     /**
      * 完善学生信息
      * @param infoDTO 完善信息DTO
@@ -106,5 +107,11 @@ public class StudentController {
             e.printStackTrace();
             return Result.error(500, "服务器内部错误: " + (e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
         }
+    }
+
+
+    @GetMapping("/statistics")
+    public Result getAllStudentStatistics() {
+        return Result.success(studentInfoService.getAllStudentStatistics());  // ✅ 正确
     }
 }
