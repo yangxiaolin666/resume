@@ -61,13 +61,6 @@ onMounted(async () => {
         </el-tag>
       </div>
     </el-descriptions-item>
-    <el-descriptions-item label="意向工作省份" :width="300">
-      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-        <el-tag type="success" size="small">
-          {{ student.region }}
-        </el-tag>
-      </div>
-    </el-descriptions-item>
     <el-descriptions-item label="证书名称" :width="300">
       <div style="display: flex; flex-wrap: wrap; gap: 5px;">
         <el-tag type="primary" v-for="item in student.certificates" :key="item" size="small">

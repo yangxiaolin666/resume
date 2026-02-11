@@ -55,7 +55,7 @@ onMounted(async () => {
         <h1 style="font-size: 60px; margin-bottom: 0px">
           {{ student.name }}
         </h1>
-        <h4>2024-2028</h4>
+        <h4>{{student.graduationYear-4}}-{{student.graduationYear}}</h4>
         <div class="s-line">
           <h4>学号:</h4>
           <span>{{ student.stuId }}</span>
@@ -88,47 +88,22 @@ onMounted(async () => {
           <h4>实习次数:</h4>
           <span>{{ student.internship }}</span>
         </div>
-        <div class="s-line" v-if="student.internshipCompany && student.internshipCompany.length>0">
+        <div class="s-line" v-if="student.internships.length>0">
           <div class="skill">
-            <h4>实习公司</h4>
+            <h4>实习经历</h4>
             <div class="tag-box">
-              <el-tag v-for="item in student.internshipCompany" :key="item" size="large" type="info" class="tag"> {{item}} </el-tag>
+              <el-tag v-for="item in student.internships" :key="item"
+               size="large" type="warning" class="tag"> 
+                {{item.company}}-{{ item.experience }} </el-tag>
             </div>
           </div>
-        </div>
-        <div class="s-line" v-if="student.cities && student.cities.length>0">
-          <div class="skill">
-            <h4>意向工作城市</h4>
-            <div class="tag-box">
-              <el-tag v-for="item in student.cities" :key="item" size="large" type="success" class="tag"> {{item}} </el-tag>
-            </div>
-          </div>
-        </div>
-        <div class="s-line" v-if="student.provinces && student.provinces.length>0">
-          <div class="skill">
-            <h4>意向工作省份</h4>
-            <div class="tag-box">
-              <el-tag v-for="item in student.provinces" :key="item" size="large" type="success" class="tag"> {{item}} </el-tag>
-            </div>
-          </div>
-        </div>
-        <div class="s-line" v-if="student.certNames && student.certNames.length>0">
-          <div class="skill">
-            <h4>证书名称</h4>
-            <div class="tag-box">
-              <el-tag v-for="item in student.certNames" :key="item" size="large" type="primary" class="tag"> {{item}} </el-tag>
-            </div>
-          </div>
-        </div>
-        <div class="s-line" v-if="student.certLevel">
-          <h4>证书等级:</h4>
-          <span>{{ student.certLevel }}</span>
         </div>
         <div class="s-line" v-if="allSpeciality.length>0">
           <div class="skill">
             <h4>技能水平</h4>
             <div class="tag-box">
-              <el-tag v-for="item in allSpeciality" :key="item" size="large" type="primary" class="tag"> {{item}} </el-tag>
+              <el-tag v-for="item in allSpeciality" :key="item"
+               size="large" type="primary" class="tag"> {{item}} </el-tag>
             </div>
           </div>
         </div>
@@ -136,20 +111,41 @@ onMounted(async () => {
           <div class="skill">
             <h4>语言水平</h4>
             <div class="tag-box">
-              <el-tag v-for="item in allLanguage" :key="item" size="large" type="warning" class="tag"> {{item}} </el-tag>
+              <el-tag v-for="item in allLanguage" :key="item" 
+              size="large" type="info" class="tag"> {{item}} </el-tag>
             </div>
           </div>
         </div>
-        <div class="s-line">
+        <div class="s-line" v-if="student.certificates.length>0">
           <div class="skill">
-            <h4>个人简介</h4>
-            <span style="font-size: 15px">
-              性格开朗、执行力强，热衷技术钻研，具备扎实的后端基础与项目实战
-              经验。在校担任工作室负责人，负责管理工作室团队的算法培训以及算
-              法招新，具备良好的沟通与团队协作能力，能够快速适应团队与业务，
-              独立承担模块设计与开发任务，有良好的合作能力以及公司开发任务的
-              上手迅速
-            </span>
+            <h4>获奖证书</h4>
+            <div class="tag-box">
+              <el-tag v-for="item in student.certificates"
+               :key="item" size="large" type="success" class="tag"> 
+                {{item.certName}}-{{item.level}} 
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line" v-if="student.region.city">
+          <div class="skill">
+            <h4>意向工作城市</h4>
+            <div class="tag-box">
+              <el-tag size="large" type="danger" class="tag"> 
+                {{student.region.city}}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line" v-if="student.jobs.length>0">
+          <div class="skill">
+            <h4>意向工作类别</h4>
+            <div class="tag-box">
+              <el-tag v-for="item in student.jobs" :key="item" 
+              size="large" type="warning" class="tag"> 
+                {{item.post}}
+              </el-tag>
+            </div>
           </div>
         </div>
       </div>
@@ -185,7 +181,7 @@ body{
     display: flex;
     justify-content: space-between;
     width: 65%;
-    padding: 20px;
+    padding: 15px;
     border-bottom: 2px solid var(--el-border-color);
   }
 }
@@ -198,13 +194,13 @@ h4 {
   font-size: 20px;
 
   h4 {
-    margin: 10px 0;
+    margin: 5px 0;
   }
 
   .tag-box {
     display: flex;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 5px;
     flex-wrap: wrap;
   }
 }
