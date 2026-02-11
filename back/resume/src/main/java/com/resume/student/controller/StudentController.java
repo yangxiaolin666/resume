@@ -112,6 +112,6 @@ public class StudentController {
 
     @GetMapping("/statistics")
     public Result getAllStudentStatistics() {
-        return Result.success(studentInfoService.getAllStudentStatistics());  // ✅ 正确
+        return Result.success(studentInfoService.getAllStudentStatistics());
     }
 }

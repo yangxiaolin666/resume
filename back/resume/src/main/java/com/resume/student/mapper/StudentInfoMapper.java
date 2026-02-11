@@ -186,14 +186,14 @@ public interface StudentInfoMapper {
 
 
     // 语言统计
-    @Select("SELECT COUNT(*) as value, language, level " +  // value 放第一个
+    @Select("SELECT COUNT(*) as value, language, level " +
             "FROM stu_language " +
             "GROUP BY language, level " +
             "ORDER BY value DESC")
     List<StudentStatisticsVO.LanguageStat> selectLanguageStats();
 
     // 城市统计
-    @Select("SELECT COUNT(*) as value, city as name " +  // value 放第一个
+    @Select("SELECT COUNT(*) as value, city as name " +
             "FROM stu_region " +
             "WHERE city IS NOT NULL " +
             "GROUP BY city " +
@@ -201,21 +201,21 @@ public interface StudentInfoMapper {
     List<StudentStatisticsVO.CityStat> selectCityStats();
 
     // 实习统计
-    @Select("SELECT COUNT(*) as value, company, experience " +  // value 放第一个
+    @Select("SELECT COUNT(*) as value, company, experience " +
             "FROM stu_internship " +
             "GROUP BY company, experience " +
             "ORDER BY value DESC")
     List<StudentStatisticsVO.InternshipStat> selectInternshipStats();
 
     // 技能统计
-    @Select("SELECT COUNT(*) as value, speciality as name " +  // value 放第一个
+    @Select("SELECT COUNT(*) as value, speciality as name " +
             "FROM stu_speciality " +
             "GROUP BY speciality " +
             "ORDER BY value DESC")
     List<StudentStatisticsVO.SpecialityStat> selectSpecialityStats();
 
     // 职位统计
-    @Select("SELECT COUNT(*) as value, post as name " +  // value 放第一个
+    @Select("SELECT COUNT(*) as value, post as name " +
             "FROM stu_job " +
             "GROUP BY post " +
             "ORDER BY value DESC")
