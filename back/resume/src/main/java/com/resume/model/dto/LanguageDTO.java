@@ -5,6 +5,7 @@ import java.util.Date;
 
 @Data
 public class LanguageDTO {
+    private Integer stuId;
     private String language;
     private String level;
     private String certNo;

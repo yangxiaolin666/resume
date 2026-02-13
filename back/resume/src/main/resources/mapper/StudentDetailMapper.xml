@@ -23,37 +23,70 @@
         <association property="resume" javaType="com.resume.model.dto.ResumeDTO">
             <result property="resume" column="resume_url"/>
         </association>
-        
-        <!-- 集合映射 -->
-        <collection property="languages" ofType="com.resume.model.dto.LanguageDTO">
-            <result property="language" column="language"/>
-            <result property="level" column="language_level"/>
-            <result property="certNo" column="language_cert_no"/>
-            <result property="issueDate" column="language_issue_date"/>
-        </collection>
-        
-        <collection property="certificates" ofType="com.resume.model.dto.CertificateDTO">
-            <result property="certName" column="cert_name"/>
-            <result property="level" column="certificate_level"/>
-            <result property="certNo" column="certificate_cert_no"/>
-            <result property="issueDate" column="certificate_issue_date"/>
-        </collection>
-        
-        <collection property="internships" ofType="com.resume.model.dto.InternshipDTO">
-            <result property="company" column="company"/>
-            <result property="experience" column="experience"/>
-        </collection>
-        
-        <collection property="jobs" ofType="com.resume.model.dto.JobDTO">
-            <result property="post" column="post"/>
-        </collection>
-        
-        <collection property="specialities" ofType="com.resume.model.dto.SpecialityDTO">
-            <result property="speciality" column="speciality"/>
-        </collection>
     </resultMap>
     
-    <select id="selectStudentDetailsByCondition" resultMap="StudentDetailMap">
+    <!-- 用于查询学生基本信息的映射 -->
+    <resultMap id="StudentBasicInfoMap" type="com.resume.model.dto.StudentDetailDTO">
+        <id property="id" column="id"/>
+        <result property="stuId" column="stu_id"/>
+        <result property="name" column="name"/>
+        <result property="age" column="age"/>
+        <result property="gender" column="gender"/>
+        <result property="nation" column="nation"/>
+        <result property="major" column="major"/>
+        <result property="degree" column="degree"/>
+        <result property="graduationYear" column="graduation_year"/>
+        <result property="internship" column="internship"/>
+        
+        <!-- 关联映射 -->
+        <association property="region" javaType="com.resume.model.dto.RegionDTO">
+            <result property="province" column="province"/>
+            <result property="city" column="city"/>
+        </association>
+        
+        <association property="resume" javaType="com.resume.model.dto.ResumeDTO">
+            <result property="resume" column="resume_url"/>
+        </association>
+    </resultMap>
+    
+    <!-- 语言信息映射 -->
+    <resultMap id="LanguageDTOMap" type="com.resume.model.dto.LanguageDTO">
+        <result property="stuId" column="stu_id"/>
+        <result property="language" column="language"/>
+        <result property="level" column="language_level"/>
+        <result property="certNo" column="language_cert_no"/>
+        <result property="issueDate" column="language_issue_date"/>
+    </resultMap>
+    
+    <!-- 证书信息映射 -->
+    <resultMap id="CertificateDTOMap" type="com.resume.model.dto.CertificateDTO">
+        <result property="stuId" column="stu_id"/>
+        <result property="certName" column="cert_name"/>
+        <result property="level" column="certificate_level"/>
+        <result property="certNo" column="certificate_cert_no"/>
+        <result property="issueDate" column="certificate_issue_date"/>
+    </resultMap>
+    
+    <!-- 实习信息映射 -->
+    <resultMap id="InternshipDTOMap" type="com.resume.model.dto.InternshipDTO">
+        <result property="stuId" column="stu_id"/>
+        <result property="company" column="company"/>
+        <result property="experience" column="experience"/>
+    </resultMap>
+    
+    <!-- 求职信息映射 -->
+    <resultMap id="JobDTOMap" type="com.resume.model.dto.JobDTO">
+        <result property="stuId" column="stu_id"/>
+        <result property="post" column="post"/>
+    </resultMap>
+    
+    <!-- 专业技能信息映射 -->
+    <resultMap id="SpecialityDTOMap" type="com.resume.model.dto.SpecialityDTO">
+        <result property="stuId" column="stu_id"/>
+        <result property="speciality" column="speciality"/>
+    </resultMap>
+    
+    <select id="selectStudentDetailsByCondition" resultMap="StudentBasicInfoMap">
         SELECT 
         s.id,
         s.stu_id,
@@ -67,27 +100,14 @@
         s.internship,
         sr.province AS province,
         sr.city AS city,
-        slr.language AS language,
-        slr.level AS language_level,
-        slr.cert_no AS language_cert_no,
-        slr.issue_date AS language_issue_date,
-        sc.cert_name AS cert_name,
-        sc.level AS certificate_level,
-        sc.cert_no AS certificate_cert_no,
-        sc.issue_date AS certificate_issue_date,
-        si.company AS company,
-        si.experience AS experience,
-        sj.post AS post,
-        ss.speciality AS speciality,
         srsm.resume AS resume_url
         FROM student s
         LEFT JOIN stu_region sr ON s.id = sr.stu_id
-        LEFT JOIN stu_language slr ON s.id = slr.stu_id
-        LEFT JOIN stu_certificate sc ON s.id = sc.stu_id
-        LEFT JOIN stu_internship si ON s.id = si.stu_id
-        LEFT JOIN stu_job sj ON s.id = sj.stu_id
-        LEFT JOIN stu_speciality ss ON s.id = ss.stu_id
-        LEFT JOIN stu_resume srsm ON s.id = srsm.stu_id
+        LEFT JOIN (
+            SELECT stu_id, resume, 
+                   ROW_NUMBER() OVER (PARTITION BY stu_id ORDER BY id DESC) as rn
+            FROM stu_resume
+        ) srsm ON s.id = srsm.stu_id AND srsm.rn = 1
         <where>
             <if test="query.id != null">
                 AND s.id = #{query.id}
@@ -131,34 +151,79 @@
                     #{province}
                 </foreach>
             </if>
-            <if test="query.languages != null and query.languages.size() > 0">
-                AND slr.language IN
-                <foreach collection="query.languages" item="language" open="(" separator="," close=")">
-                    #{language}
-                </foreach>
-            </if>
-            <if test="query.languageLevel != null and query.languageLevel != ''">
-                AND slr.level LIKE CONCAT('%', #{query.languageLevel}, '%')
-            </if>
-            <if test="query.certNames != null and query.certNames.size() > 0">
-                AND sc.cert_name IN
-                <foreach collection="query.certNames" item="certName" open="(" separator="," close=")">
-                    #{certName}
-                </foreach>
-            </if>
-            <if test="query.certLevel != null and query.certLevel != ''">
-                AND sc.level LIKE CONCAT('%', #{query.certLevel}, '%')
-            </if>
-            <if test="query.internshipCompany != null and query.internshipCompany != ''">
-                AND si.company LIKE CONCAT('%', #{query.internshipCompany}, '%')
-            </if>
-            <if test="query.specialities != null and query.specialities.size() > 0">
-                AND ss.speciality IN
-                <foreach collection="query.specialities" item="speciality" open="(" separator="," close=")">
-                    #{speciality}
-                </foreach>
-            </if>
         </where>
         ORDER BY s.id
+    </select>
+    
+    <!-- 专门用于获取语言信息的查询 -->
+    <select id="selectLanguagesByStudentIds" resultMap="LanguageDTOMap">
+        SELECT 
+            slr.stu_id,
+            slr.language,
+            slr.level as language_level,
+            slr.cert_no as language_cert_no,
+            slr.issue_date as language_issue_date
+        FROM stu_language slr
+        WHERE slr.stu_id IN
+        <foreach collection="studentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY slr.stu_id, slr.id
+    </select>
+    
+    <!-- 专门用于获取证书信息的查询 -->
+    <select id="selectCertificatesByStudentIds" resultMap="CertificateDTOMap">
+        SELECT 
+            sc.stu_id,
+            sc.cert_name as cert_name,
+            sc.level as certificate_level,
+            sc.cert_no as certificate_cert_no,
+            sc.issue_date as certificate_issue_date
+        FROM stu_certificate sc
+        WHERE sc.stu_id IN
+        <foreach collection="studentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY sc.stu_id, sc.id
+    </select>
+    
+    <!-- 专门用于获取实习信息的查询 -->
+    <select id="selectInternshipsByStudentIds" resultMap="InternshipDTOMap">
+        SELECT 
+            si.stu_id,
+            si.company,
+            si.experience
+        FROM stu_internship si
+        WHERE si.stu_id IN
+        <foreach collection="studentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY si.stu_id, si.id
+    </select>
+    
+    <!-- 专门用于获取求职信息的查询 -->
+    <select id="selectJobsByStudentIds" resultMap="JobDTOMap">
+        SELECT 
+            sj.stu_id,
+            sj.post
+        FROM stu_job sj
+        WHERE sj.stu_id IN
+        <foreach collection="studentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY sj.stu_id, sj.id
+    </select>
+    
+    <!-- 专门用于获取专业技能信息的查询 -->
+    <select id="selectSpecialitiesByStudentIds" resultMap="SpecialityDTOMap">
+        SELECT 
+            ss.stu_id,
+            ss.speciality
+        FROM stu_speciality ss
+        WHERE ss.stu_id IN
+        <foreach collection="studentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY ss.stu_id, ss.id
     </select>
 </mapper>
