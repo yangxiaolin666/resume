@@ -1,3 +1,4 @@
+import { getAllStudent } from '@/api/student'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 
@@ -108,7 +109,14 @@ const initialStudents = [
 export const useStudentsStore = defineStore(
   'students',
   () => {
-    const students = ref(initialStudents)
+    const students = ref()
+    const fn=async ()=>{
+      const res=await getAllStudent()
+      const {data:{data:{list}}}=res
+      console.log(list)
+      students.value=list
+    }
+    fn()
     return {
       students
     }
