@@ -19,7 +19,7 @@ onMounted(async () => {
   } = await getStudentById(studentId)
   console.log(list[0])
   student.value = list[0]
-  pdfURL.value="http://81.70.199.174:8081"+list[0].resume.resume
+  pdfURL.value="http://81.70.199.174:8081"+list[0].resume?.resume
   console.log(pdfURL.value)
   allLanguage.value = list[0].languages.map(item => item.language+item.level)
   allSpeciality.value = list[0].specialities.map(item => item.speciality)
@@ -127,7 +127,7 @@ onMounted(async () => {
             </div>
           </div>
         </div>
-        <div class="s-line" v-if="student.region.city">
+        <div class="s-line" v-if="student.region?.city">
           <div class="skill">
             <h4>意向工作城市</h4>
             <div class="tag-box">
@@ -151,12 +151,15 @@ onMounted(async () => {
       </div>
     </el-splitter-panel>
     <el-splitter-panel>
-      <div class="pdf-viewer">
+      <div class="pdf-viewer" v-if="student.resume">
         <embed 
           :src="pdfURL"
           type="application/pdf" 
           width="100%" 
           height="1250" />
+      </div>
+      <div style="padding:100px" v-else>
+        <el-empty image-size="250" description="暂无简历信息" />
       </div>
     </el-splitter-panel>
   </el-splitter>

@@ -1,8 +1,9 @@
 <script setup>
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import { ref } from 'vue'
-
+import { onMounted, ref } from 'vue'
+import { addLike, deleteLike, queryLike } from '@/api/student';
+import { useUserStore } from '@/stores/user';
 const router = useRouter()
 const { item } = defineProps({
   item: {
@@ -10,21 +11,53 @@ const { item } = defineProps({
     required: true
   }
 })
-const isLike = ref(!item.isLike || true)
-const allLanguage = ref(item.languages.map(item => item.language+item.level))
-const allSpeciality = ref(item.specialities.map(item => item.speciality))
-const toggleLike = () => {
-  isLike.value = !isLike.value
+const isLike = ref(false)
+const userStore=useUserStore()
+const comId=5
+const stuId=item.id
+const IdList=[
+  {
+    "comId": comId,
+    "stuId": stuId,
+  }
+]
+const pageNum=1
+const pageSize=10
+onMounted(async ()=>{
+  const {data:{data:{list}}}=await queryLike({
+    "com_id":5,
+    "pageNum":pageNum,
+    "pageSize":pageSize
+  })
+  for(let i=0;i<list.length;i++){
+    if(list[i].stuId===stuId){
+      isLike.value=true
+    }
+  }
+})
+const toggleLike = async () => {
   if (isLike.value) {
+    const res=await deleteLike(IdList)
     ElMessage({
-      message: '已取消收藏',
-      type: 'info'
+      message:'取消收藏成功',
+      type:'success',
+      duration:500
     })
+    console.log(res)
   } else {
+    const res=await addLike(IdList)
     ElMessage({
-      message: '收藏成功',
-      type: 'success'
+      message:'收藏成功',
+      type:'success',
+      duration:500
     })
+    console.log(res)
+  }
+  isLike.value = !isLike.value
+  if(item.isRefresh){
+    setTimeout(()=>{
+      router.go(0)
+    },600)
   }
 }
 </script>
@@ -48,16 +81,17 @@ const toggleLike = () => {
       <span>学位</span>
       <span>{{ item.degree }}</span>
     </div>
-    <div class="skill">
+    <div class="skill" >
       <h4>技能水平</h4>
-      <div class="tag-box">
-        <el-tag v-for="(speciality, index) in allSpeciality" :key="index" size="small" type="primary" class="tag">
-          {{ speciality }}
+      <div class="tag-box" v-if="item.languages?.length||item.specialities?.length">
+        <el-tag v-for="(item, index) in item.specialities" :key="index" size="small" type="primary" class="tag">
+          {{ item.speciality }}
         </el-tag>
-        <el-tag v-for="(language, index) in allLanguage" :key="index" size="small" type="warning" class="tag">
-          {{ language }}
+        <el-tag v-for="(item, index) in item.languages" :key="index" size="small" type="warning" class="tag">
+          {{ item.language }} {{ item.level }}
         </el-tag>
       </div>
+      <span v-else>暂无标签</span>
     </div>
     <template #footer>
       <div style="display: flex; justify-content: space-between">
@@ -71,7 +105,7 @@ const toggleLike = () => {
           ">
           查看简历
         </el-button>
-        <el-button type="success" v-if="isLike" @click="toggleLike" >
+        <el-button type="success" v-if="!isLike" @click="toggleLike" >
           收藏简历
         </el-button>
         <el-button type="info" v-else @click="toggleLike">
@@ -92,8 +126,10 @@ const toggleLike = () => {
 }
 
 .box-card {
-  min-height: 420px;
-  min-width:300px;
+  min-height: 380px;
+  max-height: 380px;
+  min-width:280px;
+  max-width: 280px;
 }
 
 .text {

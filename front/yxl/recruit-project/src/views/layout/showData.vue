@@ -4,18 +4,19 @@
       <div class="chart-wrapper" style="width:48%">
         <v-chart class="chart" :option="radarOption" />
       </div>
+      
       <div class="chart-wrapper" style="width:48%">
-        <v-chart class="chart" :option="pieOptionJobs" />
+        <v-chart class="chart" :option="pieOptionSpecialities" />
       </div>
     </div>
     <div class="chart-wrapper">
       <v-chart class="chart" :option="barOption" />
     </div>
     <div class="chart-wrapper">
-      <v-chart class="chart" :option="pieOptionSpecialities" />
-    </div>
+        <v-chart class="chart" :option="pieOptionJobs" />
+      </div>
     <div class="chart-wrapper">
-      <v-chart class="chart" :option="areaOption" />
+      <v-chart class="chart" :option="gradientAreaOption" />
     </div>
   </div>
 </template>
@@ -31,7 +32,9 @@ import {
   GridComponent
 } from "echarts/components";
 import VChart, { THEME_KEY } from "vue-echarts";
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, onMounted, computed } from "vue";
+import * as echarts from "echarts";
+import { getStatics } from "@/api/student";
 
 use([
   CanvasRenderer,
@@ -54,7 +57,7 @@ export default defineComponent({
     [THEME_KEY]: "light"
   },
   setup: () => {
-    const a = {
+    const a = ref({
       "languages": [
         {
           "value": 130,
@@ -170,29 +173,35 @@ export default defineComponent({
           "name": "大模型算法"
         },
       ]
-    }
-    const radarOption = ref({
+    })
+    onMounted( async ()=>{
+      const {data:{data}}=await getStatics()
+      console.log(data)
+      a.value=data
+      console.log(a.value);
+    })
+    const radarOption = computed(()=>({
       title: {
         text: "应届生技能水平雷达图",
         left: "center"
       },
       tooltip: {},
       radar: {
-        indicator: a.specialities.map(item=>({
-          name:item.name,
-          value:item.value
+        indicator: a.value.specialities.slice(0,10).map(item => ({
+          name: item.name,
+          value: item.value
         }))
       },
       series: [{
         type: "radar",
         data: [{
-          value: a.specialities.map(item => item.value),
+          value: a.value.specialities.slice(0,10).map(item => item.value),
           name: "技能水平",
           areaStyle: {}
         }]
       }]
-    });
-    const pieOptionSpecialities = ref({
+    }));
+    const pieOptionSpecialities = computed(()=>({
       title: {
         text: "应届生实习经历",
         left: "center"
@@ -204,7 +213,7 @@ export default defineComponent({
       legend: {
         orient: "vertical",
         left: "left",
-        data: a.internships.map(item => item.company)
+        data: a.value.internships.slice(0,10).map(item => item.company)
       },
       series: [
         {
@@ -212,7 +221,7 @@ export default defineComponent({
           type: "pie",
           radius: "55%",
           center: ["50%", "60%"],
-          data: a.internships.map(item => ({
+          data: a.value.internships.slice(0,10).map(item => ({
             value: item.value,
             name: item.company
           })),
@@ -225,8 +234,8 @@ export default defineComponent({
           }
         }
       ]
-    });
-    const pieOptionJobs = ref({
+    }));
+    const pieOptionJobs = computed(()=>({
       title: {
         text: "应届生意向工作分布",
         left: "center"
@@ -238,7 +247,7 @@ export default defineComponent({
       legend: {
         orient: "vertical",
         left: "left",
-        data: a.jobs.map(item => item.name)
+        data: a.value.jobs.slice(0,10).map(item => item.name)
       },
       series: [
         {
@@ -246,7 +255,7 @@ export default defineComponent({
           type: "pie",
           radius: "55%",
           center: ["50%", "60%"],
-          data: a.jobs.map(item => ({
+          data: a.value.jobs.slice(0,10).map(item => ({
             value: item.value,
             name: item.name
           })),
@@ -259,8 +268,8 @@ export default defineComponent({
           }
         }
       ]
-    });
-    const barOption = ref({
+    }));
+    const barOption = computed(()=>({
       title: {
         text: "应届生意向就业城市",
         left: "center"
@@ -283,7 +292,7 @@ export default defineComponent({
       },
       xAxis: {
         type: "category",
-        data: a.cities.map(item => item.name)
+        data: a.value.cities.slice(0,10).map(item => item.name)
       },
       yAxis: {
         type: "value"
@@ -292,16 +301,16 @@ export default defineComponent({
         {
           name: "意向人数",
           type: "bar",
-          data: a.cities.map(item => item.value),
+          data: a.value.cities.slice(0,10).map(item => item.value),
           itemStyle: {
             color: "#5470c6"
           }
         }
       ]
-    });
-    const areaOption = ref({
+    }));
+    const gradientAreaOption = computed(()=>({
       title: {
-        text: "网站访问趋势",
+        text: "阶段技能发展趋势",
         left: "center"
       },
       tooltip: {
@@ -314,7 +323,7 @@ export default defineComponent({
         }
       },
       legend: {
-        data: ["邮件营销", "联盟广告", "视频广告", "直接访问", "搜索引擎"],
+        data: a.value.specialities.slice(0,10).map(item => item.name),
         top: "10%"
       },
       grid: {
@@ -327,7 +336,7 @@ export default defineComponent({
         {
           type: "category",
           boundaryGap: false,
-          data: ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
+          data: ["大一", "大二", "大三", "大四", "研一", "研二"]
         }
       ],
       yAxis: [
@@ -335,64 +344,37 @@ export default defineComponent({
           type: "value"
         }
       ],
-      series: [
-        {
-          name: "邮件营销",
-          type: "line",
-          stack: "总量",
-          areaStyle: {},
-          emphasis: {
-            focus: "series"
-          },
-          data: [120, 132, 101, 134, 90, 230, 210]
+      series: a.value.specialities.slice(0,10).map((item, index) => ({
+        name: item.name,
+        type: "line",
+        stack: "总量",
+        smooth: true,
+        lineStyle: {
+          width: 0
         },
-        {
-          name: "联盟广告",
-          type: "line",
-          stack: "总量",
-          areaStyle: {},
-          emphasis: {
-            focus: "series"
-          },
-          data: [220, 182, 191, 234, 290, 330, 310]
+        showSymbol: false,
+        areaStyle: {
+          opacity: 0.8,
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: `rgba(${128 + index * 30}, ${255 - index * 40}, ${165 + index * 20}, 0.8)` },
+            { offset: 1, color: `rgba(${1 + index * 40}, ${191 - index * 30}, ${236 + index * 10}, 0.4)` }
+          ])
         },
-        {
-          name: "视频广告",
-          type: "line",
-          stack: "总量",
-          areaStyle: {},
-          emphasis: {
-            focus: "series"
-          },
-          data: [150, 232, 201, 154, 190, 330, 410]
+        emphasis: {
+          focus: "series"
         },
-        {
-          name: "直接访问",
-          type: "line",
-          stack: "总量",
-          areaStyle: {},
-          emphasis: {
-            focus: "series"
-          },
-          data: [320, 332, 301, 334, 390, 330, 320]
-        },
-        {
-          name: "搜索引擎",
-          type: "line",
-          stack: "总量",
-          label: {
-            show: true,
-            position: "top"
-          },
-          areaStyle: {},
-          emphasis: {
-            focus: "series"
-          },
-          data: [820, 932, 901, 934, 1290, 1330, 1320]
-        }
-      ]
-    });
-    return { pieOptionSpecialities, pieOptionJobs, barOption, areaOption, radarOption };
+        data: [
+          Math.round(item.value * 0.1),
+          Math.round(item.value * 0.3),
+          Math.round(item.value * 0.6),
+          Math.round(item.value * 0.8),
+          Math.round(item.value * 0.9),
+          item.value
+        ]
+      }))
+    }));
+
+    return { pieOptionSpecialities, pieOptionJobs, barOption, radarOption, gradientAreaOption };
   }
 });
 </script>
@@ -410,7 +392,7 @@ export default defineComponent({
   border: 1px solid #e0e0e0;
   border-radius: 10px;
   padding: 20px;
-  background: #fff;
+  background: var(--el-bg-color);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 

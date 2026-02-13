@@ -55,13 +55,13 @@ const userStore = useUserStore()
         </el-icon>
         应届生数据
       </el-menu-item>
-      <el-menu-item index="/home" v-if="userStore.userType === 'company'">
+      <el-menu-item index="/home" v-if="(userStore.userType === 'company')">
         <el-icon>
           <Discount />
         </el-icon>
         应届生列表
       </el-menu-item>
-      <el-menu-item>
+      <el-menu-item :index="activeIndex" style="color:var(--el-text-color)">
         <el-popover placement="bottom-end">
           <template #reference>
             <div style="display: flex; align-items: center;">
