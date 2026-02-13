@@ -55,7 +55,7 @@ const userStore = useUserStore()
         </el-icon>
         应届生数据
       </el-menu-item>
-      <el-menu-item index="/home" v-if="userStore.userType === 'company'">
+      <el-menu-item index="/home" v-if="true||(userStore.userType === 'company')">
         <el-icon>
           <Discount />
         </el-icon>
