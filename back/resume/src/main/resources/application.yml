@@ -29,3 +29,4 @@ mybatis:
 file:
   upload:
     resume-path: uploads/resume/
+#    resume-path: ${user.dir}/uploads/resume/
