@@ -1,0 +1,13 @@
+:root {
+  --main-blue:#409EFF
+}
+
+body {
+  background-color: var(--el-bg-color-page, #f0f0f0);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+#app {
+  min-height: 100vh;
+}

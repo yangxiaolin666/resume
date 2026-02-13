@@ -3,6 +3,7 @@ package com.resume.student.service;
 import com.resume.model.dto.StudentCompleteInfoDTO;
 import com.resume.model.dto.StudentDetailDTO;
 import com.resume.model.dto.ResumeUploadVO;
+import com.resume.model.entity.StudentStatisticsVO;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -25,4 +26,7 @@ public interface StudentInfoService {
      * @return 简历上传结果
      */
     ResumeUploadVO uploadResume(Integer userId, MultipartFile file);
+
+
+    StudentStatisticsVO getAllStudentStatistics();
 }
