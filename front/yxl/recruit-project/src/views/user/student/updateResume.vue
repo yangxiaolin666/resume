@@ -4,6 +4,7 @@ import { onMounted, ref, computed, watch } from 'vue'
 import { ArrowRightBold, UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getStudentById, updateResume, completeInfo } from '@/api/student'
+import { getProvinces, getCitiesByProvince } from '@/api/area'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { genFileId } from 'element-plus'
@@ -100,8 +101,14 @@ const certLevelInput = ref('')
 const companyInput = ref('')
 const experienceInput = ref('')
 const skillNameInput = ref('')
-const skillLevelInput = ref('')
 const jobInput = ref('')
+
+// 意向城市相关数据
+const provinceOptions = ref([])
+const cityOptions = ref([])
+const selectedProvince = ref('')
+const selectedCity = ref('')
+const pdfURL = ref()
 onMounted(async () => {
   const {
     data: {
@@ -110,8 +117,16 @@ onMounted(async () => {
   } = await getStudentById(userId)
   all.value = list[0]
   console.log(all.value);
+  pdfURL.value = "http://81.70.199.174:8081" + all.value.resume.resume
+
   allSpeciality.value = all.value.specialities.map(item => item.speciality)
 
+  // 加载省份数据
+  const provincesRes = await getProvinces()
+  provinceOptions.value = provincesRes.data.result.map(province => ({
+    value: province.id,
+    label: province.name
+  }))
 })
 
 watch(allSpeciality, (newV) => {
@@ -283,6 +298,77 @@ const addJob = () => {
 const removeJob = (index) => {
   all.value.jobs.splice(index, 1)
 }
+
+// 处理省份选择变化
+const handleProvinceChange = async (provinceId) => {
+  selectedProvince.value = provinceId
+  selectedCity.value = ''
+
+  if (provinceId) {
+    const citiesRes = await getCitiesByProvince(provinceId)
+    cityOptions.value = citiesRes.data.result.map(city => ({
+      value: city.id,
+      label: city.name
+    }))
+  } else {
+    cityOptions.value = []
+  }
+}
+
+// 添加意向城市
+const addIntentionCity = () => {
+  if (!selectedProvince.value || !selectedCity.value) {
+    ElMessage({
+      message: '请选择省份和城市',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+
+  const selectedProvinceName = provinceOptions.value.find(p => p.value === selectedProvince.value)?.label
+  const selectedCityName = cityOptions.value.find(c => c.value === selectedCity.value)?.label
+
+  if (!all.value.provinces) {
+    all.value.provinces = []
+  }
+  if (!all.value.cities) {
+    all.value.cities = []
+  }
+
+  // 检查是否已存在相同的省份和城市组合
+  const existingIndex = all.value.provinces.findIndex((province, index) =>
+    province === selectedProvinceName && all.value.cities[index] === selectedCityName
+  )
+
+  if (existingIndex !== -1) {
+    ElMessage({
+      message: '该意向城市已存在',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+
+  all.value.provinces.push(selectedProvinceName)
+  all.value.cities.push(selectedCityName)
+
+  selectedProvince.value = ''
+  selectedCity.value = ''
+  cityOptions.value = []
+
+  ElMessage({
+    message: '意向城市添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+// 移除意向城市
+const removeIntentionCity = (index) => {
+  all.value.provinces.splice(index, 1)
+  all.value.cities.splice(index, 1)
+}
 const updateChange = async () => {
   if (Array.isArray(all.value.degree)) {
     all.value.degree = all.value.degree[0]
@@ -307,8 +393,8 @@ const updateChange = async () => {
     "graduationYear": all.value.graduationYear,
     "internship": all.value.internship,
     "languages": all.value.languages,
-    "cities": ['北京', '上海'],
-    "provinces": ['广东', '河南'],
+    "cities": all.value.cities || [],
+    "provinces": all.value.provinces || [],
     "certificates": all.value.certificates,
     "internships": all.value.internships,
     "specialities": all.value.specialities,
@@ -389,23 +475,7 @@ const updateChange = async () => {
             <div class="tag-box">
               <el-tag v-for="(skill, index) in all.specialities" :key="index" size="small" type="primary" effect="plain"
                 closable @close="removeSkill(index)" class="tag">
-                {{ skill }}
-              </el-tag>
-            </div>
-          </div>
-        </div>
-        <div class="s-line">
-          <div class="skill">
-            <h4>意向工作</h4>
-            <div style="display: flex; align-items: center; 
-            gap: 5px; margin-bottom: 5px;">
-              <el-input v-model="jobInput" placeholder="请输入意向工作(例:后端开发)" size="default" style="width: 305px;" />
-              <el-button type="success" size="small" @click="addJob">+</el-button>
-            </div>
-            <div class="tag-box">
-              <el-tag v-for="(job, index) in all.jobs" :key="index" size="small" type="danger" effect="plain" closable
-                @close="removeJob(index)" class="tag">
-                {{ job.post }}
+                {{ skill.speciality }}
               </el-tag>
             </div>
           </div>
@@ -446,6 +516,22 @@ const updateChange = async () => {
         </div>
         <div class="s-line">
           <div class="skill">
+            <h4>意向工作</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-input v-model="jobInput" placeholder="请输入意向工作(例:后端开发)" size="default" style="width: 305px;" />
+              <el-button type="success" size="small" @click="addJob">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(job, index) in all.jobs" :key="index" size="small" type="warning" effect="plain" closable
+                @close="removeJob(index)" class="tag">
+                {{ job.post }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
             <h4>实习经历</h4>
             <div style="display: flex; align-items: center; 
             gap: 5px; margin-bottom: 5px;">
@@ -464,9 +550,35 @@ const updateChange = async () => {
         </div>
         <div class="s-line">
           <div class="skill">
-            <span style="font-size: 15px">
+            <h4>意向城市</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-select v-model="selectedProvince" placeholder="请选择省份" size="default" style="width: 150px;"
+                @change="handleProvinceChange" clearable>
+                <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label"
+                  :value="province.value">
+                </el-option>
+              </el-select>
+              <el-select v-model="selectedCity" placeholder="请选择城市" size="default" style="width: 150px;"
+                :disabled="!selectedProvince" clearable>
+                <el-option v-for="city in cityOptions" :key="city.value" :label="city.label" :value="city.value">
+                </el-option>
+              </el-select>
+              <el-button type="success" size="small" @click="addIntentionCity">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(province, index) in all.provinces" :key="index" size="small" type="primary" effect="plain"
+                closable @close="removeIntentionCity(index)" class="tag">
+                {{ province }}-{{ all.cities[index] }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <span style="font-size: 15px;">
               <el-button @click="updateChange" type="success" size="large"
-                style="width:320px;margin-top: 30px;">提交修改</el-button>
+                style="width:350px;margin-top: 30px;">提交修改</el-button>
             </span>
           </div>
         </div>
@@ -488,6 +600,7 @@ const updateChange = async () => {
           <div class="el-upload__tip" style="margin-right: 100px;">
             <p>可提交格式:PDF、DOC、DOCX</p>
             <p>限制提交一个文件,新文件将覆盖旧文件</p>
+            <el-link v-if="all.resume?.resume" :href="pdfURL" type="primary">点击查看上一次提交的简历</el-link>
           </div>
         </template>
       </el-upload>

@@ -10,9 +10,13 @@ export const getStudentDetailById = (id) => {
     id
   })
 }
-export const getAllStudent=()=>{
-  return request.post('/com/detailSearch', {
-  })
+export const getAllStudent=(data)=>{
+  return request.post('/com/detailSearch',
+    data
+  )
+}
+export const getStatics=()=>{
+  return request.get('/stu/statistics',{})
 }
 const completeObj={
   "age": 40,
@@ -71,3 +75,17 @@ export const updateResume=((resumeFile)=>{
 export const getResume=(()=>{
   return request.get('/uploads/resume')
 })
+export const addLike=(list)=>{
+  return request.post('/com/LikeAdd',
+    list
+  )
+}
+export const deleteLike=(list)=>{
+  return request.delete('/com/LikeDelete',{
+      data:list
+    }
+  )
+}
+export const queryLike=(data)=>{
+  return request.post('/com/LikeQuery',data)
+}

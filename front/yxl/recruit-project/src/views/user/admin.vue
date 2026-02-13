@@ -14,7 +14,6 @@ const handleExceed = (files) => {
 }
 const submitUpload = () => {
   console.log(upload.value);
-  
 }
 </script>
 

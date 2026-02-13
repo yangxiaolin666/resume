@@ -1,15 +1,41 @@
 <script setup>
-  import {
-    Search,
-  } from '@element-plus/icons-vue'
-  import { useStudentsStore } from '@/stores/students'
-  import studentCard from '@/components/studentCard.vue'
-  const StudentsStore = useStudentsStore()
-  const students = StudentsStore.students
+import {
+  Search,
+} from '@element-plus/icons-vue'
+import studentCard from '@/components/studentCard.vue'
+const students = ref()
+import { onMounted, ref } from 'vue'
+import { getAllStudent } from '@/api/student'
+const currentPage = ref(1)
+const pageSize = ref(1000)
+const total=ref(10)
+onMounted(async ()=>{
+  const res=await getAllStudent({
+    "pageNum":currentPage.value,
+    "pageSize":pageSize.value
+  })
+  const {data:{data}}=res
+  console.log(data)
+  total.value=data.size
+  students.value=data.list
+})
+const handleSizeChange = (val) => {
+  console.log(`${val} items per page`)
+}
+const handleCurrentChange =async (val) => {
+  console.log(`current page: ${val}`)
+  const res=await getAllStudent({
+    "pageNum":currentPage.value,
+    "pageSize":pageSize.value
+  })
+  const {data:{data}}=res
+  console.log(data)
+  students.value=data.list
+}
 </script>
 
 <template>
-  <div class="home-container">
+  <div class="home-container" style="margin-bottom: 60px;">
     <main class="main-content">
       <aside class="filter-sidebar">
         <el-card class="filter-card">
@@ -47,12 +73,24 @@
       <div>
         <el-row>
           <el-col v-for="item in students" 
-          :key="item.id" :xs="24" :sm="12" :md="8" :lg="8">
+          :key="item.id" :xs="24" :sm="12" :md="8" :lg="6">
             <studentCard :item="item" />
           </el-col>
         </el-row>
       </div>
     </main>
+  </div>
+  <div class="demo-pb">
+    <el-pagination
+      v-model:current-page="currentPage"
+      v-model:page-size="pageSize"
+      size="large"
+      :background="true"
+      layout="prev, pager, next, jumper"
+      :total="total"
+      @size-change="handleSizeChange"
+      @current-change="handleCurrentChange"
+    />
   </div>
 </template>
 
@@ -60,7 +98,7 @@
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 8px 0px;
+  padding: 3px 0px;
   cursor: pointer;
 }
 
@@ -69,15 +107,15 @@
 }
 
 .menu-item span {
-  padding-left: 30px;
+  padding-left: 20px;
   font-size: 14px;
 }
 
 /* 主要内容样式 */
 .main-content {
   display: flex;
-  gap: 20px;
-  padding: 20px;
+  gap: 5px;
+  padding: 10px;
 }
 
 .filter-sidebar {
@@ -90,5 +128,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.demo-pb{
+  display: flex;
+  width:100%;
+  align-items: center;
+  justify-content: space-around;
+  position: fixed;
+  bottom:20px;
 }
 </style>

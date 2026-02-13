@@ -15,6 +15,8 @@ const loginTo = async () => {
   const {
     data: { data }
   } = await loginToR(username.value, password.value, userType.value)
+  console.log(data);
+  
   userStore.setAll(data.userId,data.username, data.userType, data.token)
   ElMessage({
     message: '登录成功',

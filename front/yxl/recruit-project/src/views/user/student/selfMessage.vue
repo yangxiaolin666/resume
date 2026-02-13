@@ -15,15 +15,11 @@ onMounted(async () => {
   } = await getStudentById(userStore.userId)
   console.log('学生信息:', list[0])
   student.value = list[0]
-
-  // 处理语言数据显示
   if (Array.isArray(list[0].languages)) {
     allLanguage.value = list[0].languages
   } else {
     allLanguage.value = []
   }
-
-  // 处理专业技能显示
   if (Array.isArray(list[0].specialities)) {
     allSpeciality.value = list[0].specialities
   } else {
@@ -54,14 +50,21 @@ onMounted(async () => {
     </el-descriptions-item>
     <el-descriptions-item label="实习次数" :width="120">{{ student.internship }}</el-descriptions-item>
     <el-descriptions-item label="民族" :width="120">{{ student.nation }}</el-descriptions-item>
-    <el-descriptions-item label="意向工作城市" :width="300">
+    <el-descriptions-item label="意向工作地点" :width="300">
       <div style="display: flex; flex-wrap: wrap; gap: 5px;">
         <el-tag type="success" size="small">
-          {{ student.region }}
+          {{ student.region?.province||student.region?.city }}
         </el-tag>
       </div>
     </el-descriptions-item>
-    <el-descriptions-item label="证书名称" :width="300">
+    <el-descriptions-item label="意向工作" :width="300">
+      <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+        <el-tag v-for="job in student.jobs" :key="job" type="success" size="small">
+          {{ job.post }}
+        </el-tag>
+      </div>
+    </el-descriptions-item>
+    <el-descriptions-item label="证书" :width="300">
       <div style="display: flex; flex-wrap: wrap; gap: 5px;">
         <el-tag type="primary" v-for="item in student.certificates" :key="item" size="small">
           {{ item.certName }}-{{ item.level }}

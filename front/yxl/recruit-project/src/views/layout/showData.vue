@@ -4,16 +4,17 @@
       <div class="chart-wrapper" style="width:48%">
         <v-chart class="chart" :option="radarOption" />
       </div>
+      
       <div class="chart-wrapper" style="width:48%">
-        <v-chart class="chart" :option="pieOptionJobs" />
+        <v-chart class="chart" :option="pieOptionSpecialities" />
       </div>
     </div>
     <div class="chart-wrapper">
       <v-chart class="chart" :option="barOption" />
     </div>
     <div class="chart-wrapper">
-      <v-chart class="chart" :option="pieOptionSpecialities" />
-    </div>
+        <v-chart class="chart" :option="pieOptionJobs" />
+      </div>
     <div class="chart-wrapper">
       <v-chart class="chart" :option="gradientAreaOption" />
     </div>
@@ -31,8 +32,9 @@ import {
   GridComponent
 } from "echarts/components";
 import VChart, { THEME_KEY } from "vue-echarts";
-import { ref, defineComponent } from "vue";
+import { ref, defineComponent, onMounted, computed } from "vue";
 import * as echarts from "echarts";
+import { getStatics } from "@/api/student";
 
 use([
   CanvasRenderer,
@@ -55,7 +57,7 @@ export default defineComponent({
     [THEME_KEY]: "light"
   },
   setup: () => {
-    const a = {
+    const a = ref({
       "languages": [
         {
           "value": 130,
@@ -171,15 +173,21 @@ export default defineComponent({
           "name": "大模型算法"
         },
       ]
-    }
-    const radarOption = ref({
+    })
+    onMounted( async ()=>{
+      const {data:{data}}=await getStatics()
+      console.log(data)
+      a.value=data
+      console.log(a.value);
+    })
+    const radarOption = computed(()=>({
       title: {
         text: "应届生技能水平雷达图",
         left: "center"
       },
       tooltip: {},
       radar: {
-        indicator: a.specialities.map(item => ({
+        indicator: a.value.specialities.slice(0,10).map(item => ({
           name: item.name,
           value: item.value
         }))
@@ -187,13 +195,13 @@ export default defineComponent({
       series: [{
         type: "radar",
         data: [{
-          value: a.specialities.map(item => item.value),
+          value: a.value.specialities.slice(0,10).map(item => item.value),
           name: "技能水平",
           areaStyle: {}
         }]
       }]
-    });
-    const pieOptionSpecialities = ref({
+    }));
+    const pieOptionSpecialities = computed(()=>({
       title: {
         text: "应届生实习经历",
         left: "center"
@@ -205,7 +213,7 @@ export default defineComponent({
       legend: {
         orient: "vertical",
         left: "left",
-        data: a.internships.map(item => item.company)
+        data: a.value.internships.slice(0,10).map(item => item.company)
       },
       series: [
         {
@@ -213,7 +221,7 @@ export default defineComponent({
           type: "pie",
           radius: "55%",
           center: ["50%", "60%"],
-          data: a.internships.map(item => ({
+          data: a.value.internships.slice(0,10).map(item => ({
             value: item.value,
             name: item.company
           })),
@@ -226,8 +234,8 @@ export default defineComponent({
           }
         }
       ]
-    });
-    const pieOptionJobs = ref({
+    }));
+    const pieOptionJobs = computed(()=>({
       title: {
         text: "应届生意向工作分布",
         left: "center"
@@ -239,7 +247,7 @@ export default defineComponent({
       legend: {
         orient: "vertical",
         left: "left",
-        data: a.jobs.map(item => item.name)
+        data: a.value.jobs.slice(0,10).map(item => item.name)
       },
       series: [
         {
@@ -247,7 +255,7 @@ export default defineComponent({
           type: "pie",
           radius: "55%",
           center: ["50%", "60%"],
-          data: a.jobs.map(item => ({
+          data: a.value.jobs.slice(0,10).map(item => ({
             value: item.value,
             name: item.name
           })),
@@ -260,8 +268,8 @@ export default defineComponent({
           }
         }
       ]
-    });
-    const barOption = ref({
+    }));
+    const barOption = computed(()=>({
       title: {
         text: "应届生意向就业城市",
         left: "center"
@@ -284,7 +292,7 @@ export default defineComponent({
       },
       xAxis: {
         type: "category",
-        data: a.cities.map(item => item.name)
+        data: a.value.cities.slice(0,10).map(item => item.name)
       },
       yAxis: {
         type: "value"
@@ -293,14 +301,14 @@ export default defineComponent({
         {
           name: "意向人数",
           type: "bar",
-          data: a.cities.map(item => item.value),
+          data: a.value.cities.slice(0,10).map(item => item.value),
           itemStyle: {
             color: "#5470c6"
           }
         }
       ]
-    });
-    const gradientAreaOption = ref({
+    }));
+    const gradientAreaOption = computed(()=>({
       title: {
         text: "阶段技能发展趋势",
         left: "center"
@@ -315,7 +323,7 @@ export default defineComponent({
         }
       },
       legend: {
-        data: a.specialities.map(item => item.name),
+        data: a.value.specialities.slice(0,10).map(item => item.name),
         top: "10%"
       },
       grid: {
@@ -336,7 +344,7 @@ export default defineComponent({
           type: "value"
         }
       ],
-      series: a.specialities.map((item, index) => ({
+      series: a.value.specialities.slice(0,10).map((item, index) => ({
         name: item.name,
         type: "line",
         stack: "总量",
@@ -364,7 +372,7 @@ export default defineComponent({
           item.value
         ]
       }))
-    });
+    }));
 
     return { pieOptionSpecialities, pieOptionJobs, barOption, radarOption, gradientAreaOption };
   }
