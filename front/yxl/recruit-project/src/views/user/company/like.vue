@@ -51,7 +51,7 @@ onMounted(async ()=>{
     </div>
   </div>
   <div style="padding:100px" v-else>
-    <el-empty image-size="250" description="暂无收藏简历" />
+    <el-empty :image-size="250" description="暂无收藏简历" />
   </div>
   <div class="demo-pb" v-if="total>0">
     <el-pagination

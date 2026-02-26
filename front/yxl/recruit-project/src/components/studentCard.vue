@@ -74,15 +74,16 @@ const toggleLike = async () => {
       <span>{{ item.gender }}</span>
     </div>
     <div class="text item">
-      <span>专业</span>
-      <span>{{ item.major }}</span>
-    </div>
-    <div class="text item">
       <span>学位</span>
       <span>{{ item.degree }}</span>
     </div>
+    <div class="text item">
+      <span>专业</span>
+      <span>{{ item.major }}</span>
+    </div>
+    
     <div class="skill" >
-      <h4>技能水平</h4>
+      <h4>能力标签</h4>
       <div class="tag-box" v-if="item.languages?.length||item.specialities?.length">
         <el-tag v-for="(item, index) in item.specialities" :key="index" size="small" type="primary" class="tag">
           {{ item.speciality }}
@@ -144,7 +145,7 @@ const toggleLike = async () => {
 }
 
 .box-card {
-  margin: 10px;
+  margin: 8px;
   border-radius: 20px;
 }
 

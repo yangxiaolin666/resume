@@ -37,7 +37,8 @@ const userStore = useUserStore()
 </script>
 
 <template>
-  <el-menu :default-active="activeIndex" :router="true" class="el-menu-demo" mode="horizontal" style="
+  <div style="width:100%; min-width:max-content;">
+    <el-menu :default-active="activeIndex" :router="true" class="el-menu-demo" mode="horizontal" style="
         display: flex;
         justify-content: space-between;
         height: 80px;
@@ -45,7 +46,7 @@ const userStore = useUserStore()
     <div style="display: flex; align-items: center">
       <IconSchool />
       <h1>
-        <p>学生招聘平台</p>
+        <p>招聘平台</p>
       </h1>
     </div>
     <div style="display: flex; align-items: center">
@@ -88,6 +89,8 @@ const userStore = useUserStore()
     </div>
   </el-menu>
   <router-view></router-view>
+</div>
+  
 </template>
 
 <style scoped>

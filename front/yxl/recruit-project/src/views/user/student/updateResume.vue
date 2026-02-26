@@ -475,7 +475,7 @@ const updateChange = async () => {
             <div class="tag-box">
               <el-tag v-for="(skill, index) in all.specialities" :key="index" size="small" type="primary" effect="plain"
                 closable @close="removeSkill(index)" class="tag">
-                {{ skill.speciality }}
+                {{ skill }}
               </el-tag>
             </div>
           </div>
