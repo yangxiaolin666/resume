@@ -189,7 +189,7 @@ const search = async () => {
           </div>
         </div>
       </div>
-      <el-empty style="padding-left:500px" v-else :image-size="250" description="暂无学生信息" />
+      <el-empty style="left:800px;top:170px;position: absolute;" v-else :image-size="250" description="暂无学生信息" />
     </main>
   </div>
   <div class="demo-pb">

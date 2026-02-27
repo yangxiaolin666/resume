@@ -1,5 +1,5 @@
 <script setup>
-import { getStudentById } from '@/api/student'
+import { addLike, deleteLike, getStudentById, queryLike } from '@/api/student'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowRightBold } from '@element-plus/icons-vue'
@@ -11,18 +11,67 @@ const student = ref('')
 const allLanguage = ref([])
 const allSpeciality = ref([])
 const pdfURL = ref()
+const pageNum=1
+const pageSize=10
+const comId=5
+const stuId=studentId
+const IdList=[
+  {
+    "comId": comId,
+    "stuId": stuId,
+  }
+]
+const isLike=ref(false)
+const toggleLike = async () => {
+  if (isLike.value) {
+    const res=await deleteLike(IdList)
+    ElMessage({
+      message:'取消收藏成功',
+      type:'success',
+      duration:500
+    })
+    console.log(res)
+  } else {
+    const res=await addLike(IdList)
+    ElMessage({
+      message:'收藏成功',
+      type:'success',
+      duration:500
+    })
+  }
+  isLike.value = !isLike.value
+  if(item.isRefresh){
+    setTimeout(()=>{
+      router.go(0)
+    },600)
+  }
+}
 onMounted(async () => {
+  const {data:{data:{list:list1}}}=await queryLike({
+    "com_id":5,
+    "pageNum":pageNum,
+    "pageSize":pageSize
+  })
+  console.log(list1);
+  console.log(stuId);
+  
+  for(let i=0;i<list1.length;i++){
+    if(Number(list1[i].stuId)===Number(stuId)){
+      isLike.value=true
+    }
+  }
   const {
     data: {
       data: { list }
     }
   } = await getStudentById(studentId)
-  console.log(list[0])
+  //console.log(list[0])
   student.value = list[0]
   pdfURL.value = "http://81.70.199.174:8081" + list[0].resume?.resume
-  console.log(pdfURL.value)
+  //console.log(pdfURL.value)
   allLanguage.value = list[0].languages.map(item => item.language + item.level)
   allSpeciality.value = list[0].specialities.map(item => item.speciality)
+
 })
 
 </script>
@@ -144,6 +193,14 @@ onMounted(async () => {
                 </el-tag>
               </div>
             </div>
+          </div>
+          <div class="s-line">
+            <el-button style="width:340px" type="success" v-if="!isLike" @click="toggleLike" >
+              收藏简历
+            </el-button>
+            <el-button style="width:340px" type="info" v-else @click="toggleLike">
+              已收藏
+            </el-button>
           </div>
         </div>
       </el-splitter-panel>

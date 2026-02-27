@@ -33,9 +33,9 @@ onMounted(async ()=>{
 
 </script>
 <template>
-  <div style="margin:10px 15px;padding-bottom: 60px;" v-if="total>0">
-    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-      <div v-for="item in students" :key="item.id" style="width: calc(20% - 8px);">
+  <div style="margin:10px 0px;padding-bottom: 60px;" v-if="total>0">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr);">
+      <div v-for="item in students" :key="item.id">
         <studentCard :item="{
           isRefresh:true,
           id:item.stuId,

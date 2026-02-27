@@ -15,7 +15,6 @@ watch(() => route.path, () => {
 })
 </script>
 <template>
-  <div style="width:100%; min-width:max-content;">
     <el-menu :router="true" :default-active="activeIndex" class="el-menu-demo" mode="horizontal" style="
       display: flex;
       justify-content: space-between;
@@ -51,6 +50,5 @@ watch(() => route.path, () => {
       </div>
     </el-menu>
     <router-view></router-view>
-  </div>
 </template>
 <style scoped lang="scss"></style>

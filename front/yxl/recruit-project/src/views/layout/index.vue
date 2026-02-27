@@ -9,6 +9,7 @@ import {
 } from '@element-plus/icons-vue'
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import ThemeSwitch from '@/components/ThemeSwitch.vue';
 const router = useRouter()
 const goToUser = () => {
   router.push(`/${userStore.userType}`)
@@ -49,6 +50,7 @@ const userStore = useUserStore()
         <p>招聘平台</p>
       </h1>
     </div>
+    
     <div style="display: flex; align-items: center">
       <el-menu-item index="/showData">
         <el-icon>
@@ -72,6 +74,9 @@ const userStore = useUserStore()
               <span>{{ userStore.userType }}</span>
             </div>
           </template>
+          <div class="menu-item">
+            <ThemeSwitch/>
+          </div>
           <div class="menu-item" @click="goToUser">
             <el-icon>
               <House />
@@ -84,6 +89,7 @@ const userStore = useUserStore()
             </el-icon>
             <span>退出登录</span>
           </div>
+          
         </el-popover>
       </el-menu-item>
     </div>
@@ -97,7 +103,7 @@ const userStore = useUserStore()
 .menu-item {
   display: flex;
   align-items: center;
-  padding: 8px 0px;
+  padding: 8px 8px;
   cursor: pointer;
 }
 
