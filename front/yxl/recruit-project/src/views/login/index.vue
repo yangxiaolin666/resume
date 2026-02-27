@@ -15,19 +15,14 @@ const loginTo = async () => {
   const {
     data: { data }
   } = await loginToR(username.value, password.value, userType.value)
-  console.log(data);
-  
+  console.log(data)
   userStore.setAll(data.userId,data.username, data.userType, data.token)
   ElMessage({
     message: '登录成功',
     type: 'success',
     duration: 1000
   })
-  console.log(data)
-  
   setTimeout(() => {
-    console.log('跳转');
-    
     router.push('/showData')
   }, 1100)
 }

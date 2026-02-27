@@ -33,9 +33,9 @@ onMounted(async ()=>{
 
 </script>
 <template>
-  <div style="margin:10px 15px;padding-bottom: 60px;" v-if="total>0">
-    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-      <div v-for="item in students" :key="item.id" style="width: calc(20% - 8px);">
+  <div style="margin:10px 0px;padding-bottom: 60px;" v-if="total>0">
+    <div style="display: grid; grid-template-columns: repeat(5, 1fr);">
+      <div v-for="item in students" :key="item.id">
         <studentCard :item="{
           isRefresh:true,
           id:item.stuId,
@@ -51,7 +51,7 @@ onMounted(async ()=>{
     </div>
   </div>
   <div style="padding:100px" v-else>
-    <el-empty image-size="250" description="暂无收藏简历" />
+    <el-empty :image-size="250" description="暂无收藏简历" />
   </div>
   <div class="demo-pb" v-if="total>0">
     <el-pagination
