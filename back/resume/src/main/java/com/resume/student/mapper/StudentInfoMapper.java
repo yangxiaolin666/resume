@@ -1,13 +1,6 @@
 package com.resume.student.mapper;
 
-import com.resume.model.entity.Student;
-import com.resume.model.entity.StuCertificate;
-import com.resume.model.entity.StuInternship;
-import com.resume.model.entity.StuJob;
-import com.resume.model.entity.StuLanguage;
-import com.resume.model.entity.StuRegion;
-import com.resume.model.entity.StuResume;
-import com.resume.model.entity.StuSpeciality;
+import com.resume.model.entity.*;
 import org.apache.ibatis.annotations.*;
 
 import java.util.List;
@@ -190,4 +183,50 @@ public interface StudentInfoMapper {
      */
     @Select("SELECT province, city FROM stu_region WHERE stu_id = #{stuId}")
     List<StuRegion> findRegionsByStudentId(@Param("stuId") Integer stuId);
+
+
+    // 语言统计
+    @Select("SELECT COUNT(*) as value, language, level " +
+            "FROM stu_language " +
+            "GROUP BY language, level " +
+            "ORDER BY value DESC " +
+            "LIMIT 10")
+    List<StudentStatisticsVO.LanguageStat> selectLanguageStats();
+
+    // 城市统计
+    @Select("SELECT COUNT(*) as value, city as name " +
+            "FROM stu_region " +
+            "WHERE city IS NOT NULL " +
+            "GROUP BY city " +
+            "ORDER BY value DESC " +
+            "LIMIT 10")
+    List<StudentStatisticsVO.CityStat> selectCityStats();
+
+    // 实习统计
+    @Select("SELECT COUNT(*) as value, company, experience " +
+            "FROM stu_internship " +
+            "GROUP BY company, experience " +
+            "ORDER BY value DESC " +
+            "LIMIT 10")
+    List<StudentStatisticsVO.InternshipStat> selectInternshipStats();
+
+    // 技能统计
+    @Select("SELECT COUNT(*) as value, speciality as name " +
+            "FROM stu_speciality " +
+            "GROUP BY speciality " +
+            "ORDER BY value DESC " +
+            "LIMIT 10")
+    List<StudentStatisticsVO.SpecialityStat> selectSpecialityStats();
+
+    // 职位统计
+    @Select("SELECT COUNT(*) as value, post as name " +
+            "FROM stu_job " +
+            "GROUP BY post " +
+            "ORDER BY value DESC " +
+            "LIMIT 10")
+    List<StudentStatisticsVO.JobStat> selectJobStats();
+
+
+
+
 }

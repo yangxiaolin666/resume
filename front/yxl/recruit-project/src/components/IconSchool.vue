@@ -10,7 +10,7 @@ export default {}
     viewBox="0 0 800.000000 800.000000"
     preserveAspectRatio="xMidYMid meet"
   >
-    <metadata>
+    <metadata v-pre>
       <rdf:RDF
         xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
         xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
@@ -147,7 +147,7 @@ export default {}
 svg {
   fill: none;
   stroke: var(--el-text-color-primary);
-  stroke-width: 100;
+  stroke-width: 80;
 }
 
 svg:hover {

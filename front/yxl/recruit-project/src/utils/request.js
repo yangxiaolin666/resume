@@ -36,10 +36,9 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   function (res) {
     closeLoading()
-    if (res.data.code === 200) {
+    if (res.data.code === 200||res.data.code === 201) {
       return res
     }
-
     ElMessage({
       message: res.data.message || '服务异常',
       type: 'error'
