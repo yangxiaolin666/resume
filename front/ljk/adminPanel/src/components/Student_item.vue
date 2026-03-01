@@ -24,22 +24,21 @@ const handleDetailsClick = () => {
 
 <template>
 <div class="student-item-header" v-if="props.isHeader === true">
-    <div class="item id"> <!-- 占位，保持与id对应 -->>
-        &nbsp;&nbsp;
+    <div class="header-item id"> <!-- 占位，保持与id对应 -->
     </div>
-    <div class="item stuId">
+    <div class="header-item stuId">
         学号
     </div>
-    <div class="item major">
+    <div class="header-item major">
         专业
     </div>
-    <div class="item name">
+    <div class="header-item name">
         姓名
     </div>
-    <div class="item gender">
+    <div class="header-item gender">
         性别
     </div>
-    <div class="item andSoOn">
+    <div class="header-item andSoOn">
         ...
     </div>
 </div>
@@ -62,7 +61,7 @@ const handleDetailsClick = () => {
     <div class="item andSoOn">
         ...
     </div>
-    <div class="details">
+    <div class="item details">
         <div class="details-btn clickable" @click="handleDetailsClick">
             详情
         </div>
@@ -72,41 +71,72 @@ const handleDetailsClick = () => {
 
 
 <style scoped>
-.student-item-container {
+.student-item-header {
     display: flex;
-    flex-direction: row;
-    align-items: center;
     justify-content: space-between;
-    width: 100%;
-    height: 50px;
-    border-bottom: 1px solid #e5e5e5;
-    box-sizing: border-box;
-    padding: 0 10px;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border-color-base);
+    border-bottom: none;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
-.student-item-container .item {
+.student-item-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color-base);
+    border-bottom: none;
+    transition: background-color 0.3s ease;
+}
+
+.student-item-container:last-child {
+    border-bottom: 1px solid var(--border-color-base);
+}
+
+.student-item-container:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.header-item,
+.item {
     flex: 1;
-    padding: 0 10px;
     text-align: center;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    padding: 0 5px;
+    font-size: 14px;
 }
 
-.student-item-container .details {
-    margin-left: auto;
-    padding-left: 20px;
+.header-item.id,
+.item.id {
+    width: 40px;
+    flex: none;
+    color: var(--text-secondary);
 }
 
-.student-item-container .details-btn {
-    padding: 6px 12px;
-    background-color: #409eff;
+.header-item.details,
+.item.details {
+    width: 80px;
+    flex: none;
+}
+
+.details-btn {
+    background-color: var(--primary-color);
     color: white;
-    border-radius: 4px;
-    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: var(--border-radius-sm);
+    font-size: 12px;
+    transition: background-color 0.3s ease;
 }
 
-.student-item-container .details-btn:hover {
-    background-color: #66b1ff;
+.details-btn:hover {
+    background-color: var(--primary-hover);
 }
 </style>
+

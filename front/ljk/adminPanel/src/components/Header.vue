@@ -1,6 +1,7 @@
 <script setup>
 
 import { ElMessageBox, ElMessage } from 'element-plus';
+import { Search } from '@element-plus/icons-vue';
 import MenuItem from './MenuItem.vue';
 import { computed, ref } from 'vue';
 const openConfirm = () => {
@@ -30,11 +31,21 @@ const props = defineProps({
 
 const curIndex = ref(props.defaultActive);
 
-const emit = defineEmits(['menu-change', 'logout']);
+const emit = defineEmits(['menu-change', 'logout', 'search']);
 
 const menuItemClick = (index) => {
   curIndex.value = index;
   emit('menu-change', index);
+};
+
+const searchQuery = ref('');
+
+const handleSearch = () => {
+  emit('search', searchQuery.value);
+};
+
+const handleClear = () => {
+  searchQuery.value = '';
 };
 
 </script>
@@ -52,6 +63,21 @@ const menuItemClick = (index) => {
             <MenuItem text="企业信息" icon="/company_icon.png" :index="2" :activeIndex="curIndex" @click="menuItemClick(2)"></MenuItem>
             <MenuItem text="统计数据" icon="/stats_icon.svg" :index="3" :activeIndex="curIndex" @click="menuItemClick(3)"></MenuItem>
             <MenuItem text="设置" icon="/setting_icon.svg" :index="4" :activeIndex="curIndex" @click="menuItemClick(4)"></MenuItem>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="search-container" v-if="curIndex === 1 || curIndex === 2">
+            <div class="search-box">
+                <el-input
+                    v-model="searchQuery"
+                    :placeholder="'搜索' + (curIndex === 1 ? '学生' : '企业')"
+                    :prefix-icon="Search"
+                    clearable
+                    @clear="handleClear"
+                    class="search-input" 
+                ></el-input>
+                <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
+            </div>
         </div>
 
         <div class="logout-container" @click="openConfirm">
@@ -127,5 +153,27 @@ img {
     align-items: center;
     margin-left: 32px;
     height: 100%;
+}
+
+.search-container {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-right: 100px;
+}
+
+.search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.search-input {
+    width: 200px;
+}
+
+.search-btn {
+    min-width: 60px;
 }
 </style>

@@ -8,6 +8,8 @@ import Student_item from '../components/Student_item.vue'
 import { Student } from '../types/student.js'
 
 import { stu_options } from '../staticData/student_options.js'
+import { stuList } from '../staticData/student_data.js'
+import { companyList } from '../staticData/company_data.js'
 
 const menuSelect = ref(1); // 1: 学生信息, 2: 企业信息
 const handleMenuSelect = (index) => {
@@ -29,30 +31,11 @@ const handleReset = () => {
   console.log('已重置筛选条件');
 };
 
+const handleSearch = (query) => {
+  console.log('搜索关键词：', query);
+  // 后续搜索逻辑将在此实现
+};
 
-const tempStudent = new Student({
-  id: 1,
-  stuId: '20230001',
-  name: '张三',
-  age: 22,
-  gender: '男',
-  nation: '汉族',
-  major: '计算机科学与技术',
-  degree: '本科',
-  graduationYear: 2023,
-  internship: 2,
-  languages: ['英语', '日语'],
-  languageLevel: '六级',
-  cities: ['北京', '上海'],
-  provinces: ['广东', '江苏'],
-  certNames: ['AWS', 'PMP'],
-  certLevel: '高级',
-  internshipCompany: '腾讯',
-  specialities: ['Java', 'Python'],
-  education: '本科',
-  internshipCnt: 1,
-  language: '中文',
-})
 
 </script>
 
@@ -60,6 +43,7 @@ const tempStudent = new Student({
   <Header
     @menu-change="handleMenuSelect"
     @logout="handleLogout"
+    @search="handleSearch"
   ></Header>
   <div class="main-container">
     
@@ -93,37 +77,99 @@ const tempStudent = new Student({
                 @change="handleChange"
             ></SelectItem>
             <SelectItem
-              title="实习次数"
-              filter-key="status"
-              :label="stu_options.internshipCnt"
-                :options="[]"
-                v-model="selectedStatus.internshipCnt"
-                @change="handleChange"
-            ></SelectItem>
-            <SelectItem
-              title="语言"
+              title="第二语言"
               filter-key="status"
               :label="stu_options.language"
                 :options="[]"
                 v-model="selectedStatus.language"
                 @change="handleChange"
             ></SelectItem>
+            <SelectItem
+              title="技能水平"
+              filter-key="status"
+              :label="stu_options.skillLevel"
+                :options="[]"
+                v-model="selectedStatus.skillLevel"
+                @change="handleChange"
+            ></SelectItem>
           </SelectorFixed>
         </div> <!-- selector-container -->
+
         <div class="student-list-container">
-          <Student_item class="student-header" :isHeader="true"></Student_item>
-          <div class="student-container">
-            <!-- <Student_item v-for="item in stuList"
-              :studentInfo="item"></Student_item> -->
+          <el-table 
+            :data="stuList" 
+            style="width: 100%"
+            height="80%"
+            stripe
+            >
+            <el-table-column prop="id" label="" width="70" class-name="id-column"></el-table-column>
+            <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+            <el-table-column prop="gender" label="性别" width="120"></el-table-column>
+            <el-table-column prop="age" label="年龄" width="120"></el-table-column>
+            <el-table-column prop="nation" label="民族" width="120"></el-table-column>
+            <el-table-column prop="education" label="学历" width="120"></el-table-column>
+            <el-table-column prop="major" label="专业" width="180"></el-table-column>
+            <el-table-column prop="language" label="第二语言" width="90"></el-table-column>
+            <el-table-column label="..." width="50"></el-table-column>
+            <el-table-column label="操作" width="200" class-name="operation-column">
+              <template #default="scope">
+                <el-button
+                  size="mini"
+                  @click="handleEdit(scope.$index, scope.row)">查看/编辑</el-button>
+                <el-button
+                  size="mini"
+                  type="danger"
+                  @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="student-operate-container">
+            <div class="operate-left">
+              <el-tooltip content="导入后会覆盖原列表" placement="bottom">
+                <el-button>导入</el-button>
+              </el-tooltip>
+              <el-tooltip content="导出为Excel文件" placement="bottom">
+                <el-button>导出</el-button>
+              </el-tooltip>
+            </div>
           </div>
         </div>
       </div>
       <!-- 企业信息 -->
       <div class="page company-container" v-if="menuSelect === 2">
-        <div class="selector-container">
-          <SelectorFixed title="筛选" :show="false"></SelectorFixed>
+        <div class="company-list-container">
+          <el-table 
+            :data="companyList" 
+            style="width: 100%"
+            height="80%"
+            stripe
+            >
+            <el-table-column prop="id" label="" width="70" class-name="id-column"></el-table-column>
+            <el-table-column prop="name" label="企业名称" width="300"></el-table-column>
+            <el-table-column prop="city" label="所在城市" width="300"></el-table-column>
+            <el-table-column label="操作" width="200" class-name="operation-column">
+              <template #default="scope">
+                <el-button
+                  size="mini"
+                  @click="handleEdit(scope.$index, scope.row)">查看/编辑</el-button>
+                <el-button
+                  size="mini"
+                  type="danger"
+                  @click="handleDelete(scope.$index, scope.row)">删除</el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+          <div class="company-operate-container">
+            <div class="operate-left">
+              <el-tooltip content="导入后会覆盖原列表" placement="bottom">
+                <el-button>导入</el-button>
+              </el-tooltip>
+              <el-tooltip content="导出为Excel文件" placement="bottom">
+                <el-button>导出</el-button>
+              </el-tooltip>
+            </div>
+          </div>
         </div>
-        <h1>企业信息</h1>
       </div>
       <!-- 统计数据 -->
       <div class="page" v-if="menuSelect === 3">
@@ -166,8 +212,148 @@ const tempStudent = new Student({
 
 .page {
   display: flex;
+  width: 100vw;
+  height: 100%;
 }
 
+.student-list-container {
+  flex: 1;
+  padding: 24px;
+  background-color: #ffffff;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
 
+.student-list-container :deep(.el-table__row) {
+  height: 54px;
+}
+
+.student-list-container :deep(.el-table td) {
+  padding: 6px 0;
+}
+
+.student-list-container :deep(.el-table th) {
+  padding: 6px 0;
+}
+
+.student-list-container :deep(.el-table .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.student-list-container :deep(.el-table__row .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.student-list-container :deep(.el-table__row--striped .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.student-list-container :deep(.el-table__row:hover .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.student-list-container :deep(.el-table .id-column) {
+  color: #999999 !important;
+}
+
+.student-list-container :deep(.el-table__row .id-column) {
+  color: #999999 !important;
+}
+
+.student-list-container :deep(.el-table__row--striped .id-column) {
+  color: #999999 !important;
+}
+
+.student-list-container :deep(.el-table__row:hover .id-column) {
+  color: #999999 !important;
+}
+
+.student-operate-container {
+  margin-top: 24px;
+  padding: 16px 0 8px;
+  border-top: 1px solid #ebeef5;
+}
+
+.operate-left {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  width: fit-content;
+}
+
+.operate-left .el-button {
+  width: 90px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.operate-left .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.company-list-container {
+  flex: 1;
+  padding: 24px;
+  background-color: #ffffff;
+  overflow-y: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+.company-list-container :deep(.el-table__row) {
+  height: 54px;
+}
+
+.company-list-container :deep(.el-table td) {
+  padding: 6px 0;
+}
+
+.company-list-container :deep(.el-table th) {
+  padding: 6px 0;
+}
+
+.company-list-container :deep(.el-table .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.company-list-container :deep(.el-table__row .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.company-list-container :deep(.el-table__row--striped .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.company-list-container :deep(.el-table__row:hover .operation-column) {
+  background-color: #ffffff !important;
+}
+
+.company-list-container :deep(.el-table .id-column) {
+  color: #999999 !important;
+}
+
+.company-list-container :deep(.el-table__row .id-column) {
+  color: #999999 !important;
+}
+
+.company-list-container :deep(.el-table__row--striped .id-column) {
+  color: #999999 !important;
+}
+
+.company-list-container :deep(.el-table__row:hover .id-column) {
+  color: #999999 !important;
+}
+
+.company-operate-container {
+  margin-top: 24px;
+  padding: 16px 0 8px;
+  border-top: 1px solid #ebeef5;
+}
+
+.company-container {
+  padding: 0px 20px;
+}
 
 </style>

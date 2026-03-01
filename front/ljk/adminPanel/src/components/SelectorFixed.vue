@@ -80,7 +80,7 @@ const handleOpen = () => {
     
     <div class="open-btn clickable un"  @click="handleOpen"><img class="open-img un clickable" src="/open.svg" v-if="!showSelector"></div>
     <!-- 占用左侧纵向一部分宽度的空间，避免信息被展开按钮遮挡 -->
-    <div class="space" v-if="!showSelector"></div>
+    <div class="space"></div>
 </template>
 
 <!-- ///////////////////////////////////////////////////////////////////////////////////////////// -->
@@ -99,7 +99,7 @@ const handleOpen = () => {
 .selector-fixed {
     background-color: var(--bg-primary);
     height: calc(100vh - var(--height-header));
-    width: 260px;
+    width: 280px;
     position: relative;
     box-shadow: var(--shadow-light);
     z-index: 2;
