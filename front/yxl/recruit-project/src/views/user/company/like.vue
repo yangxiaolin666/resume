@@ -1,5 +1,4 @@
 <script setup>
-import { useStudentsStore } from '@/stores/students'
 import studentCard from '@/components/studentCard.vue'
 import { ref,onMounted } from 'vue';
 import { queryLike } from '@/api/student';
@@ -17,7 +16,6 @@ const handleCurrentChange = async (val) => {
   total.value=data.total
   students.value=data.list
 }
-const StudentsStore = useStudentsStore()
 const com_id=5
 const students=ref()
 onMounted(async ()=>{
