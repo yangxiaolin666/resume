@@ -6,10 +6,11 @@ import {
   SwitchButton,
   PieChart,
   Discount,
+  Moon,
+  Sunny,
 } from '@element-plus/icons-vue'
 import { onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import ThemeSwitch from '@/components/ThemeSwitch.vue';
 const router = useRouter()
 const goToUser = () => {
   router.push(`/${userStore.userType}`)
@@ -35,6 +36,15 @@ watch(() => route.path, () => {
   updateActiveIndex()
 })
 const userStore = useUserStore()
+
+const isDark = ref(window.getDarkMode ? window.getDarkMode() : true)
+
+const toggleTheme = () => {
+  isDark.value = !isDark.value
+  if (window.toggleDarkMode) {
+    window.toggleDarkMode()
+  }
+}
 </script>
 
 <template>
@@ -44,59 +54,63 @@ const userStore = useUserStore()
         justify-content: space-between;
         height: 80px;
       ">
-    <div style="display: flex; align-items: center">
-      <IconSchool />
-      <h1>
-        <p>招聘平台</p>
-      </h1>
-    </div>
-    
-    <div style="display: flex; align-items: center">
-      <el-menu-item index="/showData">
-        <el-icon>
-          <PieChart />
-        </el-icon>
-        应届生数据
-      </el-menu-item>
-      <el-menu-item index="/home" v-if="(userStore.userType === 'company')">
-        <el-icon>
-          <Discount />
-        </el-icon>
-        应届生列表
-      </el-menu-item>
-      <el-menu-item :index="activeIndex" style="color:var(--el-text-color)">
-        <el-popover placement="bottom-end">
-          <template #reference>
-            <div style="display: flex; align-items: center;">
-              <el-icon class="nav-icon">
-                <User />
+      <div style="display: flex; align-items: center">
+        <IconSchool />
+        <h1>
+          <p>招聘平台</p>
+        </h1>
+      </div>
+
+      <div style="display: flex; align-items: center">
+        <el-menu-item index="/showData">
+          <el-icon>
+            <PieChart />
+          </el-icon>
+          应届生数据
+        </el-menu-item>
+        <el-menu-item index="/home" v-if="(userStore.userType === 'company')">
+          <el-icon>
+            <Discount />
+          </el-icon>
+          应届生列表
+        </el-menu-item>
+        <el-menu-item :index="activeIndex" style="color:var(--el-text-color)">
+          <el-popover placement="bottom-end">
+            <template #reference>
+              <div style="display: flex; align-items: center;">
+                <el-icon class="nav-icon">
+                  <User />
+                </el-icon>
+                <span>{{ userStore.userType }}</span>
+              </div>
+            </template>
+            <div class="menu-item" @click="toggleTheme">
+              <el-icon>
+                <Moon v-if="isDark" />
+                <Sunny v-else />
               </el-icon>
-              <span>{{ userStore.userType }}</span>
+              <span>{{ isDark ? '暗黑模式' : '明亮模式' }}</span>
             </div>
-          </template>
-          <div class="menu-item">
-            <ThemeSwitch/>
-          </div>
-          <div class="menu-item" @click="goToUser">
-            <el-icon>
-              <House />
-            </el-icon>
-            <span>个人主页</span>
-          </div>
-          <div class="menu-item" @click="logOut">
-            <el-icon>
-              <SwitchButton />
-            </el-icon>
-            <span>退出登录</span>
-          </div>
-          
-        </el-popover>
-      </el-menu-item>
-    </div>
-  </el-menu>
-  <router-view></router-view>
-</div>
-  
+            <div class="menu-item" @click="goToUser">
+              <el-icon>
+                <House />
+              </el-icon>
+              <span>个人主页</span>
+            </div>
+            <div class="menu-item" @click="logOut">
+              <el-icon>
+                <SwitchButton />
+              </el-icon>
+              <span>退出登录</span>
+            </div>
+
+          </el-popover>
+        </el-menu-item>
+      </div>
+    </el-menu>
+    <router-view></router-view>
+  </div>
+
 </template>
 
 <style scoped>

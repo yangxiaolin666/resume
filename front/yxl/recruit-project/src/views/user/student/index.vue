@@ -41,6 +41,12 @@ watch(() => route.path, () => {
           </el-icon>
           简历修改
         </el-menu-item>
+        <el-menu-item index="/makeResume">
+          <el-icon>
+            <Document />
+          </el-icon>
+          简历制作
+        </el-menu-item>
         <el-menu-item index="/showData">
           返回
           <el-icon class="icon">

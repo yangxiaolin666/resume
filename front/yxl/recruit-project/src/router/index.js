@@ -1,8 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-
 // 懒加载组件
 const Home = () => import('../views/layout/home.vue')
+const MakeResume=() =>import('@/views/user/student/makeResume.vue')
 const LayOut = () => import('@/views/layout/index.vue')
 const UpdateResume = () => import('@/views/user/student/updateResume.vue')
 const Login = () => import('@/views/login/index.vue')
@@ -89,6 +89,11 @@ const router = createRouter({
           path: '/updateResume',
           name: 'updateResume',
           component: UpdateResume
+        },
+        {
+          path: '/makeResume',
+          name: 'makeResume',
+          component: MakeResume
         },
       ]
     },

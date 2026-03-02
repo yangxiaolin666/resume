@@ -54,6 +54,8 @@ onMounted(async () => {
   allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
   allCity.value = ['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州']
   getStudent()
+  console.log(checkSpecial.value);
+  
 })
 const handleSizeChange = (val) => {
   console.log(`${val} items per page`)
