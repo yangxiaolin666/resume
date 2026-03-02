@@ -134,7 +134,7 @@
                 AND s.degree = #{query.degree}
             </if>
             <if test="query.graduationYear != null">
-                AND s.graduation_year >= #{query.graduationYear}
+                AND s.graduation_year = #{query.graduationYear}
             </if>
             <if test="query.internship != null">
                 AND s.internship >= #{query.internship}
@@ -150,6 +150,57 @@
                 <foreach collection="query.provinces" item="province" open="(" separator="," close=")">
                     #{province}
                 </foreach>
+            </if>
+            <if test="query.languages != null and query.languages.size() > 0">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_language 
+                    WHERE language IN 
+                    <foreach collection="query.languages" item="language" open="(" separator="," close=")">
+                        #{language}
+                    </foreach>
+                    GROUP BY stu_id
+                    HAVING COUNT(DISTINCT language) >= 1
+                )
+            </if>
+            <if test="query.languageLevel != null and query.languageLevel != ''">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_language 
+                    WHERE level LIKE CONCAT('%', #{query.languageLevel}, '%')
+                )
+            </if>
+            <if test="query.certNames != null and query.certNames.size() > 0">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_certificate 
+                    WHERE cert_name IN 
+                    <foreach collection="query.certNames" item="certName" open="(" separator="," close=")">
+                        #{certName}
+                    </foreach>
+                    GROUP BY stu_id
+                    HAVING COUNT(DISTINCT cert_name) >= 1
+                )
+            </if>
+            <if test="query.certLevel != null and query.certLevel != ''">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_certificate 
+                    WHERE level LIKE CONCAT('%', #{query.certLevel}, '%')
+                )
+            </if>
+            <if test="query.internshipCompany != null and query.internshipCompany != ''">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_internship 
+                    WHERE company LIKE CONCAT('%', #{query.internshipCompany}, '%')
+                )
+            </if>
+            <if test="query.specialities != null and query.specialities.size() > 0">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_speciality 
+                    WHERE speciality IN 
+                    <foreach collection="query.specialities" item="speciality" open="(" separator="," close=")">
+                        #{speciality}
+                    </foreach>
+                    GROUP BY stu_id
+                    HAVING COUNT(DISTINCT speciality) >= #{query.specialities.size}
+                )
             </if>
         </where>
         ORDER BY s.id
