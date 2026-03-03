@@ -221,7 +221,12 @@ public interface StudentInfoMapper {
             "ORDER BY value DESC ")
     List<StudentStatisticsVO.JobStat> selectJobStats();
 
+    //查询密码
+    @Select("SELECT password FROM user WHERE user_id = #{id}")
+    String findPwdByStudentId(Integer id);
 
-
+    //修改密码
+    @Update("UPDATE user SET password = #{password} WHERE user_id = #{id}")
+    boolean updatePwd(Integer id, String password);
 
 }

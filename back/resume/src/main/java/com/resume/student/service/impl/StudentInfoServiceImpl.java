@@ -479,4 +479,14 @@ public class StudentInfoServiceImpl implements StudentInfoService {
 
         return vo;
     }
+
+    @Override
+    public void updatePwd(Integer studentId, String newPwd) {
+        studentInfoMapper.updatePwd(studentId, newPwd);
+    }
+
+    @Override
+    public String queryPwd(Integer studentId) {
+        return studentInfoMapper.findPwdByStudentId(studentId);
+    }
 }
