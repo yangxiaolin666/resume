@@ -189,8 +189,7 @@ public interface StudentInfoMapper {
     @Select("SELECT COUNT(*) as value, language, level " +
             "FROM stu_language " +
             "GROUP BY language, level " +
-            "ORDER BY value DESC " +
-            "LIMIT 10")
+            "ORDER BY value DESC ")
     List<StudentStatisticsVO.LanguageStat> selectLanguageStats();
 
     // 城市统计
@@ -198,35 +197,36 @@ public interface StudentInfoMapper {
             "FROM stu_region " +
             "WHERE city IS NOT NULL " +
             "GROUP BY city " +
-            "ORDER BY value DESC " +
-            "LIMIT 10")
+            "ORDER BY value DESC ")
     List<StudentStatisticsVO.CityStat> selectCityStats();
 
     // 实习统计
     @Select("SELECT COUNT(*) as value, company, experience " +
             "FROM stu_internship " +
             "GROUP BY company, experience " +
-            "ORDER BY value DESC " +
-            "LIMIT 10")
+            "ORDER BY value DESC ")
     List<StudentStatisticsVO.InternshipStat> selectInternshipStats();
 
     // 技能统计
     @Select("SELECT COUNT(*) as value, speciality as name " +
             "FROM stu_speciality " +
             "GROUP BY speciality " +
-            "ORDER BY value DESC " +
-            "LIMIT 10")
+            "ORDER BY value DESC ")
     List<StudentStatisticsVO.SpecialityStat> selectSpecialityStats();
 
     // 职位统计
     @Select("SELECT COUNT(*) as value, post as name " +
             "FROM stu_job " +
             "GROUP BY post " +
-            "ORDER BY value DESC " +
-            "LIMIT 10")
+            "ORDER BY value DESC ")
     List<StudentStatisticsVO.JobStat> selectJobStats();
 
+    //查询密码
+    @Select("SELECT password FROM user WHERE user_id = #{id}")
+    String findPwdByStudentId(Integer id);
 
-
+    //修改密码
+    @Update("UPDATE user SET password = #{password} WHERE user_id = #{id}")
+    boolean updatePwd(Integer id, String password);
 
 }
