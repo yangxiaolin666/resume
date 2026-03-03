@@ -33,7 +33,8 @@ const loginTo = async () => {
     <div class="login-box">
       <!-- 左侧导航栏 -->
       <div class="login-sidebar">
-        <IconSchool style="margin-left: 40px;width:120px;height: 120px;" />
+        <IconSchool style="margin-left: 40px;width:120px;
+        stroke: white;height: 120px;" />
         <div class="logo">
           招聘系统
         </div>

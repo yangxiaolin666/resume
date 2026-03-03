@@ -1,18 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from '../views/layout/home.vue'
-import LayOut from '@/views/layout/index.vue'
-import UpdateResume from '@/views/user/student/updateResume.vue'
-import Login from '@/views/login/index.vue'
 import { useUserStore } from '@/stores/user'
-import Admin from '@/views/user/admin.vue'
-import Student from '@/views/user/student/index.vue'
-import Company from '@/views/user/company/index.vue'
-import CompanyChange from '@/views/user/company/change.vue'
-import CompanyLike from '@/views/user/company/like.vue'
-import studentDetail from '@/views/studentDetail/index.vue'
-import SelfMessage from '@/views/user/student/selfMessage.vue'
-import Test from '@/views/test/test.vue'
-import ShowData from '@/views/layout/showData.vue'
+// 懒加载组件
+const Home = () => import('../views/layout/home.vue')
+const MakeResume=() =>import('@/views/user/student/makeResume.vue')
+const LayOut = () => import('@/views/layout/index.vue')
+const UpdateResume = () => import('@/views/user/student/updateResume.vue')
+const Login = () => import('@/views/login/index.vue')
+const Admin = () => import('@/views/user/admin.vue')
+const Student = () => import('@/views/user/student/index.vue')
+const Company = () => import('@/views/user/company/index.vue')
+const CompanyChange = () => import('@/views/user/company/change.vue')
+const CompanyLike = () => import('@/views/user/company/like.vue')
+const studentDetail = () => import('@/views/studentDetail/index.vue')
+const SelfMessage = () => import('@/views/user/student/selfMessage.vue')
+const Test = () => import('@/views/test/test.vue')
+const ShowData = () => import('@/views/layout/showData.vue')
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -87,6 +89,11 @@ const router = createRouter({
           path: '/updateResume',
           name: 'updateResume',
           component: UpdateResume
+        },
+        {
+          path: '/makeResume',
+          name: 'makeResume',
+          component: MakeResume
         },
       ]
     },
