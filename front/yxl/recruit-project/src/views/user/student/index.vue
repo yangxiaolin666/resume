@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { User, Document, ArrowRightBold } from '@element-plus/icons-vue'
+import { User, Document, ArrowRightBold, MessageBox } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 const activeIndex = ref('/selfMessage')
 const route = useRoute()
@@ -43,7 +43,7 @@ watch(() => route.path, () => {
         </el-menu-item>
         <el-menu-item index="/makeResume">
           <el-icon>
-            <Document />
+            <MessageBox />
           </el-icon>
           简历制作
         </el-menu-item>
