@@ -46,6 +46,7 @@ const handleSearch = () => {
 
 const handleClear = () => {
   searchQuery.value = '';
+  emit('search', '');
 };
 
 </script>
@@ -74,6 +75,7 @@ const handleClear = () => {
                     :prefix-icon="Search"
                     clearable
                     @clear="handleClear"
+                    @keyup.enter="handleSearch"
                     class="search-input" 
                 ></el-input>
                 <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
