@@ -56,14 +56,9 @@ public class StudentQueryDTO {
     private Integer internship;
     
     /**
-     * 语言要求
+     * 语言要求（对象数组）
      */
-    private List<String> languages;
-    
-    /**
-     * 语言等级
-     */
-    private String languageLevel;
+    private List<LanguageQueryDTO> languageQueries;
     
     /**
      * 城市

@@ -151,20 +151,18 @@
                     #{province}
                 </foreach>
             </if>
-            <if test="query.languages != null and query.languages.size() > 0">
-                AND EXISTS (
-                    SELECT 1 FROM stu_language 
-                    WHERE stu_id = s.id 
-                    AND language IN 
-                    <foreach collection="query.languages" item="language" open="(" separator="," close=")">
-                        #{language}
+            <if test="query.languageQueries != null and query.languageQueries.size() > 0">
+                AND (
+                    <foreach collection="query.languageQueries" item="langQuery" separator="OR">
+                        EXISTS (
+                            SELECT 1 FROM stu_language 
+                            WHERE stu_id = s.id 
+                            AND language = #{langQuery.language}
+                            <if test="langQuery.level != null and langQuery.level != ''">
+                                AND level = #{langQuery.level}
+                            </if>
+                        )
                     </foreach>
-                )
-            </if>
-            <if test="query.languageLevel != null and query.languageLevel != ''">
-                AND s.id IN (
-                    SELECT stu_id FROM stu_language 
-                    WHERE level LIKE CONCAT('%', #{query.languageLevel}, '%')
                 )
             </if>
             <if test="query.certNames != null and query.certNames.size() > 0">
