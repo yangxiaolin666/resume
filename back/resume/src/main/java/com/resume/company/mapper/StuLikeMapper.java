@@ -2,6 +2,7 @@ package com.resume.company.mapper;
 
 import com.resume.model.dto.ComLikeStuDTO;
 import com.resume.model.entity.ComLikeStu;
+import com.resume.model.entity.StuFavorite;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -21,5 +22,7 @@ public interface StuLikeMapper {
     Integer deleteLikeStudent(List<ComLikeStu> list);
 
     //查找企业的收藏列表
-    List<ComLikeStu> searchCompaniesLike(ComLikeStuDTO comLikeStuDTO);
+    List<StuFavorite> searchCompaniesLike(ComLikeStuDTO comLikeStuDTO);
+
+    Integer queryComId(Integer userId);
 }
