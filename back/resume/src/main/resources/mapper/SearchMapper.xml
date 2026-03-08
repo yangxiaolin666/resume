@@ -103,6 +103,17 @@
                     HAVING COUNT(DISTINCT speciality) >= 1
                 )
             </if>
+            <if test="query.jobs != null and query.jobs.size() > 0">
+                AND s.id IN (
+                    SELECT stu_id FROM stu_job 
+                    WHERE post IN 
+                    <foreach collection="query.jobs" item="job" open="(" separator="," close=")">
+                        #{job}
+                    </foreach>
+                    GROUP BY stu_id
+                    HAVING COUNT(DISTINCT post) >= 1
+                )
+            </if>
         </where>
         ORDER BY s.id
     </select>

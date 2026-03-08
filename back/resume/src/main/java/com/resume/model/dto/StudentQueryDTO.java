@@ -96,6 +96,11 @@ public class StudentQueryDTO {
     private List<String> specialities;
     
     /**
+     * 求职岗位
+     */
+    private List<String> jobs;
+    
+    /**
      * 当前页码
      */
     private Integer pageNum = 1;
