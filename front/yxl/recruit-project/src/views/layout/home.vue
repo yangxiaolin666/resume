@@ -4,27 +4,33 @@ import {
   Search,
 } from '@element-plus/icons-vue'
 import studentCard from '@/components/studentCard.vue'
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { getAllStudent, getStatics } from '@/api/student'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { useFilterStore } from '@/stores/students'
+import { storeToRefs } from 'pinia'
 const students = ref()
 const router = useRouter()
 const currentPage = ref(1)
 const pageSize = ref(1000)
 const total = ref(10)
 const allTag = ref()
-const checkDegree = ref('')
-const checkMajor = ref('')
-const checkGender = ref('')
+const filterStore = useFilterStore()
+const { clearAllFilters } = filterStore
+const { 
+  checkDegree, 
+  checkMajor, 
+  checkGender, 
+  checkLanguage, 
+  checkJob, 
+  checkSpecial, 
+  checkCity 
+} = storeToRefs(filterStore)
 const allLanguage = ref()
-const checkLanguage = ref()
 const allJob = ref()
-const checkJob = ref()
 const allSpecial = ref()
-const checkSpecial = ref()
 const allCity = ref()
-const checkCity = ref()
 const getStudent = async () => {
   const res = await getAllStudent({
     "gender": checkGender.value,
@@ -48,6 +54,8 @@ onMounted(async () => {
   allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
   allCity.value = ['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州']
   getStudent()
+  console.log(checkSpecial.value);
+  
 })
 const handleSizeChange = (val) => {
   console.log(`${val} items per page`)
@@ -63,18 +71,16 @@ const handleCurrentChange = async (val) => {
   students.value = data.list
 }
 const clearTag = () => {
+  clearAllFilters()
   ElMessage({
     message: '清空标签成功',
     type: 'success',
     duration: 800
   })
   setTimeout(() => {
-    router.go(0)
-  }, 900)
+    getStudent()
+  }, 100)
 }
-watch(checkSpecial, (newV) => {
-  console.log(newV);
-})
 const search = async () => {
   ElMessage({ message: '搜索成功', type: 'success', duration: 800 })
   getStudent()

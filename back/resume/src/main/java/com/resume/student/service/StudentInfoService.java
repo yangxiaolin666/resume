@@ -27,6 +27,12 @@ public interface StudentInfoService {
      */
     ResumeUploadVO uploadResume(Integer userId, MultipartFile file);
 
-
+    //获取所有学生统计信息
     StudentStatisticsVO getAllStudentStatistics();
+
+    //根据原密码修改密码
+    void updatePwd(Integer studentId, String newPwd);
+
+    //查询学生密码
+    String queryPwd(Integer userId);
 }
