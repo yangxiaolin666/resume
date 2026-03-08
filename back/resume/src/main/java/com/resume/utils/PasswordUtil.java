@@ -33,7 +33,7 @@ public class PasswordUtil {
      */
     public static void main(String[] args) {
         // 生成测试密码
-        System.out.println("20230001: " + encode("20230001"));
+        System.out.println("2024081125: " + encode("2024081125"));
         System.out.println("company01: " + encode("company01"));
         System.out.println("admin123: " + encode("admin123"));
         System.out.println("s: " + encode("s"));

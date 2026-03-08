@@ -3,6 +3,7 @@ package com.resume.student.controller;
 import com.resume.model.dto.ResumeUploadVO;
 import com.resume.model.dto.StudentCompleteInfoDTO;
 import com.resume.model.dto.StudentDetailDTO;
+import com.resume.model.entity.User;
 import com.resume.model.result.Result;
 import com.resume.student.service.StudentInfoService;
 import com.resume.utils.JwtUtil;
@@ -10,8 +11,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
+
+import static com.resume.utils.PasswordUtil.encode;
+import static com.resume.utils.PasswordUtil.matches;
 
 /**
  * 学生端控制器
@@ -37,7 +44,7 @@ public class StudentController {
         try {
             // 从Token中获取用户ID
             Integer userId = (Integer) request.getAttribute("userId");
-            
+
             StudentDetailDTO result = studentInfoService.completeInfo(userId, infoDTO);
             return Result.success(result);
         } catch (RuntimeException e) {
@@ -113,5 +120,30 @@ public class StudentController {
     @GetMapping("/statistics")
     public Result getAllStudentStatistics() {
         return Result.success(studentInfoService.getAllStudentStatistics());
+    }
+
+    @PatchMapping("/updatePwd")
+    public Result updatePwd(@RequestBody Map<String, String> params, HttpServletRequest request) {
+        //1.校验参数
+        String oldPwd = params.get("old_pwd");
+        String newPwd = params.get("new_pwd");
+        String rePwd = params.get("re_pwd");
+
+        //原密码是否正确
+        Integer userId = (Integer) request.getAttribute("userId");
+        String Pwd = studentInfoService.queryPwd(userId);
+
+        if (!matches(oldPwd,Pwd)){
+            return Result.error(400,"原密码不正确");
+        }
+        if(matches(newPwd,Pwd)){
+            return Result.error(400,"新密码不能与原密码一样");
+        }
+        if (!rePwd.equals(newPwd)){
+            return Result.error(400,"两次填写的新密码不一样");
+        }
+        studentInfoService.updatePwd(userId, encode(newPwd));
+
+        return Result.success();
     }
 }
