@@ -151,9 +151,9 @@
                     #{province}
                 </foreach>
             </if>
-            <if test="query.languageQueries != null and query.languageQueries.size() > 0">
+            <if test="query.languages != null and query.languages.size() > 0">
                 AND (
-                    <foreach collection="query.languageQueries" item="langQuery" separator="OR">
+                    <foreach collection="query.languages" item="langQuery" separator="OR">
                         EXISTS (
                             SELECT 1 FROM stu_language 
                             WHERE stu_id = s.id 

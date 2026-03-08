@@ -58,7 +58,7 @@ public class StudentQueryDTO {
     /**
      * 语言要求（对象数组）
      */
-    private List<LanguageQueryDTO> languageQueries;
+    private List<LanguageQueryDTO> languages;
     
     /**
      * 城市
