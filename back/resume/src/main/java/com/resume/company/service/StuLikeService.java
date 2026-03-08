@@ -3,7 +3,7 @@ package com.resume.company.service;
 import com.github.pagehelper.PageInfo;
 import com.resume.model.dto.ComLikeStuDTO;
 import com.resume.model.entity.ComLikeStu;
-import com.resume.model.entity.Student;
+import com.resume.model.entity.StuFavorite;
 
 import java.util.List;
 
@@ -27,10 +27,11 @@ public interface StuLikeService {
 
     /**
      * 查找某个企业收藏的学生
+     *
      * @param comLikeStuDTO 查询信息
      * @return 收藏学生列表
      */
-    PageInfo<ComLikeStu> searchCompaniesLike(ComLikeStuDTO comLikeStuDTO);
+    PageInfo<StuFavorite> searchCompaniesLike(ComLikeStuDTO comLikeStuDTO);
 
     /**
      * 查找企业是否收藏学生
@@ -38,4 +39,6 @@ public interface StuLikeService {
      * @return
      */
     boolean searchIfLikeStudents(ComLikeStu ComLikeStu);
+
+    Integer queryComId(Integer userId);
 }

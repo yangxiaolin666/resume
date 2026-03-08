@@ -6,13 +6,12 @@ import com.resume.company.mapper.StuLikeMapper;
 import com.resume.company.service.StuLikeService;
 import com.resume.model.dto.ComLikeStuDTO;
 import com.resume.model.entity.ComLikeStu;
-import com.resume.model.entity.Student;
+import com.resume.model.entity.StuFavorite;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.sql.Date;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,11 +96,11 @@ public class StuLikeServiceImpl implements StuLikeService {
 
 
     @Override
-    public PageInfo<ComLikeStu> searchCompaniesLike(ComLikeStuDTO comLikeStuDTO) {
+    public PageInfo<StuFavorite> searchCompaniesLike(ComLikeStuDTO comLikeStuDTO) {
 
         PageHelper.startPage(comLikeStuDTO.getPageNum(), comLikeStuDTO.getPageSize());
 
-        List<ComLikeStu> stu = stuLikeMapper.searchCompaniesLike(comLikeStuDTO);
+        List<StuFavorite> stu = stuLikeMapper.searchCompaniesLike(comLikeStuDTO);
 
         return new PageInfo<>(stu);
 
@@ -112,5 +111,10 @@ public class StuLikeServiceImpl implements StuLikeService {
 
         List<ComLikeStu> list = stuLikeMapper.searchLikeStudents(List.of(ComLikeStu));
         return !list.isEmpty();
+    }
+
+    @Override
+    public Integer queryComId(Integer userId) {
+        return stuLikeMapper.queryComId(userId);
     }
 }
