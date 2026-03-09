@@ -64,7 +64,9 @@
             stu.graduation_year AS graduationYear,
             stu.student_name   AS studentName,  -- 与 Java 属性 studentName 匹配
             lang.languages     AS languages,
-            spec.specialities  AS specialities
+            lang.level          AS level,
+            spec.specialities  AS specialities,
+            job.post            AS post
         FROM com_like_stu f
                  LEFT JOIN (SELECT id,
                                    name AS student_name,
@@ -74,12 +76,17 @@
                                    graduation_year
                                    FROM student) stu
                            ON stu.id = f.stu_id
-                 LEFT JOIN (SELECT stu_id, GROUP_CONCAT(language SEPARATOR '、') AS languages
+                 LEFT JOIN (SELECT stu_id,
+                                   GROUP_CONCAT(language SEPARATOR '、') AS languages,
+                                   GROUP_CONCAT(level SEPARATOR '、') AS level
                             FROM stu_language GROUP BY stu_id) lang
                            ON lang.stu_id = f.stu_id
                  LEFT JOIN (SELECT stu_id, GROUP_CONCAT(speciality SEPARATOR '、') AS specialities
                             FROM stu_speciality GROUP BY stu_id) spec
                            ON spec.stu_id = f.stu_id
+                LEFT JOIN (SELECT stu_id, GROUP_CONCAT(post SEPARATOR '、') AS post
+                           FROM stu_job GROUP BY stu_id) job
+                            ON job.stu_id = f.stu_id
         WHERE f.com_id = #{com_id}
         ORDER BY f.create_time DESC
     </select>

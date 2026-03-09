@@ -12,5 +12,7 @@ public class StuFavorite {
     private String degree;
     private String graduationYear;
     private String languages;    // 对应列别名 languages
+    private String level;
     private String specialities; // 对应列别名 specialities
+    private String post;
 }

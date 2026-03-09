@@ -10,10 +10,13 @@ import com.resume.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -25,6 +28,8 @@ public class LikeController {
 
     @Autowired
     private FavoriteService favoriteService;
+    @Autowired
+    private RedisTemplate<Object, Object> redisTemplate;
 
 
     @GetMapping("/QueryComIdByUserId")
@@ -40,7 +45,13 @@ public class LikeController {
     }
 
     @PostMapping("/LikeAdd")
-    public Result addLike(@RequestBody List<ComLikeStu> list ) {
+    public Result addLike(HttpServletRequest request, @RequestBody List<ComLikeStu> list ) {
+        String authorizationHeader = request.getHeader("Authorization");
+        Integer userId = null;
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7); // 去掉 "Bearer " 前缀
+            userId = JwtUtil.getUserId(token);
+        }
 
 //        for (int i = 0; i < list.size(); i++) {
 //            log.info("添加收藏信息：{}", list.get(i));
@@ -49,7 +60,7 @@ public class LikeController {
 
         //redis 缓存
         for (ComLikeStu item : list) {
-            favoriteService.addFavorite(item.getComId(), item.getStuId());
+            favoriteService.addFavorite(userId, item.getStuId());
         }
         if (failCount == 0) {
             return Result.success();
@@ -68,9 +79,18 @@ public class LikeController {
 
 
     @DeleteMapping("/LikeDelete")
-    public Result deleteLike(@RequestBody List<ComLikeStu> list) {
+    public Result deleteLike(HttpServletRequest request, @RequestBody List<ComLikeStu> list) {
+
+        String authorizationHeader = request.getHeader("Authorization");
+        Integer userId = null;
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7); // 去掉 "Bearer " 前缀
+            userId = JwtUtil.getUserId(token);
+        }
+
 
         Integer failCount = stuLikeService.deleteLikeStudent(list);
+        redisTemplate.opsForSet().remove("user:favorite:"+userId, list);
         if (failCount == 0) {
             return Result.success();
         } else {
@@ -90,6 +110,27 @@ public class LikeController {
 
         return Result.success(stuLikeService.searchIfLikeStudents(comLikeStu));
 
+
+    }
+    @GetMapping("/LikeIfByRedis")
+    public Result queryLikeIfRedis(HttpServletRequest request, @RequestParam("stuIdList") String stuIdList) {
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7); // 去掉 "Bearer " 前缀
+            Integer userId = JwtUtil.getUserId(token);
+            List<String> StuIdList = List.of(stuIdList.split(","));
+            List<Integer> StuIdListInteger = new ArrayList<>();
+            for (String stuId : StuIdList) {
+                StuIdListInteger.add(Integer.parseInt(stuId));
+            }
+            log.info("userid：{}", userId);
+            Map<Integer, Boolean> map = favoriteService.batchIsFavorite(userId, StuIdListInteger);
+            //数据不同步？
+            return Result.success(map);
+        }else {
+            return Result.error(500, "token解析失败");
+        }
 
     }
 }
