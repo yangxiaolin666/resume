@@ -5,16 +5,20 @@ import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
+import { changePwd } from '@/api/login'
 const username = ref('')
 const password = ref('')
-const newPassword=ref('')
-const userStore=useUserStore()
-const router=useRouter()
+const newPassword = ref('')
+const rePassword = ref('')
+const userStore = useUserStore()
+const router = useRouter()
 const change = async () => {
+  const res = await changePwd(password.value, newPassword.value, rePassword.value)
+  console.log(res)
   ElMessage({
-    type:'success',
-    message:'修改成功,请重新登录',
-    duration:1000
+    type: 'success',
+    message: '修改成功,请重新登录',
+    duration: 1000
   })
   userStore.setAll('', '', '')
   setTimeout(() => router.push('/login'), 1100)
@@ -49,8 +53,12 @@ const change = async () => {
               <el-input v-model="newPassword" type="password" placeholder="请输入新密码" :prefix-icon="Lock" show-password
                 style="width: 300px; height: 40px" />
             </el-form-item>
-            <el-form-item @click="change">
-              <el-button type="primary" style="width: 300px; height: 45px">
+            <el-form-item>
+              <el-input v-model="rePassword" type="password" placeholder="请确认新密码" :prefix-icon="Lock" show-password
+                style="width: 300px; height: 40px" />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" style="width: 300px; height: 45px" @click="change">
                 修改
               </el-button>
             </el-form-item>

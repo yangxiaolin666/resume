@@ -5,19 +5,19 @@ import { ElInput, ElInputNumber, ElUpload, ElMessage, ElTooltip, ElButton, ElDat
 import html2pdf from 'html2pdf.js'
 
 const personalInfo = reactive({
-  name: '张三',
-  age: '33岁',
+  name: '小丽',
+  age: '24岁',
   gender: '男',
-  location: '上海',
-  experience: '6年经验',
-  phone: '15888888888',
-  email: 'qminjianli@qq.com'
+  location: '北京',
+  experience: '2年经验',
+  phone: '13888888888',
+  email: 'zhangming.dev@qq.com'
 })
 
 const skills = reactive({
-  language: '大学英语6级证书，荣获全国大学生英语竞赛一等奖，能够熟练的进行交流、读写。',
-  technical: '计算机二级证书，熟练操作Windows平台的各类应用软件，如Word、Excel。',
-  team: '具有丰富的团队组建与才经验和项目管理与协调经验。'
+  language: '英语CET-6，具备良好的英文文档阅读能力，能够阅读英文技术文档和进行基本的技术交流。',
+  technical: '熟练掌握HTML5、CSS3、JavaScript、TypeScript等前端核心技术，熟悉Vue.js、React等主流框架，了解Webpack、Vite等构建工具。',
+  team: '具备良好的团队协作能力，熟悉敏捷开发流程，能够与UI设计师、后端开发人员高效协作。'
 })
 
 const progress = reactive({
@@ -25,64 +25,60 @@ const progress = reactive({
   english: 85
 })
 
-const hobbies = ref('')
+const hobbies = ref('技术博客写作、开源项目贡献、前端技术研究、参加技术分享会、阅读技术书籍、关注前端技术发展趋势')
 
 const jobInfo = reactive({
   position: '前端开发程序员',
   city: '上海',
-  salary: '11000/月',
+  salary: '26000/月',
   onboardTime: '一个月内到岗'
 })
 
 const educationList = reactive([
   {
     id: 1,
-    startDate: '2012-09',
-    endDate: '2016-07',
-    university: '全民简历师范大学',
-    major: '工商管理（本科）',
-    details: '专业成绩：GPA 3.66/4（专业前5%）\n主修课程：基础会计学、货币银行学、统计学、经济学概论、财务会计学、管理学原理、组织行为学、市场营销学、国际贸易理论、国际贸易实务、人力资源开发与管理、财务管理学、企业经营战略概论、质量管理学、西方经济学等等。'
+    startDate: '2024-09',
+    endDate: '2028-07',
+    university: '大连民族大学',
+    major: '计算机科学与技术（本科）',
+    details: '专业成绩：GPA 3.66/4（专业前5%）\n主修课程：数据结构与算法、计算机网络、操作系统、Web前端开发技术、JavaScript程序设计、Vue.js框架应用、React开发实践、移动端开发技术、软件工程、数据库原理与应用等。'
   }
 ])
 
 const workList = reactive([
   {
     id: 1,
-    startDate: '2018-09',
+    startDate: '2026-01',
     endDate: '至今',
-    company: '全民简历科技有限公司',
-    position: '行政专员',
-    responsibilities: '负责本部门的行政人事管理和日常事务，协助总监做好各部门之间的综合协调，落实公司规章制度，沟通内外联系，保证上情下达和下情上报，负责对会议文件决定的事项进行催办、查办和落实，负责公司组织系统研讨和修订。\n编制公司人事管理制度，规避各项人事风险。'
+    company: '字节跳动科技有限公司',
+    position: '前端开发工程师',
+    responsibilities: '负责公司核心产品的前端架构设计和开发工作\n使用Vue3+TypeScript技术栈开发高性能Web应用\n参与组件库建设，提升团队开发效率和代码质量\n优化前端性能，提升用户体验和页面加载速度\n与产品、设计、后端团队紧密协作，确保项目顺利交付'
   },
-  {
-    id: 2,
-    startDate: '2016-09',
-    endDate: '2018-08',
-    company: '上海柠岸网络科技有限公司',
-    position: '行政专员',
-    responsibilities: '负责中心简单财务管理，资产管控；\n负责公司总部的来访客户接待工作，负责引导和介绍公司的分布情况；\n负责中心的行政事务，人才班车管理、人才建立员工归宿感及前台管理；\n负责招聘工作，确保人才团队管理和人才储备及培养。\n督导公司各项行政、人事制度、员工福利、生日以及公司各种宴会活动的执行。\n负责招聘工作，制定公司的人力资源发展计划，确保人才梯队发展和人才储备及培养。'
-  }
 ])
 
 const projectList = reactive([
   {
     id: 1,
-    startDate: '2023-01',
-    endDate: '2023-12',
-    projectName: '企业管理系统开发',
+    startDate: '2025-03',
+    endDate: '2025-08',
+    projectName: '电商平台前端重构项目',
     role: '前端开发工程师',
-    description: '负责企业管理系统前端界面开发，使用Vue3+Element Plus技术栈。\n实现用户管理、权限控制、数据可视化等核心功能。\n优化系统性能，提升用户体验。'
-  }
+    description: '负责电商平台前端架构重构，采用Vue3+TypeScript技术栈\n实现组件化开发，提升代码复用性和可维护性\n优化页面加载性能，减少首屏加载时间30%\n集成微前端架构，支持多团队协作开发\n实现响应式设计，适配PC端和移动端'
+  },
 ])
 
 const awardList = reactive([
   {
     id: 1,
-    awardName: '英语四级，听说读写能力良好，能流利的用英语进行日常交流，能快速浏览英文文档和书籍'
+    awardName: '第十五届蓝桥杯国家一等奖'
   },
   {
     id: 2,
-    awardName: '通过全国计算机二级考试，熟练运用office等常用的办公软件'
+    awardName: '2025ICPC亚洲区域赛金奖'
+  },
+  {
+    id: 3,
+    awardName: 'GitHub开源项目贡献者，参与多个前端开源项目维护'
   }
 ])
 
