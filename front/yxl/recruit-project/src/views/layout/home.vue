@@ -233,8 +233,8 @@ watch(checkLanguage, (newV) => {
   display: flex;
   gap: 6px;
   padding: 12px;
-  min-height: calc(100vh - 120px);
-  padding-bottom: 80px;
+  min-height: calc(100vh - 200px);
+  padding-bottom: 100px;
 }
 
 .filter-sidebar {
@@ -257,11 +257,13 @@ watch(checkLanguage, (newV) => {
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: space-around;
-  position: fixed;
-  bottom: 20px;
+  justify-content: center;
+  position: sticky;
+  bottom: 0;
   z-index: 1000;
-  padding: 10px 0;
+  padding: 20px 0;
+  background: linear-gradient(transparent, #f5f5f5 50%);
+  margin-top: 20px;
 }
 
 .tag-box {
