@@ -4,7 +4,7 @@ import {
   Search,
 } from '@element-plus/icons-vue'
 import studentCard from '@/components/studentCard.vue'
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import { getAllStudent, getStatics } from '@/api/student'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
@@ -18,14 +18,14 @@ const total = ref(10)
 const allTag = ref()
 const filterStore = useFilterStore()
 const { clearAllFilters } = filterStore
-const { 
-  checkDegree, 
-  checkMajor, 
-  checkGender, 
-  checkLanguage, 
-  checkJob, 
-  checkSpecial, 
-  checkCity 
+const {
+  checkDegree,
+  checkMajor,
+  checkGender,
+  checkLanguage,
+  checkJob,
+  checkSpecial,
+  checkCity
 } = storeToRefs(filterStore)
 const allLanguage = ref()
 const allJob = ref()
@@ -36,7 +36,10 @@ const getStudent = async () => {
     "gender": checkGender.value,
     "degree": checkDegree.value,
     "major": checkMajor.value,
+    "languages": checkLanguage.value,
     "specialities": checkSpecial.value,
+    "jobs": checkJob.value,
+    "cities": checkCity.value,
     "pageNum": currentPage.value,
     "pageSize": pageSize.value
   })
@@ -48,14 +51,14 @@ const getStudent = async () => {
 onMounted(async () => {
   const { data: { data: data1 } } = await getStatics()
   allTag.value = data1
-  //console.log(allTag.value)
-  allLanguage.value = [...new Set(allTag.value.languages.map(item => item.language + "-" + item.level))]
+  console.log(allTag.value)
+  allLanguage.value = [...new Set(allTag.value.languages)]
   allJob.value = [...new Set(allTag.value.jobs.map(item => item.name))]
   allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
   allCity.value = ['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州']
   getStudent()
   console.log(checkSpecial.value);
-  
+
 })
 const handleSizeChange = (val) => {
   console.log(`${val} items per page`)
@@ -82,9 +85,12 @@ const clearTag = () => {
   }, 100)
 }
 const search = async () => {
-  ElMessage({ message: '搜索成功', type: 'success', duration: 800 })
   getStudent()
+  ElMessage({ message: '搜索成功', type: 'success', duration: 800 })
 }
+watch(checkLanguage, (newV) => {
+  console.log(newV);
+})
 </script>
 
 <template>
@@ -123,7 +129,8 @@ const search = async () => {
             </el-collapse-item>
             <el-collapse-item title="语言水平" name="1">
               <el-checkbox-group v-model="checkLanguage">
-                <el-checkbox size="small" v-for="item in allLanguage" :label="item" :value="item" />
+                <el-checkbox size="small" v-for="item in allLanguage" :label="item.language + '-' + item.level"
+                  :value="item" />
               </el-checkbox-group>
             </el-collapse-item>
             <el-collapse-item title="技能水平" name="2">
@@ -170,7 +177,7 @@ const search = async () => {
               </el-tag>
               <el-tag v-for="(item, index) in checkLanguage" :key="index" size="small" type="info" effect="plain"
                 class="tag">
-                {{ item }}
+                {{ item.language + "-" + item.level }}
               </el-tag>
               <el-tag v-for="(item, index) in checkSpecial" :key="index" size="small" type="info" effect="plain"
                 class="tag">
@@ -188,17 +195,17 @@ const search = async () => {
           </template>
         </el-card>
       </aside>
-      <div v-if="students?.length > 0">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr);">
-          <div v-for="item in students" :key="item.id">
+      <div v-if="students?.length > 0" style="min-height: 400px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px;">
+          <div v-for="item in students" :key="item.id" style="min-height: 280px;">
             <studentCard :item="item" />
           </div>
         </div>
       </div>
-      <el-empty style="left:800px;top:170px;position: absolute;" v-else :image-size="250" description="暂无学生信息" />
+      <el-empty style="position: relative; margin: 100px auto;" v-else :image-size="250" description="暂无学生信息" />
     </main>
   </div>
-  <div class="demo-pb">
+  <div class="demo-pb" v-if="students?.length > 0">
     <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" size="large" :background="true"
       layout="prev, pager, next, jumper" :total="total" @size-change="handleSizeChange"
       @current-change="handleCurrentChange" />
@@ -224,14 +231,19 @@ const search = async () => {
 
 .main-content {
   display: flex;
-  gap: 0px;
-  padding: 5px;
+  gap: 6px;
+  padding: 12px;
+  min-height: calc(100vh - 200px);
+  padding-bottom: 100px;
 }
 
 .filter-sidebar {
-  margin-top: 10px;
-  width: 280px;
+  margin-top: 8px;
+  width: 260px;
   flex-shrink: 0;
+  position: sticky;
+  top: 16px;
+  height: fit-content;
 }
 
 .filter-header {
@@ -245,16 +257,25 @@ const search = async () => {
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: space-around;
-  position: fixed;
-  bottom: 20px;
+  justify-content: center;
+  position: sticky;
+  bottom: 0;
+  z-index: 1000;
+  padding: 20px 0;
+  background: linear-gradient(transparent, #f5f5f5 50%);
+  margin-top: 20px;
 }
 
 .tag-box {
   display: flex;
   justify-content: flex-start;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+.home-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
 }
 </style>
