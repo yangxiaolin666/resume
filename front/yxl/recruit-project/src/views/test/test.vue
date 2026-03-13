@@ -1,495 +1,711 @@
 <script setup>
-import { ref, reactive } from 'vue'
-import { User, Avatar, Location, Clock, Phone, Message, Notebook, Briefcase, Medal } from '@element-plus/icons-vue'
-import { ElInput, ElInputNumber } from 'element-plus'
-
-const personalInfo = reactive({
-  age: '33岁',
-  gender: '男',
-  location: '上海',
-  experience: '6年经验',
-  phone: '15888888888',
-  email: 'qminjianli@qq.com'
+/* eslint-disable prettier/prettier */
+import { onMounted, ref, computed, watch } from 'vue'
+import { ArrowRightBold, UploadFilled } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { getStudentById, updateResume, completeInfo, getStatics } from '@/api/student'
+import { getProvinces, getCitiesByProvince } from '@/api/area'
+import { ElMessage } from 'element-plus'
+import { useUserStore } from '@/stores/user'
+import { genFileId } from 'element-plus'
+const userStore = useUserStore()
+const userId = userStore.userId
+const router = useRouter()
+const all = ref({
+  "age": 40,
+  "gender": "男",
+  "nation": "汉族",
+  "major": "计算机科学与技术",
+  "degree": "本科生",
+  "graduationYear": 2027,
+  "internship": 1,
+  "languages": [
+    {
+      "language": "英语",
+      "level": "四级"
+    }
+  ],
+  "cities": [
+    "大连", "北京"
+  ],
+  "provinces": [
+    "辽宁", "广东"
+  ],
+  "certificates": [
+    {
+      "certName": "计算机",
+      "level": "二级"
+    }
+  ],
+  "internships": [
+    {
+      "company": "腾讯",
+      "experience": "游戏后端开发"
+    },
+    {
+      "company": "阿里",
+      "experience": "游戏后端开发"
+    },
+  ],
+  "specialities": [
+    "Java", "C++", "Python"
+  ],
+  "jobs": [
+    "后端开发", "前端开发"
+  ]
 })
 
-const skills = reactive({
-  language: '大学英语6级证书，荣获全国大学生英语竞赛一等奖，能够熟练的进行交流、读写。',
-  technical: '计算机二级证书，熟练操作Windows平台的各类应用软件，如Word、Excel。',
-  team: '具有丰富的团队组建与才经验和项目管理与协调经验。'
+const degreeOptions = [
+  {
+    value: '本科生',
+    label: '本科生'
+  },
+  {
+    value: '研究生',
+    label: '研究生'
+  }
+]
+const SmajorOptions = [
+  {
+    value: '计算机科学与技术',
+    label: '计算机科学与技术'
+  },
+  {
+    value: '软件工程',
+    label: '软件工程'
+  },
+  {
+    value: '人工智能',
+    label: '人工智能'
+  },
+  {
+    value: '网络工程',
+    label: '网络工程'
+  }
+]
+const BmajorOptions = [
+  {
+    value: '计算机技术',
+    label: '计算机技术'
+  },
+  {
+    value: '人工智能',
+    label: '人工智能'
+  }
+]
+const allSpeciality = ref([])
+const languageInput = ref('')
+const levelInput = ref('')
+const certNameInput = ref('')
+const certLevelInput = ref('')
+const companyInput = ref('')
+const experienceInput = ref('')
+const skillNameInput = ref('')
+const jobInput = ref('')
+
+const allTag = ref()
+const allLanguage = ref([])
+const allJob = ref([])
+const allSpecial = ref([])
+const allCity = ref(['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州'])
+
+const selectedSkills = ref([])
+const selectedLanguages = ref([])
+const selectedJobs = ref([])
+const selectedCities = ref([])
+
+// 意向城市相关数据
+const provinceOptions = ref([])
+const cityOptions = ref([])
+const selectedProvince = ref('')
+const selectedCity = ref('')
+const pdfURL = ref()
+onMounted(async () => {
+  const {
+    data: {
+      data: { list }
+    }
+  } = await getStudentById(userId)
+  all.value = list[0]
+  console.log(all.value);
+  pdfURL.value = "http://81.70.199.174:8081" + all.value.resume.resume
+
+  allSpeciality.value = all.value.specialities.map(item => item.speciality)
+
+  // 加载标签数据
+  const { data: { data: data1 } } = await getStatics()
+  allTag.value = data1
+  allLanguage.value = [...new Set(allTag.value.languages.map(item => item.language + '-' + item.level))]
+  allJob.value = [...new Set(allTag.value.jobs.map(item => item.name))]
+  allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
+
+  // 初始化已选择的标签
+  selectedSkills.value = all.value.specialities.map(item => item.speciality)
+  selectedLanguages.value = all.value.languages.map(item => item.language + '-' + item.level)
+  selectedJobs.value = all.value.jobs.map(item => item.post)
+  selectedCities.value = all.value.cities || []
+
+  // 加载省份数据
+  const provincesRes = await getProvinces()
+  provinceOptions.value = provincesRes.data.result.map(province => ({
+    value: province.id,
+    label: province.name
+  }))
 })
 
-const progress = reactive({
-  computer: 90,
-  english: 85
+watch(allSpeciality, (newV) => {
+  all.value.specialities = newV
+  console.log(newV)
 })
 
-const hobbies = ref('')
+watch(selectedSkills, (newV) => {
+  all.value.specialities = newV
+  console.log('技能选择变化:', newV)
+})
 
-const editingField = ref('')
+watch(selectedLanguages, (newV) => {
+  all.value.languages = newV.map(item => {
+    const [language, level] = item.split('-')
+    return { language, level }
+  })
+  console.log('语言选择变化:', newV)
+})
 
-const startEdit = (field) => {
-  editingField.value = field
+watch(selectedJobs, (newV) => {
+  all.value.jobs = newV.map(post => ({ post }))
+  console.log('工作选择变化:', newV)
+})
+
+watch(selectedCities, (newV) => {
+  all.value.cities = newV
+  console.log('城市选择变化:', newV)
+})
+const upload = ref()
+const handleExceed = (files) => {
+  upload.value.clearFiles()
+  const file = files[0]
+  file.uid = genFileId()
+  upload.value.handleStart(file)
+}
+const uploadFile = ref(null)
+const handleFileChange = (file) => {
+  uploadFile.value = file.raw
+  ElMessage({
+    message: '简历上传成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+const handleUpdate = async () => {
+  if (uploadFile.value) {
+    const res = await updateResume(uploadFile.value)
+    console.log(res)
+  }
+}
+const addLanguage = () => {
+  if (!languageInput.value.trim() || !levelInput.value.trim()) {
+    ElMessage({
+      message: '请输入语言和等级',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.languages) {
+    all.value.languages = []
+  }
+  all.value.languages.push({
+    language: languageInput.value.trim(),
+    level: levelInput.value.trim()
+  })
+  console.log(all.value.languages);
+  languageInput.value = ''
+  levelInput.value = ''
+  ElMessage({
+    message: '语言添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+const removeLanguage = (index) => {
+  all.value.languages.splice(index, 1)
 }
 
-const saveEdit = (field, value) => {
-  if (field.includes('.')) {
-    const [section, subField] = field.split('.')
-    if (section === 'personalInfo') {
-      personalInfo[subField] = value
-    } else if (section === 'skills') {
-      skills[subField] = value
-    } else if (section === 'progress') {
-      progress[subField] = parseInt(value) || 0
-    }
-  } else if (field === 'hobbies') {
-    hobbies.value = value
+const addCertificate = () => {
+  if (!certNameInput.value.trim() || !certLevelInput.value.trim()) {
+    ElMessage({
+      message: '请输入证书名称和等级',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.certificates) {
+    all.value.certificates = []
+  }
+  all.value.certificates.push({
+    certName: certNameInput.value.trim(),
+    level: certLevelInput.value.trim()
+  })
+  console.log(all.value.certificates);
+
+  certNameInput.value = ''
+  certLevelInput.value = ''
+  ElMessage({
+    message: '证书添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeCertificate = (index) => {
+  all.value.certificates.splice(index, 1)
+}
+
+const addInternship = () => {
+  if (!companyInput.value.trim() || !experienceInput.value.trim()) {
+    ElMessage({
+      message: '请输入公司名称和实习经历',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.internships) {
+    all.value.internships = []
+  }
+  all.value.internships.push({
+    company: companyInput.value.trim(),
+    experience: experienceInput.value.trim()
+  })
+  console.log(all.value.internships);
+  companyInput.value = ''
+  experienceInput.value = ''
+  ElMessage({
+    message: '实习经历添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeInternship = (index) => {
+  all.value.internships.splice(index, 1)
+}
+
+const addSkill = () => {
+  if (!skillNameInput.value.trim()) {
+    ElMessage({
+      message: '请输入技能名称',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.specialities) {
+    all.value.specialities = []
+  }
+  all.value.specialities.push(
+    skillNameInput.value.trim(),
+  )
+  skillNameInput.value = ''
+  ElMessage({
+    message: '技能添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeSkill = (index) => {
+  all.value.specialities.splice(index, 1)
+}
+
+const addJob = () => {
+  if (!jobInput.value.trim()) {
+    ElMessage({
+      message: '请输入意向工作',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.jobs) {
+    all.value.jobs = []
+  }
+  all.value.jobs.push({
+    post: jobInput.value.trim()
+  })
+  jobInput.value = ''
+  ElMessage({
+    message: '意向工作添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeJob = (index) => {
+  all.value.jobs.splice(index, 1)
+}
+
+// 处理省份选择变化
+const handleProvinceChange = async (provinceId) => {
+  selectedProvince.value = provinceId
+  selectedCity.value = ''
+
+  if (provinceId) {
+    const citiesRes = await getCitiesByProvince(provinceId)
+    cityOptions.value = citiesRes.data.result.map(city => ({
+      value: city.id,
+      label: city.name
+    }))
+  } else {
+    cityOptions.value = []
+  }
+}
+
+// 添加意向城市
+const addIntentionCity = () => {
+  if (!selectedProvince.value || !selectedCity.value) {
+    ElMessage({
+      message: '请选择省份和城市',
+      type: 'warning',
+      duration: 1000
+    })
+    return
   }
 
-  editingField.value = ''
+  const selectedProvinceName = provinceOptions.value.find(p => p.value === selectedProvince.value)?.label
+  const selectedCityName = cityOptions.value.find(c => c.value === selectedCity.value)?.label
+
+  if (!all.value.provinces) {
+    all.value.provinces = []
+  }
+  if (!all.value.cities) {
+    all.value.cities = []
+  }
+
+  // 检查是否已存在相同的省份和城市组合
+  const existingIndex = all.value.provinces.findIndex((province, index) =>
+    province === selectedProvinceName && all.value.cities[index] === selectedCityName
+  )
+
+  if (existingIndex !== -1) {
+    ElMessage({
+      message: '该意向城市已存在',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+
+  all.value.provinces.push(selectedProvinceName)
+  all.value.cities.push(selectedCityName)
+
+  selectedProvince.value = ''
+  selectedCity.value = ''
+  cityOptions.value = []
+
+  ElMessage({
+    message: '意向城市添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+// 移除意向城市
+const removeIntentionCity = (index) => {
+  all.value.provinces.splice(index, 1)
+  all.value.cities.splice(index, 1)
+}
+const updateChange = async () => {
+  if (Array.isArray(all.value.degree)) {
+    all.value.degree = all.value.degree[0]
+  }
+  if (Array.isArray(all.value.major)) {
+    all.value.major = all.value.major[0]
+  }
+  // if(!uploadFile.value){
+  //   ElMessage({
+  //     message:'请上传简历',
+  //     type:'error',
+  //     duration:1000
+  //   })
+  //   return;
+  // }
+  const dataObj = {
+    "age": all.value.age,
+    "gender": all.value.gender,
+    "nation": all.value.nation,
+    "major": all.value.major,
+    "degree": all.value.degree,
+    "graduationYear": all.value.graduationYear,
+    "internship": all.value.internship,
+    "languages": all.value.languages,
+    "cities": all.value.cities || [],
+    "provinces": all.value.provinces || [],
+    "certificates": all.value.certificates,
+    "internships": all.value.internships,
+    "specialities": all.value.specialities,
+    "jobs": all.value.jobs.map(item => item.post)
+  }
+  console.log(all.value);
+  const res = await completeInfo(dataObj)
+  await handleUpdate()
+  console.log(res.data.data)
+  ElMessage({
+    message: '修改成功',
+    type: 'success',
+    duration: 1000
+  })
+  setTimeout(() => router.push('/selfMessage'), 1100)
 }
 </script>
 <template>
-  <div class="resume-container">
-    <div class="resume-wrapper">
-      <el-splitter>
-        <el-splitter-panel :resizable="false" size="30%" style="background-color: #254665;">
-          <div class="left-panel">
-            <div class="avatar-container">
-              <img src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" alt="头像" class="avatar">
-            </div>
-            <div class="personal-info">
-              <div v-for="item in [
-                { field: 'age', icon: User, label: '年龄' },
-                { field: 'gender', icon: Avatar, label: '性别' },
-                { field: 'location', icon: Location, label: '地点' },
-                { field: 'experience', icon: Clock, label: '工作经验' },
-                { field: 'phone', icon: Phone, label: '电话' },
-                { field: 'email', icon: Message, label: '邮箱' }
-              ]" :key="item.field" class="info-item" @dblclick="startEdit(`personalInfo.${item.field}`)">
-                <el-icon>
-                  <component :is="item.icon" />
-                </el-icon>
-                <span v-if="editingField !== `personalInfo.${item.field}`">{{ personalInfo[item.field] }}</span>
-                <el-input v-else v-model="personalInfo[item.field]"
-                  @blur="saveEdit(`personalInfo.${item.field}`, personalInfo[item.field])"
-                  @keyup.enter="saveEdit(`personalInfo.${item.field}`, personalInfo[item.field])" size="small"
-                  :placeholder="`请输入${item.label}`" autofocus />
-              </div>
-            </div>
-            <div class="skills-section">
-              <div v-for="item in [
-                { field: 'language', label: '语言能力' },
-                { field: 'technical', label: '技能能力' },
-                { field: 'team', label: '团队能力' }
-              ]" :key="item.field">
-                <h3>{{ item.label }}</h3>
-                <p @dblclick="startEdit(`skills.${item.field}`)">
-                  <span v-if="editingField !== `skills.${item.field}`">{{ skills[item.field] }}</span>
-                  <el-input v-else v-model="skills[item.field]" type="textarea" :rows="3"
-                    @blur="saveEdit(`skills.${item.field}`, skills[item.field])"
-                    @keyup.enter="saveEdit(`skills.${item.field}`, skills[item.field])" size="small"
-                    :placeholder="`请输入${item.label}`" autofocus />
-                </p>
-              </div>
-            </div>
-            <div class="skills-progress">
-              <div v-for="item in [
-                { field: 'computer', label: '计算机' },
-                { field: 'english', label: '英语' }
-              ]" :key="item.field">
-                <h3>{{ item.label }}</h3>
-                <div class="progress-container" @dblclick="startEdit(`progress.${item.field}`)">
-                  <div class="progress-bar">
-                    <div class="progress" :style="{ width: progress[item.field] + '%' }"></div>
-                  </div>
-                  <span v-if="editingField !== `progress.${item.field}`" class="progress-value">{{ progress[item.field]
-                  }}%</span>
-                  <el-input-number v-else v-model="progress[item.field]"
-                    @blur="saveEdit(`progress.${item.field}`, progress[item.field])"
-                    @keyup.enter="saveEdit(`progress.${item.field}`, progress[item.field])" :min="0" :max="100"
-                    size="small" controls-position="right" autofocus />
-                </div>
-              </div>
-            </div>
-            <div class="hobbies">
-              <h3>兴趣爱好</h3>
-              <div class="hobbies-content" @dblclick="startEdit('hobbies')">
-                <p v-if="editingField !== 'hobbies'">{{ hobbies || '双击添加兴趣爱好' }}</p>
-                <el-input v-else v-model="hobbies" type="textarea" :rows="3" @blur="saveEdit('hobbies', hobbies)"
-                  @keyup.enter="saveEdit('hobbies', hobbies)" size="small" placeholder="请输入兴趣爱好" autofocus />
-              </div>
+  <el-splitter>
+    <el-splitter-panel size="45%" :resizable="false">
+      <div class="demo-panel">
+        <h1 style="font-size: 60px; margin-bottom: 0px">
+          {{ all.name }}
+        </h1>
+        <div class="s-line">
+          <h4>性别:</h4>
+          <el-input v-model="all.gender" maxlength="2" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入性别" />
+        </div>
+        <div class="s-line">
+          <h4>年龄:</h4>
+          <el-input v-model="all.age" maxlength="3" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入年龄" />
+        </div>
+        <div class="s-line">
+          <h4>民族:</h4>
+          <el-input v-model="all.nation" maxlength="10" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入民族" />
+        </div>
+        <div class="s-line">
+          <h4>学号:</h4>
+          <el-input v-model="all.stuId" maxlength="12" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入学号" />
+        </div>
+        <div class="s-line">
+          <h4>学位:</h4>
+          <el-cascader v-model="all.degree" :options="degreeOptions" style="width: 150px;height: 32px"
+            placeholder="请选择学位" popper-style="max-height:80px;" />
+        </div>
+        <div class="s-line">
+          <h4>专业:</h4>
+          <el-cascader v-model="all.major"
+            :options="all.degree ? (all.degree[0] === '本科生' || all.degree === '本科生' ? SmajorOptions : BmajorOptions) : []"
+            style="width: 150px;height: 32px" placeholder="请选择专业" popper-style="max-height:150px;">
+            <template #empty>
+              <span style="font-size: 15px;margin-bottom: 55px;">请先选择学位</span>
+            </template>
+          </el-cascader>
+        </div>
+        <div class="s-line">
+          <h4>毕业年份</h4>
+          <el-input v-model="all.graduationYear" maxlength="5" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入毕业年份" />
+        </div>
+        <div class="s-line">
+          <h4>实习次数:</h4>
+          <el-input v-model="all.internship" maxlength="10" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入实习次数" />
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>技能水平</h4>
+            <el-checkbox-group v-model="selectedSkills" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allSpecial" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
+            <div class="tag-box">
+              <el-tag v-for="(skill, index) in selectedSkills" :key="index" size="small" type="primary" effect="plain"
+                closable @close="selectedSkills.splice(index, 1)" class="tag">
+                {{ skill }}
+              </el-tag>
             </div>
           </div>
-        </el-splitter-panel>
-        <el-splitter-panel :min="200" style="background-color: white;">
-          <div class="right-panel">
-            <div class="header">
-              <h1>全民简历</h1>
-              <div class="job-info">
-                <div class="info-row">
-                  <span class="label">求职意向：</span>
-                  <span class="value">行政专员</span>
-                  <span class="label">意向城市：</span>
-                  <span class="value">上海</span>
-                </div>
-                <div class="info-row">
-                  <span class="label">期望薪资：</span>
-                  <span class="value">11000/月</span>
-                  <span class="label">入职时间：</span>
-                  <span class="value">一个月内到岗</span>
-                </div>
-              </div>
-            </div>
-            <div class="section">
-              <h2><el-icon>
-                  <Notebook />
-                </el-icon> 教育背景</h2>
-              <div class="section-content">
-                <div class="timeline-item">
-                  <div class="timeline-date">2012-09 ~ 2016-07</div>
-                  <div class="timeline-content">
-                    <h3>全民简历师范大学</h3>
-                    <span class="major">工商管理（本科）</span>
-                    <p class="description">专业成绩：GPA 3.66/4（专业前5%）</p>
-                    <p class="description">
-                      主修课程：基础会计学、货币银行学、统计学、经济学概论、财务会计学、管理学原理、组织行为学、市场营销学、国际贸易理论、国际贸易实务、人力资源开发与管理、财务管理学、企业经营战略概论、质量管理学、西方经济学等等。
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="section">
-              <h2><el-icon>
-                  <Briefcase />
-                </el-icon> 工作经验</h2>
-              <div class="section-content">
-                <div class="timeline-item">
-                  <div class="timeline-date">2018-09 ~ 至今</div>
-                  <div class="timeline-content">
-                    <h3>全民简历科技有限公司</h3>
-                    <span class="position">行政专员</span>
-                    <ul class="responsibilities">
-                      <li>
-                        负责本部门的行政人事管理和日常事务，协助总监做好各部门之间的综合协调，落实公司规章制度，沟通内外联系，保证上情下达和下情上报，负责对会议文件决定的事项进行催办、查办和落实，负责公司组织系统研讨和修订。
-                      </li>
-                      <li>编制公司人事管理制度，规避各项人事风险。</li>
-                    </ul>
-                  </div>
-                </div>
-                <div class="timeline-item">
-                  <div class="timeline-date">2016-09 ~ 2018-08</div>
-                  <div class="timeline-content">
-                    <h3>上海柠岸网络科技有限公司</h3>
-                    <span class="position">行政专员</span>
-                    <ul class="responsibilities">
-                      <li>负责中心简单财务管理，资产管控；</li>
-                      <li>负责公司总部的来访客户接待工作，负责引导和介绍公司的分布情况；</li>
-                      <li>负责中心的行政事务，人才班车管理、人才建立员工归宿感及前台管理；</li>
-                      <li>负责招聘工作，确保人才团队管理和人才储备及培养。</li>
-                      <li>督导公司各项行政、人事制度、员工福利、生日以及公司各种宴会活动的执行。</li>
-                      <li>负责招聘工作，制定公司的人力资源发展计划，确保人才梯队发展和人才储备及培养。</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="section">
-              <h2><el-icon>
-                  <Medal />
-                </el-icon> 荣誉证书</h2>
-              <div class="section-content">
-                <ul class="certificates">
-                  <li>英语四级，听说读写能力良好，能流利的用英语进行日常交流，能快速浏览英文文档和书籍；</li>
-                  <li>通过全国计算机二级考试，熟练运用office等常用的办公软件。</li>
-                </ul>
-              </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>语言水平</h4>
+            <el-checkbox-group v-model="selectedLanguages" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allLanguage" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
+            <div class="tag-box">
+              <el-tag v-for="(lang, index) in selectedLanguages" :key="index" size="small" type="warning" effect="plain"
+                closable @close="selectedLanguages.splice(index, 1)" class="tag">
+                {{ lang }}
+              </el-tag>
             </div>
           </div>
-        </el-splitter-panel>
-      </el-splitter>
-    </div>
-  </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>证书信息</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-input v-model="certNameInput" placeholder="请输入证书名称(例:计算机)" size="default" style="width: 150px;" />
+              <el-input v-model="certLevelInput" placeholder="请输入等级(例:二级)" size="default" style="width: 150px;" />
+              <el-button type="success" size="small" @click="addCertificate">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(cert, index) in all.certificates" :key="index" size="small" type="success" effect="plain"
+                closable @close="removeCertificate(index)" class="tag">
+                {{ cert.certName }}-{{ cert.level }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>意向工作</h4>
+            <el-checkbox-group v-model="selectedJobs" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allJob" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
+            <div class="tag-box">
+              <el-tag v-for="(job, index) in selectedJobs" :key="index" size="small" type="warning" effect="plain"
+                closable @close="selectedJobs.splice(index, 1)" class="tag">
+                {{ job }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>实习经历</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-input v-model="companyInput" placeholder="请输入公司名称(例:阿里)" size="default" style="width: 150px;" />
+              <el-input v-model="experienceInput" placeholder="请输入实习经历(例:游戏后端开发)" size="default"
+                style="width: 150px;" />
+              <el-button type="success" size="small" @click="addInternship">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(internship, index) in all.internships" :key="index" size="small" type="danger"
+                effect="plain" closable @close="removeInternship(index)" class="tag">
+                {{ internship.company }}-{{ internship.experience }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>意向城市</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-select v-model="selectedProvince" placeholder="请选择省份" size="default" style="width: 150px;"
+                @change="handleProvinceChange" clearable>
+                <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label"
+                  :value="province.value">
+                </el-option>
+              </el-select>
+              <el-select v-model="selectedCity" placeholder="请选择城市" size="default" style="width: 150px;"
+                :disabled="!selectedProvince" clearable>
+                <el-option v-for="city in cityOptions" :key="city.value" :label="city.label" :value="city.value">
+                </el-option>
+              </el-select>
+              <el-button type="success" size="small" @click="addIntentionCity">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(province, index) in all.provinces" :key="index" size="small" type="primary" effect="plain"
+                closable @close="removeIntentionCity(index)" class="tag">
+                {{ province }}-{{ all.cities[index] }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <span style="font-size: 15px;">
+              <el-button @click="updateChange" type="success" size="large"
+                style="width:350px;margin-top: 30px;">提交修改</el-button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </el-splitter-panel>
+    <el-splitter-panel>
+      <!-- <div class="demo-panel">
+        <img src="@/assents/简历(3)_01.png" alt="">
+      </div> -->
+      <el-upload ref="upload" class="upload-demo" drag show-file-list :limit="1" :on-change="handleFileChange"
+        :auto-upload="false" :on-exceed="handleExceed"
+        style="width: 80%;margin-top:100px;margin-left:100px;height: 100%;">
+        <el-icon class="el-icon--upload" style="font-size: 200px;">
+          <upload-filled /></el-icon>
+        <div class="el-upload__text" style="height:100px;font-size: 30px;">
+          将简历文件拖拽至此上传或 <em>点击上传</em>
+        </div>
+        <template #tip>
+          <div class="el-upload__tip" style="margin-right: 100px;">
+            <p>可提交格式:PDF、DOC、DOCX</p>
+            <p>限制提交一个文件,新文件将覆盖旧文件</p>
+            <el-link v-if="all.resume?.resume" :href="pdfURL" type="primary">点击查看上一次提交的简历</el-link>
+          </div>
+        </template>
+      </el-upload>
+
+    </el-splitter-panel>
+  </el-splitter>
 </template>
 
-<style scoped>
-.resume-container {
+<style scoped lang="scss">
+.demo-panel {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   align-items: center;
-  min-height: 100vh;
-  padding: 20px;
-  background-color: #f5f5f5;
-}
-
-.resume-wrapper {
-  width: 1000px;
-  height: 1400px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.left-panel {
-  padding: 40px 20px;
-  color: white;
+  justify-content: flex-start;
   height: 100%;
-  box-sizing: border-box;
+
+  .s-line {
+    font-size: 20px;
+    display: flex;
+    justify-content: space-between;
+    width: 75%;
+    padding: 20px;
+    border-bottom: 2px solid var(--el-border-color);
+  }
 }
 
-.avatar-container {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-}
-
-.avatar {
-  width: 120px;
-  height: 160px;
-  border-radius: 5px;
-  object-fit: cover;
-}
-
-.personal-info {
-  margin-bottom: 40px;
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-  margin-bottom: 15px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  padding: 5px;
-  border-radius: 4px;
-}
-
-.info-item:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.info-item i {
-  margin-right: 10px;
-  width: 16px;
-  text-align: center;
-}
-
-/* Element Plus 组件样式优化 */
-:deep(.el-input__wrapper) {
-  background: transparent !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
-}
-
-:deep(.el-input__inner) {
-  color: white !important;
-}
-
-:deep(.el-textarea__inner) {
-  background: transparent !important;
-  color: white !important;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.5) inset !important;
-}
-
-:deep(.el-input-number) {
-  width: 80px;
-}
-
-.skills-section {
-  margin-bottom: 30px;
-}
-
-.skills-section h3 {
-  font-size: 16px;
-  margin-bottom: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 5px;
-}
-
-.skills-section p {
-  font-size: 12px;
-  line-height: 1.5;
-  margin-bottom: 15px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  padding: 8px;
-  border-radius: 4px;
-  position: relative;
-}
-
-.skills-section p:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-
-
-.skills-progress {
-  margin-bottom: 30px;
-}
-
-.skills-progress h3 {
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.progress-container {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 15px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  padding: 8px;
-  border-radius: 4px;
-}
-
-.progress-container:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 4px;
-  overflow: hidden;
-  flex: 1;
-}
-
-.progress {
-  height: 100%;
-  background-color: white;
-  border-radius: 4px;
-}
-
-.progress-value {
-  font-size: 12px;
-  min-width: 30px;
-}
-
-
-
-.hobbies h3 {
-  font-size: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 5px;
-}
-
-.hobbies-content {
-  cursor: pointer;
-  transition: background-color 0.3s;
-  padding: 8px;
-  border-radius: 4px;
-  position: relative;
-}
-
-.hobbies-content:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.hobbies-content p {
-  font-size: 12px;
-  line-height: 1.5;
+h4 {
   margin: 0;
-  color: rgba(255, 255, 255, 0.8);
 }
 
+.skill {
+  font-size: 20px;
 
+  h4 {
+    margin: 10px 0;
+  }
 
-.right-panel {
-  padding: 40px;
-  height: 100%;
-  box-sizing: border-box;
-  overflow-y: auto;
+  .tag-box {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 }
 
-.header {
-  margin-bottom: 40px;
-}
-
-.header h1 {
-  font-size: 28px;
-  margin-bottom: 20px;
-  color: #254665;
-}
-
-.job-info {
-  margin-bottom: 20px;
-}
-
-.info-row {
-  margin-bottom: 10px;
-  font-size: 14px;
-}
-
-.label {
-  font-weight: bold;
-  margin-right: 5px;
-  color: black;
-}
-
-.value {
-  margin-right: 30px;
-  color: black;
-}
-
-.section {
-  margin-bottom: 40px;
-}
-
-.section h2 {
-  font-size: 18px;
-  color: #254665;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #e0e0e0;
+.right-box {
   display: flex;
-  align-items: center;
-}
+  justify-content: space-between;
 
-.section h2 i {
-  margin-right: 10px;
-}
+  .updateBtn {
+    display: flex;
+    flex-direction: column;
 
-.timeline-item {
-  margin-bottom: 30px;
-}
+    .el-button {
+      width: 200px;
+      height: 200px;
+      font-size: 100px;
+    }
 
-.timeline-date {
-  font-weight: bold;
-  margin-bottom: 10px;
-  color: #666;
-}
-
-.timeline-content h3 {
-  font-size: 16px;
-  margin-bottom: 5px;
-  color: #333;
-}
-
-.major,
-.position {
-  color: #666;
-  font-size: 14px;
-  margin-bottom: 10px;
-  display: block;
-}
-
-.description {
-  font-size: 14px;
-  line-height: 1.5;
-  margin-bottom: 10px;
-  color: #666;
-}
-
-.responsibilities,
-.certificates {
-  font-size: 14px;
-  line-height: 1.5;
-  color: #666;
-  padding-left: 20px;
-}
-
-.responsibilities li,
-.certificates li {
-  margin-bottom: 8px;
+    span {
+      font-size: 30px;
+    }
+  }
 }
 </style>

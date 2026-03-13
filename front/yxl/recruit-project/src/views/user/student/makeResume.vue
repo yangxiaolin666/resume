@@ -1,23 +1,23 @@
 <script setup>
 import { ref, reactive } from 'vue'
-import { User, Avatar, Location, Clock, Phone, Message, Notebook, Briefcase, Medal, Document, Download } from '@element-plus/icons-vue'
-import { ElInput, ElInputNumber, ElUpload, ElMessage, ElTooltip, ElButton } from 'element-plus'
+import { User, Avatar, Location, Clock, Phone, Message, Notebook, Briefcase, Document, Download, Plus, Delete, Medal, Upload, Check } from '@element-plus/icons-vue'
+import { ElInput, ElInputNumber, ElUpload, ElMessage, ElTooltip, ElButton, ElDatePicker } from 'element-plus'
 import html2pdf from 'html2pdf.js'
 
 const personalInfo = reactive({
-  name: '张三',
-  age: '33岁',
+  name: '小丽',
+  age: '24岁',
   gender: '男',
-  location: '上海',
-  experience: '6年经验',
-  phone: '15888888888',
-  email: 'qminjianli@qq.com'
+  location: '北京',
+  experience: '2年经验',
+  phone: '13888888888',
+  email: 'zhangming.dev@qq.com'
 })
 
 const skills = reactive({
-  language: '大学英语6级证书，荣获全国大学生英语竞赛一等奖，能够熟练的进行交流、读写。',
-  technical: '计算机二级证书，熟练操作Windows平台的各类应用软件，如Word、Excel。',
-  team: '具有丰富的团队组建与才经验和项目管理与协调经验。'
+  language: '英语CET-6，具备良好的英文文档阅读能力，能够阅读英文技术文档和进行基本的技术交流。',
+  technical: '熟练掌握HTML5、CSS3、JavaScript、TypeScript等前端核心技术，熟悉Vue.js、React等主流框架，了解Webpack、Vite等构建工具。',
+  team: '具备良好的团队协作能力，熟悉敏捷开发流程，能够与UI设计师、后端开发人员高效协作。'
 })
 
 const progress = reactive({
@@ -25,18 +25,68 @@ const progress = reactive({
   english: 85
 })
 
-const hobbies = ref('')
+const hobbies = ref('技术博客写作、开源项目贡献、前端技术研究、参加技术分享会、阅读技术书籍、关注前端技术发展趋势')
 
 const jobInfo = reactive({
   position: '前端开发程序员',
   city: '上海',
-  salary: '11000/月',
+  salary: '26000/月',
   onboardTime: '一个月内到岗'
 })
+
+const educationList = reactive([
+  {
+    id: 1,
+    startDate: '2024-09',
+    endDate: '2028-07',
+    university: '大连民族大学',
+    major: '计算机科学与技术（本科）',
+    details: '专业成绩：GPA 3.66/4（专业前5%）\n主修课程：数据结构与算法、计算机网络、操作系统、Web前端开发技术、JavaScript程序设计、Vue.js框架应用、React开发实践、移动端开发技术、软件工程、数据库原理与应用等。'
+  }
+])
+
+const workList = reactive([
+  {
+    id: 1,
+    startDate: '2026-01',
+    endDate: '至今',
+    company: '字节跳动科技有限公司',
+    position: '前端开发工程师',
+    responsibilities: '负责公司核心产品的前端架构设计和开发工作\n使用Vue3+TypeScript技术栈开发高性能Web应用\n参与组件库建设，提升团队开发效率和代码质量\n优化前端性能，提升用户体验和页面加载速度\n与产品、设计、后端团队紧密协作，确保项目顺利交付'
+  },
+])
+
+const projectList = reactive([
+  {
+    id: 1,
+    startDate: '2025-03',
+    endDate: '2025-08',
+    projectName: '电商平台前端重构项目',
+    role: '前端开发工程师',
+    description: '负责电商平台前端架构重构，采用Vue3+TypeScript技术栈\n实现组件化开发，提升代码复用性和可维护性\n优化页面加载性能，减少首屏加载时间30%\n集成微前端架构，支持多团队协作开发\n实现响应式设计，适配PC端和移动端'
+  },
+])
+
+const awardList = reactive([
+  {
+    id: 1,
+    awardName: '第十五届蓝桥杯国家一等奖'
+  },
+  {
+    id: 2,
+    awardName: '2025ICPC亚洲区域赛金奖'
+  },
+  {
+    id: 3,
+    awardName: 'GitHub开源项目贡献者，参与多个前端开源项目维护'
+  }
+])
 
 const avatarUrl = ref('https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png')
 const editingField = ref('')
 const originalValue = ref('')
+const editingEducation = ref(null)
+const editingEducationField = ref('')
 
 const startEdit = (field) => {
   editingField.value = field
@@ -126,7 +176,174 @@ const saveEdit = (field, value) => {
   }
 
   editingField.value = ''
-  ElMessage.success('修改成功')
+}
+
+const startEditEducation = (education, field) => {
+  editingEducation.value = education
+  editingEducationField.value = field
+  originalValue.value = education[field]
+}
+
+const saveEditEducation = (education, field, value) => {
+  if (!value || value.trim() === '') {
+    education[field] = originalValue.value
+  } else {
+    education[field] = value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const cancelEditEducation = () => {
+  if (editingEducation.value && editingEducationField.value) {
+    editingEducation.value[editingEducationField.value] = originalValue.value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const addEducation = () => {
+  educationList.push({
+    id: Date.now(),
+    startDate: '',
+    endDate: '',
+    university: '',
+    major: '',
+    details: ''
+  })
+}
+
+const removeEducation = (index) => {
+  if (educationList.length > 1) {
+    educationList.splice(index, 1)
+  } else {
+    ElMessage.warning('至少需要保留一条教育背景信息')
+  }
+}
+
+const startEditWork = (work, field) => {
+  editingEducation.value = work
+  editingEducationField.value = field
+  originalValue.value = work[field]
+}
+
+const saveEditWork = (work, field, value) => {
+  if (!value || value.trim() === '') {
+    work[field] = originalValue.value
+  } else {
+    work[field] = value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const cancelEditWork = () => {
+  if (editingEducation.value && editingEducationField.value) {
+    editingEducation.value[editingEducationField.value] = originalValue.value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const addWork = () => {
+  workList.push({
+    id: Date.now(),
+    startDate: '',
+    endDate: '',
+    company: '',
+    position: '',
+    responsibilities: ''
+  })
+}
+
+const removeWork = (index) => {
+  if (workList.length > 1) {
+    workList.splice(index, 1)
+  } else {
+    ElMessage.warning('至少需要保留一条工作经历信息')
+  }
+}
+
+const startEditProject = (project, field) => {
+  editingEducation.value = project
+  editingEducationField.value = field
+  originalValue.value = project[field]
+}
+
+const saveEditProject = (project, field, value) => {
+  if (!value || value.trim() === '') {
+    project[field] = originalValue.value
+  } else {
+    project[field] = value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const cancelEditProject = () => {
+  if (editingEducation.value && editingEducationField.value) {
+    editingEducation.value[editingEducationField.value] = originalValue.value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const addProject = () => {
+  projectList.push({
+    id: Date.now(),
+    startDate: '',
+    endDate: '',
+    projectName: '',
+    role: '',
+    description: ''
+  })
+}
+
+const removeProject = (index) => {
+  if (projectList.length > 1) {
+    projectList.splice(index, 1)
+  } else {
+    ElMessage.warning('至少需要保留一条项目经历信息')
+  }
+}
+
+const startEditAward = (award, field) => {
+  editingEducation.value = award
+  editingEducationField.value = field
+  originalValue.value = award[field]
+}
+
+const saveEditAward = (award, field, value) => {
+  if (!value || value.trim() === '') {
+    award[field] = originalValue.value
+  } else {
+    award[field] = value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const cancelEditAward = () => {
+  if (editingEducation.value && editingEducationField.value) {
+    editingEducation.value[editingEducationField.value] = originalValue.value
+  }
+  editingEducation.value = null
+  editingEducationField.value = ''
+}
+
+const addAward = () => {
+  awardList.push({
+    id: Date.now(),
+    awardName: ''
+  })
+}
+
+const removeAward = (index) => {
+  if (awardList.length > 1) {
+    awardList.splice(index, 1)
+  } else {
+    ElMessage.warning('至少需要保留一条获奖经历信息')
+  }
 }
 
 const downloadPDF = async () => {
@@ -183,22 +400,22 @@ const downloadPDF = async () => {
 </script>
 <template>
   <el-splitter>
-    <el-splitter-panel size="20%" :resizable="false">
+    <el-splitter-panel size="10%" :resizable="false">
       <div class="control-panel">
-        <el-button style="margin:5px 20px;margin-top:20px;width:87%;
-        height:45px;font-size: 20px;" type="info">
-          <el-icon>
-            <Document />
-          </el-icon>
-          <p style="font-size: 20px;margin-left:8px">简历预览</p>
-        </el-button>
-        <el-button style="margin:5px 20px;width:87%;
-        height:45px;font-size: 20px;" type="success" @click="downloadPDF">
-          <el-icon>
-            <Download />
-          </el-icon>
-          <p style="font-size: 20px;margin-left:8px">简历下载</p>
-        </el-button>
+        <div class="circle-buttons">
+          <el-tooltip content="简历预览" placement="top">
+            <el-button class="circle-button" type="info" :icon="Document" circle />
+          </el-tooltip>
+          <el-tooltip content="简历下载" placement="top">
+            <el-button class="circle-button" type="success" :icon="Download" circle @click="downloadPDF" />
+          </el-tooltip>
+          <el-tooltip content="简历保存" placement="top">
+            <el-button class="circle-button" type="warning" :icon="Check" circle />
+          </el-tooltip>
+          <el-tooltip content="简历上传" placement="top">
+            <el-button class="circle-button" type="primary" :icon="Upload" circle />
+          </el-tooltip>
+        </div>
       </div>
     </el-splitter-panel>
     <el-splitter-panel :min="200">
@@ -334,67 +551,276 @@ const downloadPDF = async () => {
                   </div>
                 </div>
                 <div class="section">
-                  <h2><el-icon>
-                      <Notebook />
-                    </el-icon> 教育背景</h2>
+                  <div class="section-header">
+                    <h2><el-icon>
+                        <Notebook />
+                      </el-icon> 教育背景</h2>
+                    <el-button type="primary" size="small" @click="addEducation" class="add-btn">
+                      <el-icon>
+                        <Plus />
+                      </el-icon>
+                    </el-button>
+                  </div>
                   <div class="section-content">
-                    <div class="timeline-item">
-                      <div class="timeline-date">2012-09 ~ 2016-07</div>
+                    <div v-for="(education, index) in educationList" :key="education.id"
+                      class="timeline-item education-item">
+                      <div class="education-actions">
+                        <el-button v-if="educationList.length > 1" type="danger" size="small"
+                          @click="removeEducation(index)" class="remove-btn">
+                          <el-icon>
+                            <Delete />
+                          </el-icon>
+                        </el-button>
+                      </div>
+                      <div class="timeline-date" @dblclick="startEditEducation(education, 'date')">
+                        <span v-if="!(editingEducation === education && editingEducationField === 'date')">
+                          {{ education.startDate }} ~ {{ education.endDate }}
+                        </span>
+                        <div v-else class="date-editor">
+                          <el-date-picker v-model="education.startDate" type="month" placeholder="开始时间" format="YYYY-MM"
+                            value-format="YYYY-MM"
+                            @blur="saveEditEducation(education, 'startDate', education.startDate)"
+                            @keyup.enter="saveEditEducation(education, 'startDate', education.startDate)"
+                            size="small" />
+                          <span class="date-separator">~</span>
+                          <el-date-picker v-model="education.endDate" type="month" placeholder="结束时间" format="YYYY-MM"
+                            value-format="YYYY-MM" @blur="saveEditEducation(education, 'endDate', education.endDate)"
+                            @keyup.enter="saveEditEducation(education, 'endDate', education.endDate)" size="small" />
+                          <div class="editor-actions">
+                            <el-button type="primary" size="small"
+                              @click="saveEditEducation(education, 'startDate', education.startDate)">保存</el-button>
+                            <el-button size="small" @click="cancelEditEducation">取消</el-button>
+                          </div>
+                        </div>
+                      </div>
                       <div class="timeline-content">
-                        <h3>全民简历师范大学</h3>
-                        <span class="major">工商管理（本科）</span>
-                        <p class="description">专业成绩：GPA 3.66/4（专业前5%）</p>
-                        <p class="description">
-                          主修课程：基础会计学、货币银行学、统计学、经济学概论、财务会计学、管理学原理、组织行为学、市场营销学、国际贸易理论、国际贸易实务、人力资源开发与管理、财务管理学、企业经营战略概论、质量管理学、西方经济学等等。
-                        </p>
+                        <h3 @dblclick="startEditEducation(education, 'university')">
+                          <span v-if="!(editingEducation === education && editingEducationField === 'university')">
+                            {{ education.university || '双击输入大学名称' }}
+                          </span>
+                          <el-input v-else v-model="education.university"
+                            @blur="saveEditEducation(education, 'university', education.university)"
+                            @keyup.enter="saveEditEducation(education, 'university', education.university)"
+                            placeholder="请输入大学名称" size="small" autofocus />
+                        </h3>
+                        <span class="major" @dblclick="startEditEducation(education, 'major')">
+                          <span v-if="!(editingEducation === education && editingEducationField === 'major')">
+                            {{ education.major || '双击输入专业' }}
+                          </span>
+                          <el-input v-else v-model="education.major"
+                            @blur="saveEditEducation(education, 'major', education.major)"
+                            @keyup.enter="saveEditEducation(education, 'major', education.major)" placeholder="请输入专业"
+                            size="small" autofocus />
+                        </span>
+                        <div class="description" @dblclick="startEditEducation(education, 'details')">
+                          <div v-if="!(editingEducation === education && editingEducationField === 'details')"
+                            style="white-space: pre-wrap;">{{ education.details || '双击输入详细信息' }}</div>
+                          <div v-else class="textarea-editor">
+                            <el-input v-model="education.details" type="textarea" :rows="6"
+                              placeholder="请输入详细信息（如专业成绩、主修课程等）"
+                              @blur="saveEditEducation(education, 'details', education.details)"
+                              @keyup.enter="saveEditEducation(education, 'details', education.details)" autofocus />
+                            <div class="editor-actions">
+                              <el-button type="primary" size="small"
+                                @click="saveEditEducation(education, 'details', education.details)">保存</el-button>
+                              <el-button size="small" @click="cancelEditEducation">取消</el-button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div class="section">
-                  <h2><el-icon>
-                      <Briefcase />
-                    </el-icon> 工作经验</h2>
+                  <div class="section-header">
+                    <h2><el-icon>
+                        <Briefcase />
+                      </el-icon> 工作经验</h2>
+                    <el-button type="primary" size="small" @click="addWork" class="add-btn">
+                      <el-icon>
+                        <Plus />
+                      </el-icon>
+
+                    </el-button>
+                  </div>
                   <div class="section-content">
-                    <div class="timeline-item">
-                      <div class="timeline-date">2018-09 ~ 至今</div>
-                      <div class="timeline-content">
-                        <h3>全民简历科技有限公司</h3>
-                        <span class="position">行政专员</span>
-                        <ul class="responsibilities">
-                          <li>
-                            负责本部门的行政人事管理和日常事务，协助总监做好各部门之间的综合协调，落实公司规章制度，沟通内外联系，保证上情下达和下情上报，负责对会议文件决定的事项进行催办、查办和落实，负责公司组织系统研讨和修订。
-                          </li>
-                          <li>编制公司人事管理制度，规避各项人事风险。</li>
-                        </ul>
+                    <div v-for="(work, index) in workList" :key="work.id" class="timeline-item work-item">
+                      <div class="work-actions">
+                        <el-button v-if="workList.length > 1" type="danger" size="small" @click="removeWork(index)"
+                          class="remove-btn">
+                          <el-icon>
+                            <Delete />
+                          </el-icon>
+                        </el-button>
                       </div>
-                    </div>
-                    <div class="timeline-item">
-                      <div class="timeline-date">2016-09 ~ 2018-08</div>
+                      <div class="timeline-date" @dblclick="startEditWork(work, 'date')">
+                        <span v-if="!(editingEducation === work && editingEducationField === 'date')">
+                          {{ work.startDate }} ~ {{ work.endDate }}
+                        </span>
+                        <div v-else class="date-editor">
+                          <el-date-picker v-model="work.startDate" type="month" placeholder="开始时间" format="YYYY-MM"
+                            value-format="YYYY-MM" @blur="saveEditWork(work, 'startDate', work.startDate)"
+                            @keyup.enter="saveEditWork(work, 'startDate', work.startDate)" size="small" />
+                          <span class="date-separator">~</span>
+                          <el-input v-model="work.endDate" placeholder="结束时间（如：至今）"
+                            @blur="saveEditWork(work, 'endDate', work.endDate)"
+                            @keyup.enter="saveEditWork(work, 'endDate', work.endDate)" size="small" />
+                          <div class="editor-actions">
+                            <el-button type="primary" size="small"
+                              @click="saveEditWork(work, 'startDate', work.startDate)">保存</el-button>
+                            <el-button size="small" @click="cancelEditWork">取消</el-button>
+                          </div>
+                        </div>
+                      </div>
                       <div class="timeline-content">
-                        <h3>上海柠岸网络科技有限公司</h3>
-                        <span class="position">行政专员</span>
-                        <ul class="responsibilities">
-                          <li>负责中心简单财务管理，资产管控；</li>
-                          <li>负责公司总部的来访客户接待工作，负责引导和介绍公司的分布情况；</li>
-                          <li>负责中心的行政事务，人才班车管理、人才建立员工归宿感及前台管理；</li>
-                          <li>负责招聘工作，确保人才团队管理和人才储备及培养。</li>
-                          <li>督导公司各项行政、人事制度、员工福利、生日以及公司各种宴会活动的执行。</li>
-                          <li>负责招聘工作，制定公司的人力资源发展计划，确保人才梯队发展和人才储备及培养。</li>
-                        </ul>
+                        <h3 @dblclick="startEditWork(work, 'company')">
+                          <span v-if="!(editingEducation === work && editingEducationField === 'company')">
+                            {{ work.company || '双击输入公司名称' }}
+                          </span>
+                          <el-input v-else v-model="work.company" @blur="saveEditWork(work, 'company', work.company)"
+                            @keyup.enter="saveEditWork(work, 'company', work.company)" placeholder="请输入公司名称"
+                            size="small" autofocus />
+                        </h3>
+                        <span class="position" @dblclick="startEditWork(work, 'position')">
+                          <span v-if="!(editingEducation === work && editingEducationField === 'position')">
+                            {{ work.position || '双击输入职位' }}
+                          </span>
+                          <el-input v-else v-model="work.position" @blur="saveEditWork(work, 'position', work.position)"
+                            @keyup.enter="saveEditWork(work, 'position', work.position)" placeholder="请输入职位"
+                            size="small" autofocus />
+                        </span>
+                        <div class="responsibilities" @dblclick="startEditWork(work, 'responsibilities')">
+                          <div v-if="!(editingEducation === work && editingEducationField === 'responsibilities')"
+                            style="white-space: pre-wrap;">{{ work.responsibilities || '双击输入工作职责' }}</div>
+                          <div v-else class="textarea-editor">
+                            <el-input v-model="work.responsibilities" type="textarea" :rows="6"
+                              placeholder="请输入工作职责（每项职责用换行分隔）"
+                              @blur="saveEditWork(work, 'responsibilities', work.responsibilities)"
+                              @keyup.enter="saveEditWork(work, 'responsibilities', work.responsibilities)" autofocus />
+                            <div class="editor-actions">
+                              <el-button type="primary" size="small"
+                                @click="saveEditWork(work, 'responsibilities', work.responsibilities)">保存</el-button>
+                              <el-button size="small" @click="cancelEditWork">取消</el-button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div class="section">
-                  <h2><el-icon>
-                      <Medal />
-                    </el-icon> 荣誉证书</h2>
+                  <div class="section-header">
+                    <h2><el-icon>
+                        <Briefcase />
+                      </el-icon> 项目经历</h2>
+                    <el-button type="primary" size="small" @click="addProject" class="add-btn">
+                      <el-icon>
+                        <Plus />
+                      </el-icon>
+                    </el-button>
+                  </div>
                   <div class="section-content">
-                    <ul class="certificates">
-                      <li>英语四级，听说读写能力良好，能流利的用英语进行日常交流，能快速浏览英文文档和书籍；</li>
-                      <li>通过全国计算机二级考试，熟练运用office等常用的办公软件。</li>
-                    </ul>
+                    <div v-for="(project, index) in projectList" :key="project.id" class="timeline-item project-item">
+                      <div class="project-actions">
+                        <el-button v-if="projectList.length > 1" type="danger" size="small"
+                          @click="removeProject(index)" class="remove-btn">
+                          <el-icon>
+                            <Delete />
+                          </el-icon>
+                        </el-button>
+                      </div>
+                      <div class="timeline-date" @dblclick="startEditProject(project, 'date')">
+                        <span v-if="!(editingEducation === project && editingEducationField === 'date')">
+                          {{ project.startDate }} ~ {{ project.endDate }}
+                        </span>
+                        <div v-else class="date-editor">
+                          <el-date-picker v-model="project.startDate" type="month" placeholder="开始时间" format="YYYY-MM"
+                            value-format="YYYY-MM" @blur="saveEditProject(project, 'startDate', project.startDate)"
+                            @keyup.enter="saveEditProject(project, 'startDate', project.startDate)" size="small" />
+                          <span class="date-separator">~</span>
+                          <el-date-picker v-model="project.endDate" type="month" placeholder="结束时间" format="YYYY-MM"
+                            value-format="YYYY-MM" @blur="saveEditProject(project, 'endDate', project.endDate)"
+                            @keyup.enter="saveEditProject(project, 'endDate', project.endDate)" size="small" />
+                          <div class="editor-actions">
+                            <el-button type="primary" size="small"
+                              @click="saveEditProject(project, 'startDate', project.startDate)">保存</el-button>
+                            <el-button size="small" @click="cancelEditProject">取消</el-button>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="timeline-content">
+                        <h3 @dblclick="startEditProject(project, 'projectName')">
+                          <span v-if="!(editingEducation === project && editingEducationField === 'projectName')">
+                            {{ project.projectName || '双击输入项目名称' }}
+                          </span>
+                          <el-input v-else v-model="project.projectName"
+                            @blur="saveEditProject(project, 'projectName', project.projectName)"
+                            @keyup.enter="saveEditProject(project, 'projectName', project.projectName)"
+                            placeholder="请输入项目名称" size="small" autofocus />
+                        </h3>
+                        <span class="role" @dblclick="startEditProject(project, 'role')">
+                          <span v-if="!(editingEducation === project && editingEducationField === 'role')">
+                            {{ project.role || '双击输入担任角色' }}
+                          </span>
+                          <el-input v-else v-model="project.role" @blur="saveEditProject(project, 'role', project.role)"
+                            @keyup.enter="saveEditProject(project, 'role', project.role)" placeholder="请输入担任角色"
+                            size="small" autofocus />
+                        </span>
+                        <div class="description" @dblclick="startEditProject(project, 'description')">
+                          <div v-if="!(editingEducation === project && editingEducationField === 'description')"
+                            style="white-space: pre-wrap;">{{ project.description || '双击输入项目描述' }}</div>
+                          <div v-else class="textarea-editor">
+                            <el-input v-model="project.description" type="textarea" :rows="6"
+                              placeholder="请输入项目描述（每项描述用换行分隔）"
+                              @blur="saveEditProject(project, 'description', project.description)"
+                              @keyup.enter="saveEditProject(project, 'description', project.description)" autofocus />
+                            <div class="editor-actions">
+                              <el-button type="primary" size="small"
+                                @click="saveEditProject(project, 'description', project.description)">保存</el-button>
+                              <el-button size="small" @click="cancelEditProject">取消</el-button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="section">
+                  <div class="section-header">
+                    <h2><el-icon>
+                        <Medal />
+                      </el-icon> 获奖经历</h2>
+                    <el-button type="primary" size="small" @click="addAward" class="add-btn">
+                      <el-icon>
+                        <Plus />
+                      </el-icon>
+                    </el-button>
+                  </div>
+                  <div class="section-content">
+                    <div v-for="(award, index) in awardList" :key="award.id" class="timeline-item award-item">
+                      <div class="award-actions">
+                        <el-button v-if="awardList.length > 1" type="danger" size="small" @click="removeAward(index)"
+                          class="remove-btn">
+                          <el-icon>
+                            <Delete />
+                          </el-icon>
+                        </el-button>
+                      </div>
+                      <div class="award-content" @dblclick="startEditAward(award, 'awardName')">
+                        <div v-if="!(editingEducation === award && editingEducationField === 'awardName')"
+                          style="white-space: pre-wrap;">{{ award.awardName || '双击输入获奖经历' }}</div>
+                        <div v-else class="textarea-editor">
+                          <el-input v-model="award.awardName" type="textarea" :rows="3" placeholder="请输入获奖经历"
+                            @blur="saveEditAward(award, 'awardName', award.awardName)"
+                            @keyup.enter="saveEditAward(award, 'awardName', award.awardName)" autofocus />
+                          <div class="editor-actions">
+                            <el-button type="primary" size="small"
+                              @click="saveEditAward(award, 'awardName', award.awardName)">保存</el-button>
+                            <el-button size="small" @click="cancelEditAward">取消</el-button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -413,36 +839,14 @@ const downloadPDF = async () => {
   align-items: center;
   min-height: 100vh;
   padding: 20px;
-  background-color: #f5f5f5;
+  background-color: var(--el-bg-color);
 }
 
 .resume-wrapper {
-  width: 1000px;
-  height: 1400px;
+  width: 794px;
+  min-height: 1123px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
 }
-
-/* PDF生成专用样式 */
-@media print {
-  .resume-wrapper {
-    width: 100% !important;
-    height: auto !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-    padding: 0 !important;
-  }
-
-  .resume-container {
-    padding: 0 !important;
-    background: white !important;
-  }
-
-  .control-panel {
-    display: none !important;
-  }
-}
-
 
 
 .left-panel {
@@ -714,7 +1118,6 @@ const downloadPDF = async () => {
   margin-right: 30px;
   color: black;
   cursor: pointer;
-  transition: background-color 0.3s;
   padding: 2px 5px;
   border-radius: 3px;
   display: inline-block;
@@ -725,21 +1128,24 @@ const downloadPDF = async () => {
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-/* 右侧面板输入框样式 */
-.right-panel :deep(.el-input__wrapper) {
+/* 求职意向表单输入框样式 */
+.job-info :deep(.el-input__wrapper) {
   background: white !important;
   box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+  width: auto !important;
+  min-width: 80px;
 }
 
-.right-panel :deep(.el-input__inner) {
+.job-info :deep(.el-input__inner) {
   color: #606266 !important;
+  width: 100% !important;
 }
 
-.right-panel :deep(.el-textarea__inner) {
-  background: white !important;
-  color: #606266 !important;
-  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+.job-info .value .el-input {
+  width: auto !important;
+  max-width: 100px;
 }
+
 
 .section {
   margin-bottom: 40px;
@@ -807,5 +1213,458 @@ const downloadPDF = async () => {
 .responsibilities li,
 .certificates li {
   margin-bottom: 8px;
+}
+
+/* 教育背景编辑样式 */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  position: relative;
+}
+
+.section-header h2 {
+  margin-bottom: 0;
+  flex: 1;
+  position: relative;
+}
+
+.add-btn {
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.section-header:hover .add-btn {
+  opacity: 1;
+}
+
+.education-item {
+  position: relative;
+  padding: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.education-item:hover {
+  border-color: #e0e0e0;
+  background-color: #fafafa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.education-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.education-item:hover .education-actions {
+  opacity: 1;
+}
+
+.remove-btn {
+  padding: 4px 8px;
+  min-width: auto;
+}
+
+.timeline-date {
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  font-weight: bold;
+  color: #666;
+  background-color: #fafafa;
+  margin-left: 0;
+  padding-left: 0;
+  width: 90%;
+}
+
+.timeline-date:hover {
+  background-color: #e8f4fd;
+}
+
+
+.date-editor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.date-separator {
+  font-weight: bold;
+}
+
+.editor-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.timeline-content h3 {
+  cursor: pointer;
+  padding: 0px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  text-align: left;
+  margin-left: 0;
+  padding-left: 0;
+  width: 100%;
+}
+
+.timeline-content h3:hover {
+  background-color: #e8f4fd;
+}
+
+.major {
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  display: block;
+  text-align: left;
+  margin-left: 0;
+  padding-left: 0;
+  width: 100%;
+}
+
+.major:hover {
+  background-color: #e8f4fd;
+}
+
+/* 专门针对教育背景的样式 */
+.education-item .timeline-content h3 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+}
+
+.education-item .major {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+}
+
+.description {
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 8px;
+  transition: all 0.3s;
+  background-color: transparent;
+  border: 1px solid transparent;
+  min-height: 60px;
+}
+
+.description:hover {
+  background-color: #f8f9fa;
+  border-color: #e0e0e0;
+}
+
+.textarea-editor {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: white;
+}
+
+/* 日期选择器样式 */
+:deep(.el-date-editor) {
+  width: 140px;
+}
+
+:deep(.el-date-editor .el-input__wrapper) {
+  background: white !important;
+}
+
+/* 教育背景输入框样式 */
+.education-item :deep(.el-input__wrapper) {
+  background: white !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+.education-item :deep(.el-input__inner) {
+  color: #606266 !important;
+}
+
+.education-item :deep(.el-textarea__inner) {
+  background: white !important;
+  color: #606266 !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+/* 工作经历编辑样式 */
+.work-item {
+  position: relative;
+  padding: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.work-item:hover {
+  border-color: #e0e0e0;
+  background-color: #fafafa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.work-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.work-item:hover .work-actions {
+  opacity: 1;
+}
+
+.responsibilities {
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 8px;
+  transition: all 0.3s;
+  background-color: transparent;
+  border: 1px solid transparent;
+  min-height: 60px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.responsibilities:hover {
+  background-color: #f8f9fa;
+  border-color: #e0e0e0;
+}
+
+/* 专门针对工作经历的样式 */
+.work-item .timeline-content h3 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+  cursor: pointer;
+  padding: 0px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  margin-bottom: 10px;
+}
+
+.work-item .timeline-content h3:hover {
+  background-color: #e8f4fd;
+}
+
+.work-item .position {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+  cursor: pointer;
+  padding: 0px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  display: block;
+  margin-bottom: 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.work-item .position:hover {
+  background-color: #e8f4fd;
+}
+
+/* 工作经历输入框样式 */
+.work-item :deep(.el-input__wrapper) {
+  background: white !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+.work-item :deep(.el-input__inner) {
+  color: #606266 !important;
+}
+
+.work-item :deep(.el-textarea__inner) {
+  background: white !important;
+  color: #606266 !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+/* 项目经历编辑样式 */
+.project-item {
+  position: relative;
+  padding: 7px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.project-item:hover {
+  border-color: #e0e0e0;
+  background-color: #fafafa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.project-actions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.project-item:hover .project-actions {
+  opacity: 1;
+}
+
+/* 专门针对项目经历的样式 */
+.project-item .timeline-content h3 {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+  cursor: pointer;
+  padding: 0px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  margin-bottom: 10px;
+}
+
+.project-item .timeline-content h3:hover {
+  background-color: #e8f4fd;
+}
+
+.project-item .role {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+  cursor: pointer;
+  padding: 0px 8px;
+  border-radius: 4px;
+  transition: background-color 0.3s;
+  display: block;
+  margin-bottom: 15px;
+  color: #666;
+  font-size: 14px;
+}
+
+.project-item .role:hover {
+  background-color: #e8f4fd;
+}
+
+/* 项目经历输入框样式 */
+.project-item :deep(.el-input__wrapper) {
+  background: white !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+.project-item :deep(.el-input__inner) {
+  color: #606266 !important;
+}
+
+.project-item :deep(.el-textarea__inner) {
+  background: white !important;
+  color: #606266 !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+/* 获奖经历编辑样式 */
+.award-item {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background-color: transparent;
+  transition: all 0.3s ease;
+  margin-bottom: 0px;
+}
+
+.award-item:hover {
+  border-color: #e0e0e0;
+  background-color: #fafafa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.award-actions {
+  position: absolute;
+  top: 2px;
+  right: 10px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.award-item:hover .award-actions {
+  opacity: 1;
+}
+
+.award-content {
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 8px;
+  transition: all 0.3s;
+  background-color: transparent;
+  border: 1px solid transparent;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.award-content:hover {
+  background-color: #f8f9fa;
+  border-color: #e0e0e0;
+}
+
+/* 专门针对获奖经历的样式 */
+.award-item .award-content {
+  text-align: left !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+  width: 90% !important;
+}
+
+/* 获奖经历输入框样式 */
+.award-item :deep(.el-textarea__inner) {
+  background: white !important;
+  color: #606266 !important;
+  box-shadow: 0 0 0 1px #dcdfe6 inset !important;
+}
+
+/* 圆圈按钮样式 */
+.control-panel {
+  display: flex;
+  justify-content: center;
+  height: 100%;
+  background-color: var(--el-bg-color);
+}
+
+.circle-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+.circle-button {
+  width: 60px !important;
+  height: 60px !important;
+  font-size: 24px !important;
+  transition: all 0.3s ease;
+}
+
+/* 第一个按钮往右偏移 */
+.circle-button:first-child {
+  margin-left: 10px;
+}
+
+.circle-button:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 </style>

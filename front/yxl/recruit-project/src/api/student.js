@@ -89,3 +89,6 @@ export const deleteLike=(list)=>{
 export const queryLike=(data)=>{
   return request.post('/com/LikeQuery',data)
 }
+export const queryComId=()=>{
+  return request.get('/com/QueryComIdByUserId')
+}

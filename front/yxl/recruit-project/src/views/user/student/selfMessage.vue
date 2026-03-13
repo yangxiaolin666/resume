@@ -83,6 +83,5 @@ onMounted(async () => {
     </el-descriptions-item>
 
   </el-descriptions>
-  <el-calendar controller-type="select" />
 </template>
 <style scoped lang="scss"></style>

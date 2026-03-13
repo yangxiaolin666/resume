@@ -275,6 +275,7 @@ export default defineComponent({
       try {
         loading.value = true
         const { data: { data } } = await getStatics()
+        console.log(data)
         chartData.value = data
       } catch (error) {
         console.error('加载统计数据失败:', error)

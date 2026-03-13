@@ -2,7 +2,7 @@
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
-import { addLike, deleteLike, queryLike } from '@/api/student';
+import { addLike, deleteLike, queryComId, queryLike } from '@/api/student';
 import { useUserStore } from '@/stores/user';
 const router = useRouter()
 const { item } = defineProps({
@@ -13,19 +13,19 @@ const { item } = defineProps({
 })
 const isLike = ref(false)
 const userStore=useUserStore()
-const comId=5
+const com_id=ref(5)
 const stuId=item.id
-const IdList=[
+onMounted(async ()=>{
+  const res=await queryComId()
+  com_id.value=res.data.data
+  IdList.value=[
   {
-    "comId": comId,
+    "comId": com_id.value,
     "stuId": stuId,
   }
-]
-const pageNum=1
-const pageSize=10
-onMounted(async ()=>{
+  ]
   const {data:{data:{list}}}=await queryLike({
-    "com_id":5,
+    "com_id":com_id.value,
     "pageNum":pageNum,
     "pageSize":pageSize
   })
@@ -35,9 +35,18 @@ onMounted(async ()=>{
     }
   }
 })
+const IdList=ref([
+  {
+    "comId": com_id.value,
+    "stuId": stuId,
+  }
+])
+const pageNum=1
+const pageSize=10
+
 const toggleLike = async () => {
   if (isLike.value) {
-    const res=await deleteLike(IdList)
+    const res=await deleteLike(IdList.value)
     ElMessage({
       message:'取消收藏成功',
       type:'success',
@@ -45,7 +54,7 @@ const toggleLike = async () => {
     })
     console.log(res)
   } else {
-    const res=await addLike(IdList)
+    const res=await addLike(IdList.value)
     ElMessage({
       message:'收藏成功',
       type:'success',
@@ -89,7 +98,7 @@ const toggleLike = async () => {
           {{ item.speciality }}
         </el-tag>
         <el-tag v-for="(item, index) in item.languages" :key="index" size="small" type="warning" class="tag">
-          {{ item.language }} {{ item.level }}
+          {{ item.language }}-{{ item.level }}
         </el-tag>
       </div>
       <span v-else>暂无标签</span>
