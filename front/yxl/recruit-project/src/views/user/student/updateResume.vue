@@ -3,7 +3,7 @@
 import { onMounted, ref, computed, watch } from 'vue'
 import { ArrowRightBold, UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { getStudentById, updateResume, completeInfo } from '@/api/student'
+import { getStudentById, updateResume, completeInfo, getStatics } from '@/api/student'
 import { getProvinces, getCitiesByProvince } from '@/api/area'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -103,6 +103,17 @@ const experienceInput = ref('')
 const skillNameInput = ref('')
 const jobInput = ref('')
 
+const allTag = ref()
+const allLanguage = ref([])
+const allJob = ref([])
+const allSpecial = ref([])
+const allCity = ref(['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州'])
+
+const selectedSkills = ref([])
+const selectedLanguages = ref([])
+const selectedJobs = ref([])
+const selectedCities = ref([])
+
 // 意向城市相关数据
 const provinceOptions = ref([])
 const cityOptions = ref([])
@@ -121,6 +132,19 @@ onMounted(async () => {
 
   allSpeciality.value = all.value.specialities.map(item => item.speciality)
 
+  // 加载标签数据
+  const { data: { data: data1 } } = await getStatics()
+  allTag.value = data1
+  allLanguage.value = [...new Set(allTag.value.languages.map(item => item.language + '-' + item.level))]
+  allJob.value = [...new Set(allTag.value.jobs.map(item => item.name))]
+  allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
+
+  // 初始化已选择的标签
+  selectedSkills.value = all.value.specialities
+  selectedLanguages.value = all.value.languages.map(item => item.language + '-' + item.level)
+  selectedJobs.value = all.value.jobs.map(item => item.post)
+  selectedCities.value = all.value.cities || []
+
   // 加载省份数据
   const provincesRes = await getProvinces()
   provinceOptions.value = provincesRes.data.result.map(province => ({
@@ -132,6 +156,29 @@ onMounted(async () => {
 watch(allSpeciality, (newV) => {
   all.value.specialities = newV
   console.log(newV)
+})
+
+watch(selectedSkills, (newV) => {
+  all.value.specialities = newV
+  console.log('技能选择变化:', newV)
+})
+
+watch(selectedLanguages, (newV) => {
+  all.value.languages = newV.map(item => {
+    const [language, level] = item.split('-')
+    return { language, level }
+  })
+  console.log('语言选择变化:', newV)
+})
+
+watch(selectedJobs, (newV) => {
+  all.value.jobs = newV.map(post => ({ post }))
+  console.log('工作选择变化:', newV)
+})
+
+watch(selectedCities, (newV) => {
+  all.value.cities = newV
+  console.log('城市选择变化:', newV)
 })
 const upload = ref()
 const handleExceed = (files) => {
@@ -414,7 +461,7 @@ const updateChange = async () => {
 </script>
 <template>
   <el-splitter>
-    <el-splitter-panel size="30%" :resizable="false">
+    <el-splitter-panel size="40%" :resizable="false">
       <div class="demo-panel">
         <h1 style="font-size: 60px; margin-bottom: 0px">
           {{ all.name }}
@@ -467,14 +514,13 @@ const updateChange = async () => {
         <div class="s-line">
           <div class="skill">
             <h4>技能水平</h4>
-            <div style="display: flex; align-items: center; 
-            gap: 5px; margin-bottom: 5px;">
-              <el-input v-model="skillNameInput" placeholder="请输入技能名称(例:Java)" size="default" style="width: 305px;" />
-              <el-button type="success" size="small" @click="addSkill">+</el-button>
-            </div>
+            <el-checkbox-group v-model="selectedSkills" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allSpecial" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
             <div class="tag-box">
-              <el-tag v-for="(skill, index) in all.specialities" :key="index" size="small" type="primary" effect="plain"
-                closable @close="removeSkill(index)" class="tag">
+              <el-tag v-for="(skill, index) in selectedSkills" :key="index" size="small" type="primary" effect="plain"
+                closable @close="selectedSkills.splice(index, 1)" class="tag">
                 {{ skill }}
               </el-tag>
             </div>
@@ -483,16 +529,14 @@ const updateChange = async () => {
         <div class="s-line">
           <div class="skill">
             <h4>语言水平</h4>
-            <div style="display: flex; align-items: center; 
-            gap: 5px; margin-bottom: 5px;">
-              <el-input v-model="languageInput" placeholder="请输入语言(例:英语)" size="default" style="width: 150px;" />
-              <el-input v-model="levelInput" placeholder="请输入等级(例:四级)" size="default" style="width: 150px;" />
-              <el-button type="success" size="small" @click="addLanguage">+</el-button>
-            </div>
+            <el-checkbox-group v-model="selectedLanguages" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allLanguage" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
             <div class="tag-box">
-              <el-tag v-for="(lang, index) in all.languages" :key="index" size="small" type="warning" effect="plain"
-                closable @close="removeLanguage(index)" class="tag">
-                {{ lang.language }}-{{ lang.level }}
+              <el-tag v-for="(lang, index) in selectedLanguages" :key="index" size="small" type="warning" effect="plain"
+                closable @close="selectedLanguages.splice(index, 1)" class="tag">
+                {{ lang }}
               </el-tag>
             </div>
           </div>
@@ -502,8 +546,8 @@ const updateChange = async () => {
             <h4>证书信息</h4>
             <div style="display: flex; align-items: center; 
             gap: 5px; margin-bottom: 5px;">
-              <el-input v-model="certNameInput" placeholder="请输入证书名称(例:计算机)" size="default" style="width: 150px;" />
-              <el-input v-model="certLevelInput" placeholder="请输入等级(例:二级)" size="default" style="width: 150px;" />
+              <el-input v-model="certNameInput" placeholder="请输入证书名称(例:计算机)" size="default" style="width: 200px;" />
+              <el-input v-model="certLevelInput" placeholder="请输入等级(例:二级)" size="default" style="width: 200px;" />
               <el-button type="success" size="small" @click="addCertificate">+</el-button>
             </div>
             <div class="tag-box">
@@ -517,15 +561,14 @@ const updateChange = async () => {
         <div class="s-line">
           <div class="skill">
             <h4>意向工作</h4>
-            <div style="display: flex; align-items: center; 
-            gap: 5px; margin-bottom: 5px;">
-              <el-input v-model="jobInput" placeholder="请输入意向工作(例:后端开发)" size="default" style="width: 305px;" />
-              <el-button type="success" size="small" @click="addJob">+</el-button>
-            </div>
+            <el-checkbox-group v-model="selectedJobs" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allJob" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
             <div class="tag-box">
-              <el-tag v-for="(job, index) in all.jobs" :key="index" size="small" type="warning" effect="plain" closable
-                @close="removeJob(index)" class="tag">
-                {{ job.post }}
+              <el-tag v-for="(job, index) in selectedJobs" :key="index" size="small" type="warning" effect="plain"
+                closable @close="selectedJobs.splice(index, 1)" class="tag">
+                {{ job }}
               </el-tag>
             </div>
           </div>
@@ -535,9 +578,9 @@ const updateChange = async () => {
             <h4>实习经历</h4>
             <div style="display: flex; align-items: center; 
             gap: 5px; margin-bottom: 5px;">
-              <el-input v-model="companyInput" placeholder="请输入公司名称(例:阿里)" size="default" style="width: 150px;" />
+              <el-input v-model="companyInput" placeholder="请输入公司名称(例:阿里)" size="default" style="width: 200px;" />
               <el-input v-model="experienceInput" placeholder="请输入实习经历(例:游戏后端开发)" size="default"
-                style="width: 150px;" />
+                style="width: 200px;" />
               <el-button type="success" size="small" @click="addInternship">+</el-button>
             </div>
             <div class="tag-box">
@@ -553,13 +596,13 @@ const updateChange = async () => {
             <h4>意向城市</h4>
             <div style="display: flex; align-items: center; 
             gap: 5px; margin-bottom: 5px;">
-              <el-select v-model="selectedProvince" placeholder="请选择省份" size="default" style="width: 150px;"
+              <el-select v-model="selectedProvince" placeholder="请选择省份" size="default" style="width: 200px;"
                 @change="handleProvinceChange" clearable>
                 <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label"
                   :value="province.value">
                 </el-option>
               </el-select>
-              <el-select v-model="selectedCity" placeholder="请选择城市" size="default" style="width: 150px;"
+              <el-select v-model="selectedCity" placeholder="请选择城市" size="default" style="width: 200px;"
                 :disabled="!selectedProvince" clearable>
                 <el-option v-for="city in cityOptions" :key="city.value" :label="city.label" :value="city.value">
                 </el-option>
@@ -578,7 +621,7 @@ const updateChange = async () => {
           <div class="skill">
             <span style="font-size: 15px;">
               <el-button @click="updateChange" type="success" size="large"
-                style="width:350px;margin-top: 30px;">提交修改</el-button>
+                style="width:420px;margin-top: 30px;">提交修改</el-button>
             </span>
           </div>
         </div>

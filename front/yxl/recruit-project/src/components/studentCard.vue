@@ -100,9 +100,6 @@ const toggleLike = async () => {
         <el-tag v-for="(item, index) in item.languages" :key="index" size="small" type="warning" class="tag">
           {{ item.language }}-{{ item.level }}
         </el-tag>
-        <el-tag v-for="(item, index) in item.jobs" :key="index" size="small" type="danger" class="tag">
-          {{ item.post }}
-        </el-tag>
       </div>
       <span v-else>暂无标签</span>
     </div>

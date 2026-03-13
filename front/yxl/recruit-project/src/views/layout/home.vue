@@ -5,11 +5,12 @@ import {
 } from '@element-plus/icons-vue'
 import studentCard from '@/components/studentCard.vue'
 import { onMounted, ref, watch } from 'vue'
-import { getAllStudent, getStatics } from '@/api/student'
+import { getAllStudent, getStatics, addLike, deleteLike, queryComId, queryLike } from '@/api/student'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { useFilterStore } from '@/stores/students'
 import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/stores/user'
 const students = ref()
 const router = useRouter()
 const currentPage = ref(1)
@@ -17,6 +18,7 @@ const pageSize = ref(1000)
 const total = ref(10)
 const allTag = ref()
 const filterStore = useFilterStore()
+const userStore = useUserStore()
 const { clearAllFilters } = filterStore
 const {
   checkDegree,
@@ -31,6 +33,13 @@ const allLanguage = ref()
 const allJob = ref()
 const allSpecial = ref()
 const allCity = ref()
+const com_id = ref(5)
+const likedStudents = ref(new Set())
+
+const searchLanguage = ref('')
+const searchJob = ref('')
+const searchSpecial = ref('')
+const searchCity = ref('')
 const getStudent = async () => {
   const res = await getAllStudent({
     "gender": checkGender.value,
@@ -56,7 +65,12 @@ onMounted(async () => {
   allJob.value = [...new Set(allTag.value.jobs.map(item => item.name))]
   allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
   allCity.value = ['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州']
-  getStudent()
+
+  const res = await queryComId()
+  com_id.value = res.data.data
+
+  await getStudent()
+  await initLikeStatus()
   console.log(checkSpecial.value);
 
 })
@@ -91,6 +105,77 @@ const search = async () => {
 watch(checkLanguage, (newV) => {
   console.log(newV);
 })
+
+const filterLanguage = (items) => {
+  if (!searchLanguage.value) return items
+  return items.filter(item =>
+    (item.language + '-' + item.level).toLowerCase().includes(searchLanguage.value.toLowerCase())
+  )
+}
+
+const filterJob = (items) => {
+  if (!searchJob.value) return items
+  return items.filter(item =>
+    item.toLowerCase().includes(searchJob.value.toLowerCase())
+  )
+}
+
+const filterSpecial = (items) => {
+  if (!searchSpecial.value) return items
+  return items.filter(item =>
+    item.toLowerCase().includes(searchSpecial.value.toLowerCase())
+  )
+}
+
+const filterCity = (items) => {
+  if (!searchCity.value) return items
+  return items.filter(item =>
+    item.toLowerCase().includes(searchCity.value.toLowerCase())
+  )
+}
+
+const initLikeStatus = async () => {
+  try {
+    const { data: { data: { list } } } = await queryLike({
+      "com_id": com_id.value,
+      "pageNum": 1,
+      "pageSize": 1000
+    })
+
+    likedStudents.value = new Set(list.map(item => item.stuId))
+  } catch (error) {
+    console.error('初始化收藏状态失败:', error)
+  }
+}
+
+const toggleLike = async (student) => {
+  try {
+    const IdList = [{
+      "comId": com_id.value,
+      "stuId": student.id,
+    }]
+
+    if (likedStudents.value.has(student.id)) {
+      await deleteLike(IdList)
+      likedStudents.value.delete(student.id)
+      ElMessage({
+        message: '取消收藏成功',
+        type: 'success',
+        duration: 500
+      })
+    } else {
+      await addLike(IdList)
+      likedStudents.value.add(student.id)
+      ElMessage({
+        message: '收藏成功',
+        type: 'success',
+        duration: 500
+      })
+    }
+  } catch (error) {
+    console.error('收藏操作失败:', error)
+  }
+}
 </script>
 
 <template>
@@ -98,21 +183,8 @@ watch(checkLanguage, (newV) => {
     <main class="main-content">
       <aside class="filter-sidebar">
         <el-card class="filter-card">
-          <el-input placeholder="输入标签">
-            <template #prefix>
-              <el-icon>
-                <Search />
-              </el-icon>
-            </template>
-          </el-input>
           <el-collapse expand-icon-position="left">
-            <el-collapse-item title="性别" name="-2">
-              <el-radio-group v-model="checkGender">
-                <el-radio value="男" size="small">男</el-radio>
-                <el-radio value="女" size="small">女</el-radio>
-              </el-radio-group>
-            </el-collapse-item>
-            <el-collapse-item title="学位" name="-1">
+            <el-collapse-item title="学历" name="-1">
               <el-radio-group v-model="checkDegree">
                 <el-radio value="本科生" size="small">本科生</el-radio>
                 <el-radio value="研究生" size="small">研究生</el-radio>
@@ -128,24 +200,31 @@ watch(checkLanguage, (newV) => {
               </el-radio-group>
             </el-collapse-item>
             <el-collapse-item title="语言水平" name="1">
+              <el-input v-model="searchLanguage" placeholder="搜索语言标签" size="small" style="margin-bottom: 8px;"
+                clearable />
               <el-checkbox-group v-model="checkLanguage">
-                <el-checkbox size="small" v-for="item in allLanguage" :label="item.language + '-' + item.level"
-                  :value="item" />
+                <el-checkbox size="small" v-for="item in filterLanguage(allLanguage)"
+                  :key="item.language + '-' + item.level" :label="item.language + '-' + item.level" :value="item" />
               </el-checkbox-group>
             </el-collapse-item>
             <el-collapse-item title="技能水平" name="2">
+              <el-input v-model="searchSpecial" placeholder="搜索技能标签" size="small" style="margin-bottom: 8px;"
+                clearable />
               <el-checkbox-group v-model="checkSpecial">
-                <el-checkbox size="small" v-for="item in allSpecial" :label="item" :value="item" />
+                <el-checkbox size="small" v-for="item in filterSpecial(allSpecial)" :key="item" :label="item"
+                  :value="item" />
               </el-checkbox-group>
             </el-collapse-item>
             <el-collapse-item title="意向工作" name="3">
+              <el-input v-model="searchJob" placeholder="搜索工作标签" size="small" style="margin-bottom: 8px;" clearable />
               <el-checkbox-group v-model="checkJob">
-                <el-checkbox size="small" v-for="item in allJob" :label="item" :value="item" />
+                <el-checkbox size="small" v-for="item in filterJob(allJob)" :key="item" :label="item" :value="item" />
               </el-checkbox-group>
             </el-collapse-item>
             <el-collapse-item title="热门城市" name="4">
+              <el-input v-model="searchCity" placeholder="搜索城市标签" size="small" style="margin-bottom: 8px;" clearable />
               <el-checkbox-group v-model="checkCity">
-                <el-checkbox size="small" v-for="item in allCity" :label="item" :value="item" />
+                <el-checkbox size="small" v-for="item in filterCity(allCity)" :key="item" :label="item" :value="item" />
               </el-checkbox-group>
             </el-collapse-item>
           </el-collapse>
@@ -195,14 +274,102 @@ watch(checkLanguage, (newV) => {
           </template>
         </el-card>
       </aside>
-      <div v-if="students?.length > 0" style="min-height: 400px;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px; padding: 2px;">
-          <div v-for="item in students" :key="item.id" style="min-height: 280px;">
-            <studentCard :item="item" />
-          </div>
-        </div>
+      <div v-if="students?.length > 0" style="min-height: 400px; flex: 1;margin-top:8px;border-radius: 10px;">
+        <el-table :data="students" style="width: 100%" :border="true" stripe
+          :cell-style="{ textAlign: 'center', verticalAlign: 'middle' }">
+          <el-table-column prop="name" label="姓名" width="100" align="center" />
+          <el-table-column prop="gender" label="性别" width="80" align="center" />
+          <el-table-column prop="degree" label="学位" width="100" align="center" />
+          <el-table-column prop="major" label="专业" width="150" align="center" />
+          <el-table-column prop="graduationYear" label="毕业年份" width="100" align="center" />
+          <el-table-column label="语言能力" width="200" align="center">
+            <template #default="scope">
+              <div
+                style="height: 48px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <template v-if="scope.row.languages?.length > 0">
+                  <div v-if="scope.row.languages.length <= 3" style="display: flex; justify-content: center; gap: 4px;">
+                    <el-tag v-for="lang in scope.row.languages" :key="lang.language" size="small" type="warning">
+                      {{ lang.language }}-{{ lang.level }}
+                    </el-tag>
+                  </div>
+                  <template v-else>
+                    <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px;">
+                      <el-tag v-for="lang in scope.row.languages.slice(0, 3)" :key="lang.language" size="small"
+                        type="warning">
+                        {{ lang.language }}-{{ lang.level }}
+                      </el-tag>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 4px;">
+                      <el-tag v-for="lang in scope.row.languages.slice(3, 6)" :key="lang.language" size="small"
+                        type="warning">
+                        {{ lang.language }}-{{ lang.level }}
+                      </el-tag>
+                    </div>
+                  </template>
+                </template>
+                <span v-else
+                  style="display: flex; justify-content: center; align-items: center; height: 48px; color: #999;">
+                  暂无标签
+                </span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="专业技能" width="200" align="center">
+            <template #default="scope">
+              <div
+                style="height: 48px; overflow: hidden; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <template v-if="scope.row.specialities?.length > 0">
+                  <div v-if="scope.row.specialities.length <= 3"
+                    style="display: flex; justify-content: center; gap: 4px;">
+                    <el-tag v-for="skill in scope.row.specialities" :key="skill.speciality" size="small" type="primary">
+                      {{ skill.speciality }}
+                    </el-tag>
+                  </div>
+                  <template v-else>
+                    <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px;">
+                      <el-tag v-for="skill in scope.row.specialities.slice(0, 3)" :key="skill.speciality" size="small"
+                        type="primary">
+                        {{ skill.speciality }}
+                      </el-tag>
+                    </div>
+                    <div style="display: flex; justify-content: center; gap: 4px;">
+                      <el-tag v-for="skill in scope.row.specialities.slice(3, 6)" :key="skill.speciality" size="small"
+                        type="primary">
+                        {{ skill.speciality }}
+                      </el-tag>
+                    </div>
+                  </template>
+                </template>
+                <span v-else
+                  style="display: flex; justify-content: center; align-items: center; height: 48px; color: #999;">
+                  暂无标签
+                </span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="查看学生" align="center">
+            <template #default="scope">
+              <div style="display: flex; justify-content: center;">
+                <el-button type="primary" size="small"
+                  @click="$router.push({ path: '/studentDetail', query: { id: scope.row.id } })">
+                  查看简历
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="收藏学生" align="center">
+            <template #default="scope">
+              <div style="display: flex; justify-content: center;">
+                <el-button :type="likedStudents.has(scope.row.id) ? 'info' : 'success'" size="small"
+                  @click="toggleLike(scope.row)">
+                  {{ likedStudents.has(scope.row.id) ? '已收藏' : '收藏' }}
+                </el-button>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
       </div>
-      <el-empty style="position: relative; margin: 100px auto;" v-else :image-size="250" description="暂无学生信息" />
+      <el-empty style="margin: 100px auto;" v-else :image-size="250" description="暂无学生信息" />
     </main>
   </div>
   <div class="demo-pb" v-if="students?.length > 0">
@@ -220,6 +387,23 @@ watch(checkLanguage, (newV) => {
   cursor: pointer;
 }
 
+::-webkit-scrollbar {
+  width: 0px;
+  height: 1px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 5px;
+  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+body {
+  overflow-y: scroll;
+  overflow-x: scroll;
+  
+  background-color: var(--el-bg-color);
+}
+
 .menu-item:hover {
   color: #409eff;
 }
@@ -233,8 +417,8 @@ watch(checkLanguage, (newV) => {
   display: flex;
   gap: 6px;
   padding: 12px;
-  min-height: calc(100vh - 200px);
-  padding-bottom: 100px;
+  min-height: calc(100vh - 120px);
+  padding-bottom: 80px;
 }
 
 .filter-sidebar {
@@ -257,13 +441,11 @@ watch(checkLanguage, (newV) => {
   display: flex;
   width: 100%;
   align-items: center;
-  justify-content: center;
-  position: sticky;
-  bottom: 0;
+  justify-content: space-around;
+  position: fixed;
+  bottom: 20px;
   z-index: 1000;
-  padding: 20px 0;
-  background: linear-gradient(transparent, #f5f5f5 50%);
-  margin-top: 20px;
+  padding: 10px 0;
 }
 
 .tag-box {
@@ -276,6 +458,5 @@ watch(checkLanguage, (newV) => {
 
 .home-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
 }
 </style>
