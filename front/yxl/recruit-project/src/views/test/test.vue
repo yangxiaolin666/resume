@@ -1,422 +1,711 @@
 <script setup>
-import {
-  Delete,
-  Search,
-} from '@element-plus/icons-vue'
-import studentCard from '@/components/studentCard.vue'
-import { onMounted, ref, watch } from 'vue'
-import { getAllStudent, getStatics, addLike, deleteLike, queryComId, queryLike } from '@/api/student'
+/* eslint-disable prettier/prettier */
+import { onMounted, ref, computed, watch } from 'vue'
+import { ArrowRightBold, UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { getStudentById, updateResume, completeInfo, getStatics } from '@/api/student'
+import { getProvinces, getCitiesByProvince } from '@/api/area'
 import { ElMessage } from 'element-plus'
-import { useFilterStore } from '@/stores/students'
-import { storeToRefs } from 'pinia'
 import { useUserStore } from '@/stores/user'
-const students = ref()
-const router = useRouter()
-const currentPage = ref(1)
-const pageSize = ref(1000)
-const total = ref(10)
-const allTag = ref()
-const filterStore = useFilterStore()
+import { genFileId } from 'element-plus'
 const userStore = useUserStore()
-const { clearAllFilters } = filterStore
-const {
-  checkDegree,
-  checkMajor,
-  checkGender,
-  checkLanguage,
-  checkJob,
-  checkSpecial,
-  checkCity
-} = storeToRefs(filterStore)
-const allLanguage = ref()
-const allJob = ref()
-const allSpecial = ref()
-const allCity = ref()
-const com_id = ref(5)
-const likedStudents = ref(new Set())
-const getStudent = async () => {
-  const res = await getAllStudent({
-    "gender": checkGender.value,
-    "degree": checkDegree.value,
-    "major": checkMajor.value,
-    "languages": checkLanguage.value,
-    "specialities": checkSpecial.value,
-    "jobs": checkJob.value,
-    "cities": checkCity.value,
-    "pageNum": currentPage.value,
-    "pageSize": pageSize.value
-  })
-  const { data: { data } } = res
-  console.log(data)
-  total.value = data.size
-  students.value = data.list
-}
+const userId = userStore.userId
+const router = useRouter()
+const all = ref({
+  "age": 40,
+  "gender": "男",
+  "nation": "汉族",
+  "major": "计算机科学与技术",
+  "degree": "本科生",
+  "graduationYear": 2027,
+  "internship": 1,
+  "languages": [
+    {
+      "language": "英语",
+      "level": "四级"
+    }
+  ],
+  "cities": [
+    "大连", "北京"
+  ],
+  "provinces": [
+    "辽宁", "广东"
+  ],
+  "certificates": [
+    {
+      "certName": "计算机",
+      "level": "二级"
+    }
+  ],
+  "internships": [
+    {
+      "company": "腾讯",
+      "experience": "游戏后端开发"
+    },
+    {
+      "company": "阿里",
+      "experience": "游戏后端开发"
+    },
+  ],
+  "specialities": [
+    "Java", "C++", "Python"
+  ],
+  "jobs": [
+    "后端开发", "前端开发"
+  ]
+})
+
+const degreeOptions = [
+  {
+    value: '本科生',
+    label: '本科生'
+  },
+  {
+    value: '研究生',
+    label: '研究生'
+  }
+]
+const SmajorOptions = [
+  {
+    value: '计算机科学与技术',
+    label: '计算机科学与技术'
+  },
+  {
+    value: '软件工程',
+    label: '软件工程'
+  },
+  {
+    value: '人工智能',
+    label: '人工智能'
+  },
+  {
+    value: '网络工程',
+    label: '网络工程'
+  }
+]
+const BmajorOptions = [
+  {
+    value: '计算机技术',
+    label: '计算机技术'
+  },
+  {
+    value: '人工智能',
+    label: '人工智能'
+  }
+]
+const allSpeciality = ref([])
+const languageInput = ref('')
+const levelInput = ref('')
+const certNameInput = ref('')
+const certLevelInput = ref('')
+const companyInput = ref('')
+const experienceInput = ref('')
+const skillNameInput = ref('')
+const jobInput = ref('')
+
+const allTag = ref()
+const allLanguage = ref([])
+const allJob = ref([])
+const allSpecial = ref([])
+const allCity = ref(['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州'])
+
+const selectedSkills = ref([])
+const selectedLanguages = ref([])
+const selectedJobs = ref([])
+const selectedCities = ref([])
+
+// 意向城市相关数据
+const provinceOptions = ref([])
+const cityOptions = ref([])
+const selectedProvince = ref('')
+const selectedCity = ref('')
+const pdfURL = ref()
 onMounted(async () => {
+  const {
+    data: {
+      data: { list }
+    }
+  } = await getStudentById(userId)
+  all.value = list[0]
+  console.log(all.value);
+  pdfURL.value = "http://81.70.199.174:8081" + all.value.resume.resume
+
+  allSpeciality.value = all.value.specialities.map(item => item.speciality)
+
+  // 加载标签数据
   const { data: { data: data1 } } = await getStatics()
   allTag.value = data1
-  console.log(allTag.value)
-  allLanguage.value = [...new Set(allTag.value.languages)]
+  allLanguage.value = [...new Set(allTag.value.languages.map(item => item.language + '-' + item.level))]
   allJob.value = [...new Set(allTag.value.jobs.map(item => item.name))]
   allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
-  allCity.value = ['北京', '上海', '广州', '深圳', '武汉', '西安', '南京', '沈阳', '大连', '杭州']
 
-  const res = await queryComId()
-  com_id.value = res.data.data
+  // 初始化已选择的标签
+  selectedSkills.value = all.value.specialities.map(item => item.speciality)
+  selectedLanguages.value = all.value.languages.map(item => item.language + '-' + item.level)
+  selectedJobs.value = all.value.jobs.map(item => item.post)
+  selectedCities.value = all.value.cities || []
 
-  await getStudent()
-  await initLikeStatus()
-  console.log(checkSpecial.value);
-
+  // 加载省份数据
+  const provincesRes = await getProvinces()
+  provinceOptions.value = provincesRes.data.result.map(province => ({
+    value: province.id,
+    label: province.name
+  }))
 })
-const handleSizeChange = (val) => {
-  console.log(`${val} items per page`)
-}
-const handleCurrentChange = async (val) => {
-  console.log(`current page: ${val}`)
-  const res = await getAllStudent({
-    "pageNum": currentPage.value,
-    "pageSize": pageSize.value
+
+watch(allSpeciality, (newV) => {
+  all.value.specialities = newV
+  console.log(newV)
+})
+
+watch(selectedSkills, (newV) => {
+  all.value.specialities = newV
+  console.log('技能选择变化:', newV)
+})
+
+watch(selectedLanguages, (newV) => {
+  all.value.languages = newV.map(item => {
+    const [language, level] = item.split('-')
+    return { language, level }
   })
-  const { data: { data } } = res
-  console.log(data)
-  students.value = data.list
+  console.log('语言选择变化:', newV)
+})
+
+watch(selectedJobs, (newV) => {
+  all.value.jobs = newV.map(post => ({ post }))
+  console.log('工作选择变化:', newV)
+})
+
+watch(selectedCities, (newV) => {
+  all.value.cities = newV
+  console.log('城市选择变化:', newV)
+})
+const upload = ref()
+const handleExceed = (files) => {
+  upload.value.clearFiles()
+  const file = files[0]
+  file.uid = genFileId()
+  upload.value.handleStart(file)
 }
-const clearTag = () => {
-  clearAllFilters()
+const uploadFile = ref(null)
+const handleFileChange = (file) => {
+  uploadFile.value = file.raw
   ElMessage({
-    message: '清空标签成功',
+    message: '简历上传成功',
     type: 'success',
-    duration: 800
+    duration: 1000
   })
-  setTimeout(() => {
-    getStudent()
-  }, 100)
 }
-const search = async () => {
-  getStudent()
-  ElMessage({ message: '搜索成功', type: 'success', duration: 800 })
-}
-watch(checkLanguage, (newV) => {
-  console.log(newV);
-})
-
-const initLikeStatus = async () => {
-  try {
-    const { data: { data: { list } } } = await queryLike({
-      "com_id": com_id.value,
-      "pageNum": 1,
-      "pageSize": 1000
-    })
-
-    likedStudents.value = new Set(list.map(item => item.stuId))
-  } catch (error) {
-    console.error('初始化收藏状态失败:', error)
+const handleUpdate = async () => {
+  if (uploadFile.value) {
+    const res = await updateResume(uploadFile.value)
+    console.log(res)
   }
 }
-
-const toggleLike = async (student) => {
-  try {
-    const IdList = [{
-      "comId": com_id.value,
-      "stuId": student.id,
-    }]
-
-    if (likedStudents.value.has(student.id)) {
-      await deleteLike(IdList)
-      likedStudents.value.delete(student.id)
-      ElMessage({
-        message: '取消收藏成功',
-        type: 'success',
-        duration: 500
-      })
-    } else {
-      await addLike(IdList)
-      likedStudents.value.add(student.id)
-      ElMessage({
-        message: '收藏成功',
-        type: 'success',
-        duration: 500
-      })
-    }
-  } catch (error) {
-    console.error('收藏操作失败:', error)
+const addLanguage = () => {
+  if (!languageInput.value.trim() || !levelInput.value.trim()) {
     ElMessage({
-      message: '操作失败，请重试',
-      type: 'error',
+      message: '请输入语言和等级',
+      type: 'warning',
       duration: 1000
     })
+    return
+  }
+  if (!all.value.languages) {
+    all.value.languages = []
+  }
+  all.value.languages.push({
+    language: languageInput.value.trim(),
+    level: levelInput.value.trim()
+  })
+  console.log(all.value.languages);
+  languageInput.value = ''
+  levelInput.value = ''
+  ElMessage({
+    message: '语言添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+const removeLanguage = (index) => {
+  all.value.languages.splice(index, 1)
+}
+
+const addCertificate = () => {
+  if (!certNameInput.value.trim() || !certLevelInput.value.trim()) {
+    ElMessage({
+      message: '请输入证书名称和等级',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.certificates) {
+    all.value.certificates = []
+  }
+  all.value.certificates.push({
+    certName: certNameInput.value.trim(),
+    level: certLevelInput.value.trim()
+  })
+  console.log(all.value.certificates);
+
+  certNameInput.value = ''
+  certLevelInput.value = ''
+  ElMessage({
+    message: '证书添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeCertificate = (index) => {
+  all.value.certificates.splice(index, 1)
+}
+
+const addInternship = () => {
+  if (!companyInput.value.trim() || !experienceInput.value.trim()) {
+    ElMessage({
+      message: '请输入公司名称和实习经历',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.internships) {
+    all.value.internships = []
+  }
+  all.value.internships.push({
+    company: companyInput.value.trim(),
+    experience: experienceInput.value.trim()
+  })
+  console.log(all.value.internships);
+  companyInput.value = ''
+  experienceInput.value = ''
+  ElMessage({
+    message: '实习经历添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeInternship = (index) => {
+  all.value.internships.splice(index, 1)
+}
+
+const addSkill = () => {
+  if (!skillNameInput.value.trim()) {
+    ElMessage({
+      message: '请输入技能名称',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.specialities) {
+    all.value.specialities = []
+  }
+  all.value.specialities.push(
+    skillNameInput.value.trim(),
+  )
+  skillNameInput.value = ''
+  ElMessage({
+    message: '技能添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeSkill = (index) => {
+  all.value.specialities.splice(index, 1)
+}
+
+const addJob = () => {
+  if (!jobInput.value.trim()) {
+    ElMessage({
+      message: '请输入意向工作',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+  if (!all.value.jobs) {
+    all.value.jobs = []
+  }
+  all.value.jobs.push({
+    post: jobInput.value.trim()
+  })
+  jobInput.value = ''
+  ElMessage({
+    message: '意向工作添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+const removeJob = (index) => {
+  all.value.jobs.splice(index, 1)
+}
+
+// 处理省份选择变化
+const handleProvinceChange = async (provinceId) => {
+  selectedProvince.value = provinceId
+  selectedCity.value = ''
+
+  if (provinceId) {
+    const citiesRes = await getCitiesByProvince(provinceId)
+    cityOptions.value = citiesRes.data.result.map(city => ({
+      value: city.id,
+      label: city.name
+    }))
+  } else {
+    cityOptions.value = []
   }
 }
-</script>
 
+// 添加意向城市
+const addIntentionCity = () => {
+  if (!selectedProvince.value || !selectedCity.value) {
+    ElMessage({
+      message: '请选择省份和城市',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+
+  const selectedProvinceName = provinceOptions.value.find(p => p.value === selectedProvince.value)?.label
+  const selectedCityName = cityOptions.value.find(c => c.value === selectedCity.value)?.label
+
+  if (!all.value.provinces) {
+    all.value.provinces = []
+  }
+  if (!all.value.cities) {
+    all.value.cities = []
+  }
+
+  // 检查是否已存在相同的省份和城市组合
+  const existingIndex = all.value.provinces.findIndex((province, index) =>
+    province === selectedProvinceName && all.value.cities[index] === selectedCityName
+  )
+
+  if (existingIndex !== -1) {
+    ElMessage({
+      message: '该意向城市已存在',
+      type: 'warning',
+      duration: 1000
+    })
+    return
+  }
+
+  all.value.provinces.push(selectedProvinceName)
+  all.value.cities.push(selectedCityName)
+
+  selectedProvince.value = ''
+  selectedCity.value = ''
+  cityOptions.value = []
+
+  ElMessage({
+    message: '意向城市添加成功',
+    type: 'success',
+    duration: 1000
+  })
+}
+
+// 移除意向城市
+const removeIntentionCity = (index) => {
+  all.value.provinces.splice(index, 1)
+  all.value.cities.splice(index, 1)
+}
+const updateChange = async () => {
+  if (Array.isArray(all.value.degree)) {
+    all.value.degree = all.value.degree[0]
+  }
+  if (Array.isArray(all.value.major)) {
+    all.value.major = all.value.major[0]
+  }
+  // if(!uploadFile.value){
+  //   ElMessage({
+  //     message:'请上传简历',
+  //     type:'error',
+  //     duration:1000
+  //   })
+  //   return;
+  // }
+  const dataObj = {
+    "age": all.value.age,
+    "gender": all.value.gender,
+    "nation": all.value.nation,
+    "major": all.value.major,
+    "degree": all.value.degree,
+    "graduationYear": all.value.graduationYear,
+    "internship": all.value.internship,
+    "languages": all.value.languages,
+    "cities": all.value.cities || [],
+    "provinces": all.value.provinces || [],
+    "certificates": all.value.certificates,
+    "internships": all.value.internships,
+    "specialities": all.value.specialities,
+    "jobs": all.value.jobs.map(item => item.post)
+  }
+  console.log(all.value);
+  const res = await completeInfo(dataObj)
+  await handleUpdate()
+  console.log(res.data.data)
+  ElMessage({
+    message: '修改成功',
+    type: 'success',
+    duration: 1000
+  })
+  setTimeout(() => router.push('/selfMessage'), 1100)
+}
+</script>
 <template>
-  <div class="home-container" style="margin-bottom: 60px;">
-    <main class="main-content">
-      <aside class="filter-sidebar">
-        <el-card class="filter-card">
-          <el-collapse expand-icon-position="left">
-            <el-collapse-item title="学位" name="-1">
-              <el-radio-group v-model="checkDegree">
-                <el-radio value="本科生" size="small">本科生</el-radio>
-                <el-radio value="研究生" size="small">研究生</el-radio>
-              </el-radio-group>
-            </el-collapse-item>
-            <el-collapse-item title="专业" name="0">
-              <el-radio-group v-model="checkMajor">
-                <el-radio value="计算机科学与技术" size="small">计算机科学与技术</el-radio>
-                <el-radio value="软件工程" size="small">软件工程</el-radio>
-                <el-radio value="人工智能" size="small">人工智能</el-radio>
-                <el-radio value="网络工程" size="small">网络工程</el-radio>
-                <el-radio value="计算机技术" size="small">计算机技术</el-radio>
-              </el-radio-group>
-            </el-collapse-item>
-            <el-collapse-item title="语言水平" name="1">
-              <el-checkbox-group v-model="checkLanguage">
-                <el-checkbox size="small" v-for="item in allLanguage" :label="item.language + '-' + item.level"
-                  :value="item" />
-              </el-checkbox-group>
-            </el-collapse-item>
-            <el-collapse-item title="技能水平" name="2">
-              <el-checkbox-group v-model="checkSpecial">
-                <el-checkbox size="small" v-for="item in allSpecial" :label="item" :value="item" />
-              </el-checkbox-group>
-            </el-collapse-item>
-            <el-collapse-item title="意向工作" name="3">
-              <el-checkbox-group v-model="checkJob">
-                <el-checkbox size="small" v-for="item in allJob" :label="item" :value="item" />
-              </el-checkbox-group>
-            </el-collapse-item>
-            <el-collapse-item title="热门城市" name="4">
-              <el-checkbox-group v-model="checkCity">
-                <el-checkbox size="small" v-for="item in allCity" :label="item" :value="item" />
-              </el-checkbox-group>
-            </el-collapse-item>
-          </el-collapse>
-          <template #header>
-            <div class="filter-header">
-              <h4 style="margin:0px;">当前已选标签</h4>
-              <div>
-                <el-button @click="clearTag">
-                  <el-icon>
-                    <Delete />
-                  </el-icon>
-                </el-button>
-                <el-button @click="search">
-                  <el-icon>
-                    <Search />
-                  </el-icon>
-                </el-button>
-              </div>
+  <el-splitter>
+    <el-splitter-panel size="45%" :resizable="false">
+      <div class="demo-panel">
+        <h1 style="font-size: 60px; margin-bottom: 0px">
+          {{ all.name }}
+        </h1>
+        <div class="s-line">
+          <h4>性别:</h4>
+          <el-input v-model="all.gender" maxlength="2" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入性别" />
+        </div>
+        <div class="s-line">
+          <h4>年龄:</h4>
+          <el-input v-model="all.age" maxlength="3" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入年龄" />
+        </div>
+        <div class="s-line">
+          <h4>民族:</h4>
+          <el-input v-model="all.nation" maxlength="10" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入民族" />
+        </div>
+        <div class="s-line">
+          <h4>学号:</h4>
+          <el-input v-model="all.stuId" maxlength="12" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入学号" />
+        </div>
+        <div class="s-line">
+          <h4>学位:</h4>
+          <el-cascader v-model="all.degree" :options="degreeOptions" style="width: 150px;height: 32px"
+            placeholder="请选择学位" popper-style="max-height:80px;" />
+        </div>
+        <div class="s-line">
+          <h4>专业:</h4>
+          <el-cascader v-model="all.major"
+            :options="all.degree ? (all.degree[0] === '本科生' || all.degree === '本科生' ? SmajorOptions : BmajorOptions) : []"
+            style="width: 150px;height: 32px" placeholder="请选择专业" popper-style="max-height:150px;">
+            <template #empty>
+              <span style="font-size: 15px;margin-bottom: 55px;">请先选择学位</span>
+            </template>
+          </el-cascader>
+        </div>
+        <div class="s-line">
+          <h4>毕业年份</h4>
+          <el-input v-model="all.graduationYear" maxlength="5" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入毕业年份" />
+        </div>
+        <div class="s-line">
+          <h4>实习次数:</h4>
+          <el-input v-model="all.internship" maxlength="10" show-word-limit word-limit-position="outside"
+            style="width: 150px; height: 32px" placeholder="请输入实习次数" />
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>技能水平</h4>
+            <el-checkbox-group v-model="selectedSkills" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allSpecial" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
+            <div class="tag-box">
+              <el-tag v-for="(skill, index) in selectedSkills" :key="index" size="small" type="primary" effect="plain"
+                closable @close="selectedSkills.splice(index, 1)" class="tag">
+                {{ skill }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>语言水平</h4>
+            <el-checkbox-group v-model="selectedLanguages" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allLanguage" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
+            <div class="tag-box">
+              <el-tag v-for="(lang, index) in selectedLanguages" :key="index" size="small" type="warning" effect="plain"
+                closable @close="selectedLanguages.splice(index, 1)" class="tag">
+                {{ lang }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>证书信息</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-input v-model="certNameInput" placeholder="请输入证书名称(例:计算机)" size="default" style="width: 150px;" />
+              <el-input v-model="certLevelInput" placeholder="请输入等级(例:二级)" size="default" style="width: 150px;" />
+              <el-button type="success" size="small" @click="addCertificate">+</el-button>
             </div>
             <div class="tag-box">
-              <el-tag size="small" type="info" effect="plain" class="tag" v-if="checkGender.length > 0">
-                {{ checkGender }}
-              </el-tag>
-              <el-tag size="small" type="info" effect="plain" class="tag" v-if="checkDegree.length > 0">
-                {{ checkDegree }}
-              </el-tag>
-              <el-tag size="small" type="info" effect="plain" class="tag" v-if="checkMajor.length > 0">
-                {{ checkMajor }}
-              </el-tag>
-              <el-tag v-for="(item, index) in checkLanguage" :key="index" size="small" type="info" effect="plain"
-                class="tag">
-                {{ item.language + "-" + item.level }}
-              </el-tag>
-              <el-tag v-for="(item, index) in checkSpecial" :key="index" size="small" type="info" effect="plain"
-                class="tag">
-                {{ item }}
-              </el-tag>
-              <el-tag v-for="(item, index) in checkJob" :key="index" size="small" type="info" effect="plain"
-                class="tag">
-                {{ item }}
-              </el-tag>
-              <el-tag v-for="(item, index) in checkCity" :key="index" size="small" type="info" effect="plain"
-                class="tag">
-                {{ item }}
+              <el-tag v-for="(cert, index) in all.certificates" :key="index" size="small" type="success" effect="plain"
+                closable @close="removeCertificate(index)" class="tag">
+                {{ cert.certName }}-{{ cert.level }}
               </el-tag>
             </div>
-          </template>
-        </el-card>
-      </aside>
-      <div v-if="students?.length > 0" style="min-height: 400px; flex: 1;margin-top:8px;border-radius: 10px;">
-        <el-table :data="students" style="width: 100%" :border="true" stripe>
-          <el-table-column prop="name" label="姓名" width="100" />
-          <el-table-column prop="gender" label="性别" width="80" />
-          <el-table-column prop="degree" label="学位" width="100" />
-          <el-table-column prop="major" label="专业" width="150" />
-          <el-table-column prop="graduationYear" label="毕业年份" width="100" />
-          <el-table-column label="语言能力" width="200">
-            <template #default="scope">
-              <div
-                style="height: 48px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
-                <template v-if="scope.row.languages?.length > 0">
-                  <div v-if="scope.row.languages.length <= 3" style="display: flex; justify-content: center; gap: 4px;">
-                    <el-tag v-for="lang in scope.row.languages" :key="lang.language" size="small" type="warning">
-                      {{ lang.language }}-{{ lang.level }}
-                    </el-tag>
-                  </div>
-                  <template v-else>
-                    <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px;">
-                      <el-tag v-for="lang in scope.row.languages.slice(0, 3)" :key="lang.language" size="small"
-                        type="warning">
-                        {{ lang.language }}-{{ lang.level }}
-                      </el-tag>
-                    </div>
-                    <div style="display: flex; justify-content: center; gap: 4px;">
-                      <el-tag v-for="lang in scope.row.languages.slice(3, 6)" :key="lang.language" size="small"
-                        type="warning">
-                        {{ lang.language }}-{{ lang.level }}
-                      </el-tag>
-                    </div>
-                  </template>
-                </template>
-                <span v-else
-                  style="display: flex; justify-content: center; align-items: center; height: 48px; color: #999;">
-                  暂无标签
-                </span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="专业技能" width="200">
-            <template #default="scope">
-              <div
-                style="height: 48px; overflow: hidden; display: flex; flex-direction: column; justify-content: center;">
-                <template v-if="scope.row.specialities?.length > 0">
-                  <div v-if="scope.row.specialities.length <= 3"
-                    style="display: flex; justify-content: center; gap: 4px;">
-                    <el-tag v-for="skill in scope.row.specialities" :key="skill.speciality" size="small" type="primary">
-                      {{ skill.speciality }}
-                    </el-tag>
-                  </div>
-                  <template v-else>
-                    <div style="display: flex; justify-content: center; gap: 4px; margin-bottom: 4px;">
-                      <el-tag v-for="skill in scope.row.specialities.slice(0, 3)" :key="skill.speciality" size="small"
-                        type="primary">
-                        {{ skill.speciality }}
-                      </el-tag>
-                    </div>
-                    <div style="display: flex; justify-content: center; gap: 4px;">
-                      <el-tag v-for="skill in scope.row.specialities.slice(3, 6)" :key="skill.speciality" size="small"
-                        type="primary">
-                        {{ skill.speciality }}
-                      </el-tag>
-                    </div>
-                  </template>
-                </template>
-                <span v-else
-                  style="display: flex; justify-content: center; align-items: center; height: 48px; color: #999;">
-                  暂无标签
-                </span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column label="查看学生">
-            <template #default="scope">
-              <el-button type="primary" size="small"
-                @click="$router.push({ path: '/studentDetail', query: { id: scope.row.id } })">
-                查看简历
-              </el-button>
-            </template>
-          </el-table-column>
-          <el-table-column label="收藏学生">
-            <template #default="scope">
-              <el-button :type="likedStudents.has(scope.row.id) ? 'info' : 'success'" size="small"
-                @click="toggleLike(scope.row)">
-                {{ likedStudents.has(scope.row.id) ? '已收藏' : '收藏' }}
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>意向工作</h4>
+            <el-checkbox-group v-model="selectedJobs" style="margin-bottom: 10px;">
+              <el-checkbox size="small" v-for="item in allJob" :key="item" :label="item" :value="item"
+                style="margin-right: 8px; margin-bottom: 4px;" />
+            </el-checkbox-group>
+            <div class="tag-box">
+              <el-tag v-for="(job, index) in selectedJobs" :key="index" size="small" type="warning" effect="plain"
+                closable @close="selectedJobs.splice(index, 1)" class="tag">
+                {{ job }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>实习经历</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-input v-model="companyInput" placeholder="请输入公司名称(例:阿里)" size="default" style="width: 150px;" />
+              <el-input v-model="experienceInput" placeholder="请输入实习经历(例:游戏后端开发)" size="default"
+                style="width: 150px;" />
+              <el-button type="success" size="small" @click="addInternship">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(internship, index) in all.internships" :key="index" size="small" type="danger"
+                effect="plain" closable @close="removeInternship(index)" class="tag">
+                {{ internship.company }}-{{ internship.experience }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <h4>意向城市</h4>
+            <div style="display: flex; align-items: center; 
+            gap: 5px; margin-bottom: 5px;">
+              <el-select v-model="selectedProvince" placeholder="请选择省份" size="default" style="width: 150px;"
+                @change="handleProvinceChange" clearable>
+                <el-option v-for="province in provinceOptions" :key="province.value" :label="province.label"
+                  :value="province.value">
+                </el-option>
+              </el-select>
+              <el-select v-model="selectedCity" placeholder="请选择城市" size="default" style="width: 150px;"
+                :disabled="!selectedProvince" clearable>
+                <el-option v-for="city in cityOptions" :key="city.value" :label="city.label" :value="city.value">
+                </el-option>
+              </el-select>
+              <el-button type="success" size="small" @click="addIntentionCity">+</el-button>
+            </div>
+            <div class="tag-box">
+              <el-tag v-for="(province, index) in all.provinces" :key="index" size="small" type="primary" effect="plain"
+                closable @close="removeIntentionCity(index)" class="tag">
+                {{ province }}-{{ all.cities[index] }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="s-line">
+          <div class="skill">
+            <span style="font-size: 15px;">
+              <el-button @click="updateChange" type="success" size="large"
+                style="width:350px;margin-top: 30px;">提交修改</el-button>
+            </span>
+          </div>
+        </div>
       </div>
-      <el-empty style="margin: 100px auto;" v-else :image-size="250" description="暂无学生信息" />
-    </main>
-  </div>
-  <div class="demo-pb" v-if="students?.length > 0">
-    <el-pagination v-model:current-page="currentPage" v-model:page-size="pageSize" size="large" :background="true"
-      layout="prev, pager, next, jumper" :total="total" @size-change="handleSizeChange"
-      @current-change="handleCurrentChange" />
-  </div>
+    </el-splitter-panel>
+    <el-splitter-panel>
+      <!-- <div class="demo-panel">
+        <img src="@/assents/简历(3)_01.png" alt="">
+      </div> -->
+      <el-upload ref="upload" class="upload-demo" drag show-file-list :limit="1" :on-change="handleFileChange"
+        :auto-upload="false" :on-exceed="handleExceed"
+        style="width: 80%;margin-top:100px;margin-left:100px;height: 100%;">
+        <el-icon class="el-icon--upload" style="font-size: 200px;">
+          <upload-filled /></el-icon>
+        <div class="el-upload__text" style="height:100px;font-size: 30px;">
+          将简历文件拖拽至此上传或 <em>点击上传</em>
+        </div>
+        <template #tip>
+          <div class="el-upload__tip" style="margin-right: 100px;">
+            <p>可提交格式:PDF、DOC、DOCX</p>
+            <p>限制提交一个文件,新文件将覆盖旧文件</p>
+            <el-link v-if="all.resume?.resume" :href="pdfURL" type="primary">点击查看上一次提交的简历</el-link>
+          </div>
+        </template>
+      </el-upload>
+
+    </el-splitter-panel>
+  </el-splitter>
 </template>
 
-<style scoped>
-.menu-item {
+<style scoped lang="scss">
+.demo-panel {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 3px 0px;
-  cursor: pointer;
+  justify-content: flex-start;
+  height: 100%;
+
+  .s-line {
+    font-size: 20px;
+    display: flex;
+    justify-content: space-between;
+    width: 75%;
+    padding: 20px;
+    border-bottom: 2px solid var(--el-border-color);
+  }
 }
 
-::-webkit-scrollbar {
-  width: 0px;
-  height: 1px;
+h4 {
+  margin: 0;
 }
 
-::-webkit-scrollbar-thumb {
-  border-radius: 5px;
-  -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-  background: rgba(0, 0, 0, 0.2);
+.skill {
+  font-size: 20px;
+
+  h4 {
+    margin: 10px 0;
+  }
+
+  .tag-box {
+    display: flex;
+    justify-content: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
 }
 
-body {
-  overflow-y: scroll;
-  overflow-x: scroll;
-}
-
-.menu-item:hover {
-  color: #409eff;
-}
-
-.menu-item span {
-  padding-left: 20px;
-  font-size: 14px;
-}
-
-.main-content {
-  display: flex;
-  gap: 6px;
-  padding: 12px;
-  min-height: calc(100vh - 120px);
-  padding-bottom: 80px;
-}
-
-.filter-sidebar {
-  margin-top: 8px;
-  width: 260px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 16px;
-  height: fit-content;
-}
-
-.filter-header {
+.right-box {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
 
-.demo-pb {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-around;
-  position: fixed;
-  bottom: 20px;
-  z-index: 1000;
-  padding: 10px 0;
-}
+  .updateBtn {
+    display: flex;
+    flex-direction: column;
 
-.tag-box {
-  display: flex;
-  justify-content: flex-start;
-  gap: 4px;
-  flex-wrap: wrap;
-  margin-bottom: 8px;
-}
+    .el-button {
+      width: 200px;
+      height: 200px;
+      font-size: 100px;
+    }
 
-.home-container {
-  min-height: 100vh;
-  background-color: #f5f5f5;
+    span {
+      font-size: 30px;
+    }
+  }
 }
 </style>

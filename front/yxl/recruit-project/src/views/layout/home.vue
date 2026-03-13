@@ -174,11 +174,6 @@ const toggleLike = async (student) => {
     }
   } catch (error) {
     console.error('收藏操作失败:', error)
-    ElMessage({
-      message: '操作失败，请重试',
-      type: 'error',
-      duration: 1000
-    })
   }
 }
 </script>
@@ -400,12 +395,13 @@ const toggleLike = async (student) => {
 ::-webkit-scrollbar-thumb {
   border-radius: 5px;
   -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-  background: rgba(0, 0, 0, 0.2);
 }
 
 body {
   overflow-y: scroll;
   overflow-x: scroll;
+  
+  background-color: var(--el-bg-color);
 }
 
 .menu-item:hover {
@@ -462,6 +458,5 @@ body {
 
 .home-container {
   min-height: 100vh;
-  background-color: #f5f5f5;
 }
 </style>
