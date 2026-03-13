@@ -26,13 +26,23 @@ const isActive = computed(() => {
     return props.index === props.activeIndex;
 });
 
+// 处理图标路径
+const iconUrl = computed(() => {
+    if (!props.icon) return '';
+    if (props.icon.startsWith('http')) return props.icon;
+    if (props.icon.startsWith('/')) {
+        const baseUrl = import.meta.env.BASE_URL || '/';
+        return baseUrl.replace(/\/$/, '') + props.icon;
+    }
+    return props.icon;
+});
 
 </script>
 
 <template>
     <div class="menu-item" :class="{ active: isActive }">
         <div class="menu-item-icon un">
-            <img :src="icon" :alt="text" class="svg-icon" />
+            <img :src="iconUrl" :alt="text" class="svg-icon" />
         </div>
         <div class="menu-item-text un">
             {{ text }}

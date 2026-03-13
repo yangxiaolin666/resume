@@ -14,14 +14,14 @@ import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 
-const backendUrl = 'http://81.70.199.174:8081/admin';
+const backendUrl = 'http://81.70.199.174:8081'
 
 const currMenu = {
   Student: 1,
   Company: 2
 }
 
-const TOKEN = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiYWRtaW4iLCJ1c2VyVHlwZSI6ImFkbWluIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiZXhwIjoxNzczMDU5NDg5fQ.u2j3CiaCIXapM4PDwpRDjM7oCvycA-nIAJfjDNcm4pw');
+const TOKEN = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiYWRtaW4iLCJ1c2VyVHlwZSI6ImFkbWluIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiZXhwIjoxNzczMzIxMTI0fQ.yaA_pn4_K6D1XOVwOGEi8h8-KsmxvdoRFKjoRLUUGiw');
 
 const menuSelect = ref(1); // 1: 学生信息, 2: 企业信息
 
@@ -38,9 +38,14 @@ const handleMenuSelect = (index) => {
       reGetList();
     }
   }
+  isDeleteMode.value = false
+  selectedIds.value = []
 };
 const handleLogout = () => {
   console.log("退出登录");
+  // localStorage.removeItem('token')
+  // TOKEN.value = ''
+  window.location.replace("/");
 }
 const selectedStatus = ref({});
 
@@ -71,10 +76,9 @@ const reGetList = () => {
 }
 
 
-
 const getStudentList = (name) => {
   var token = TOKEN.value
-  axios.get(backendUrl + '/searchStu', {
+  axios.get(backendUrl + '/admin/searchStu', {
     headers: {
       'Authorization': `Bearer ${token}`
     },
@@ -96,7 +100,7 @@ const getStudentList = (name) => {
 
 const getCompanyList = (name) => {
   var token = TOKEN.value
-  axios.get(backendUrl + '/searchCom', {
+  axios.get(backendUrl + '/admin/searchCom', {
     headers: {
       'Authorization': `Bearer ${token}`
     },
@@ -206,7 +210,7 @@ const confirmBatchDelete = () => {
 // 批量删除学生
 const batchDeleteStudents = () => {
   console.log(selectedIds.value);
-  axios.delete(backendUrl + '/delStu', {
+  axios.delete(backendUrl + '/admin/delStu', {
     headers: {
       'Authorization': `Bearer ${TOKEN.value}`
     },
@@ -231,7 +235,7 @@ const batchDeleteStudents = () => {
 
 // 批量删除企业
 const batchDeleteCompanies = () => {
-  axios.delete(backendUrl + '/delCom', {
+  axios.delete(backendUrl + '/admin/delCom', {
     headers: {
       'Authorization': `Bearer ${TOKEN.value}`
     },
@@ -328,70 +332,19 @@ const handleExport = () => {
 }
 
 
-const handleDelete = (id, name) => {
+
+// 查看/编辑
+const showStudentDrawer = ref(false)
+const showCompanyDrawer = ref(false)
+
+const handleEdit = (currItem) => {
   if (menuSelect.value === currMenu.Student) {
-    deleteStudent(id, name)
+    showStudentDrawer.value = true
   } else if (menuSelect.value === currMenu.Company) {
-    deleteCompany(id, name)
+    showCompanyDrawer.value = true
   }
 }
-const deleteStudent = (stuIds, stuName) => {
-  ElMessageBox.confirm('确认删除该学生 ' + stuName + " ?", '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    console.log('删除学生 ' + stuName);
-    axios.delete(backendUrl + '/delStu', {
-      headers: {
-        'Authorization': `Bearer ${TOKEN.value}`
-      },
-      body: {
-        stuIds: stuIds
-      }
-    }).then(res => {
-      console.log(res.data);
-      if (res.data.code === 200) {
-        ElMessage.success('删除成功！');
-        reGetList();
-      } else {
-        ElMessage.error('删除失败！');
-      }
-    }).catch(err => {
-      console.log(err);
-    })
-  }).catch(() => {
-    console.log('取消删除学生 ' + stuName);
-  });
-}
-const deleteCompany = (companyIds, companyName) => {
-  ElMessageBox.confirm('确认删除该公司 ' + companyName + " ?", '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    console.log('删除公司 ' + companyName);
-    axios.delete(backendUrl + '/delCom', {
-      headers: {
-        'Authorization': `Bearer ${TOKEN.value}`
-      },
-      body: {
-        companyIds: companyIds
-      }
-    }).then(res => {
-      if (res.data.code === 200) {
-        ElMessage.success('删除成功！');
-        reGetList();
-      } else {
-        ElMessage.error('删除失败！');
-      }
-    }).catch(err => {
-      console.log(err);
-    })
-  }).catch(() => {
-    console.log('取消删除公司 ' + companyName);
-  });
-}
+
 
 
 </script>
@@ -407,7 +360,7 @@ const deleteCompany = (companyIds, companyName) => {
     <div class="content-container">
       <!-- 学生信息 -->
       <div class="page student-container" v-if="menuSelect === 1">
-        <div class="selector-container">
+        <!-- <div class="selector-container">
           <SelectorFixed title="筛选" @reset="handleReset">
             <SelectItem
               title="学历"
@@ -450,7 +403,7 @@ const deleteCompany = (companyIds, companyName) => {
                 @change="handleChange"
             ></SelectItem>
           </SelectorFixed>
-        </div> <!-- selector-container -->
+        </div> -->
 
         <div class="student-list-container">
           <el-table 
@@ -462,19 +415,18 @@ const deleteCompany = (companyIds, companyName) => {
             >
             <el-table-column v-if="isDeleteMode" type="selection" width="35"></el-table-column>
             <!-- <el-table-column v-else label="" width="35"></el-table-column> -->
-            <el-table-column prop="stuId" label="学号" width="120"></el-table-column>
-            <el-table-column prop="name" label="姓名" width="120"></el-table-column>
+            <el-table-column prop="stuId" label="学号" width="150"></el-table-column>
+            <el-table-column prop="name" label="姓名" width="150"></el-table-column>
             <el-table-column prop="gender" label="性别" width="120"></el-table-column>
-            <el-table-column prop="age" label="年龄" width="80"></el-table-column>
-            <el-table-column prop="nation" label="民族" width="120"></el-table-column>
-            <el-table-column prop="degree" label="学位" width="120"></el-table-column>
-            <el-table-column prop="major" label="专业" width="160"></el-table-column>
-            <el-table-column prop="graduationYear" label="毕业年份" width="80"></el-table-column>
-            <el-table-column label="..." width="50"></el-table-column>
-            <el-table-column v-if="!isDeleteMode" label="操作" width="200" class-name="operation-column">
+            <el-table-column prop="age" label="出生年" width="150"></el-table-column>
+            <el-table-column prop="degree" label="学历" width="150"></el-table-column>
+            <el-table-column prop="major" label="专业" width="150"></el-table-column>
+            <el-table-column prop="graduationYear" label="毕业年份" width="150"></el-table-column>
+            <el-table-column label="..." width="80"></el-table-column>
+            <el-table-column label="操作" width="200" class-name="operation-column">
               <template #default="scope">
                 <el-button
-                  size="medium"
+                  size="default"
                   @click="handleEdit(scope.row)">查看/编辑</el-button>
               </template>
             </el-table-column>
@@ -514,7 +466,8 @@ const deleteCompany = (companyIds, companyName) => {
               />
             </div>
           </div>
-        </div>
+        </div> <!-- student-list-container -->
+        
       </div>
       <!-- 企业信息 -->
       <div class="page company-container" v-if="menuSelect === 2">
@@ -530,11 +483,11 @@ const deleteCompany = (companyIds, companyName) => {
             <el-table-column prop="id" label="" width="70" class-name="id-column"></el-table-column>
             <el-table-column prop="comName" label="企业名称" width="300"></el-table-column>
             <el-table-column prop="comRegion" label="所在城市" width="300"></el-table-column>
-            <el-table-column v-if="!isDeleteMode" label="操作" width="200" class-name="operation-column">
+            <el-table-column label="操作" width="200" class-name="operation-column">
               <template #default="scope">
                 <el-button
-                  size="medium"
-                  @click="handleEdit(scope.$index, scope.row)">查看/编辑</el-button>
+                  size="default"
+                  @click="handleEdit(scope.row)">查看/编辑</el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -615,6 +568,27 @@ const deleteCompany = (companyIds, companyName) => {
           </template>
         </el-dialog>
       </div>
+      <!-- 查看/编辑 -->
+      <el-drawer
+        v-model = "showStudentDrawer"
+        direction = "rtl"
+        size = "50%"
+        class="drawer-student-container"
+      >
+        <div>
+          <h1>查看/编辑学生信息</h1>
+        </div>
+      </el-drawer>
+      <el-drawer
+        v-model = "showCompanyDrawer"
+        direction = "rtl"
+        size = "50%"
+        class="drawer-company-container"
+      >
+        <div>
+          <h1>查看/编辑企业信息</h1>
+        </div>
+      </el-drawer>
       <!-- 详情页 -->
 
       <!-- 统计数据 -->
@@ -723,9 +697,6 @@ const deleteCompany = (companyIds, companyName) => {
   border-top: 1px solid #ebeef5;
 }
 
-.pagination-left {
-  margin-right: auto;
-}
 
 .pagination-center {
   flex: 1;
@@ -835,7 +806,7 @@ const deleteCompany = (companyIds, companyName) => {
   color: #999999 !important;
 }
 
-.company-container {
+.page {
   padding: 0px 20px;
 }
 
@@ -843,6 +814,7 @@ const deleteCompany = (companyIds, companyName) => {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-left: 20px;
 }
 
 .pagination-left .action-btn {
@@ -851,6 +823,8 @@ const deleteCompany = (companyIds, companyName) => {
 
 .delete-btn-container {
   display: flex;
+  margin-left: auto;
+  margin-right: auto;
   gap: 8px;
 }
 
