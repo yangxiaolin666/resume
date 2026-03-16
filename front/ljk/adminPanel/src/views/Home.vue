@@ -21,7 +21,7 @@ const currMenu = {
   Company: 2
 }
 
-const TOKEN = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiYWRtaW4iLCJ1c2VyVHlwZSI6ImFkbWluIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiZXhwIjoxNzczNDA0NDUwfQ.mk3EDXijJBOeKyxDSpDWvBbXiRjg5Nei5InCr5zqHTk');
+const TOKEN = ref(localStorage.getItem('token'));
 
 const menuSelect = ref(1); // 1: 学生信息, 2: 企业信息
 
@@ -43,25 +43,17 @@ const handleMenuSelect = (index) => {
 };
 const handleLogout = () => {
   console.log("退出登录");
-  // localStorage.removeItem('token')
-  // TOKEN.value = ''
-  window.location.replace("/");
+  localStorage.removeItem('token')
+  TOKEN.value = ''
+  window.location.replace("http://47.93.133.36/");
 }
-const selectedStatus = ref({});
 
-const handleChange = (value) => {
-  console.log('筛选：', value);
-  console.log('筛选条件：', selectedStatus.value);
-};
 
-const handleReset = () => {
-  selectedStatus.value = {};
-  console.log('已重置筛选条件');
-};
 
 
 onMounted(() => {
   // 1. 初始化列表
+  // console.log(TOKEN.value);
   reGetList();
 });
 

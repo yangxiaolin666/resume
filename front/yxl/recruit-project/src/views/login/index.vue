@@ -23,9 +23,30 @@ const loginTo = async () => {
     duration: 1000
   })
   setTimeout(() => {
-    router.push('/showData')
+    if (userType.value === 'admin') {
+      loginToAdmin()
+    } else {
+      router.push('/showData')
+    }
   }, 1100)
 }
+const loginToAdmin = () => {
+  const adminToken = userStore.token
+  if (!adminToken) {
+    ElMessage({
+      message: '管理员登录失败，未获取到token',
+      type: 'error',
+      duration: 1000
+    })
+    return
+  }
+
+  const encodeToken = encodeURIComponent(adminToken)
+  const adminUrl = `http://47.93.133.36/admin/?token=${encodeToken}`
+  window.location.replace(adminUrl)
+}
+
+
 </script>
 
 <template>
