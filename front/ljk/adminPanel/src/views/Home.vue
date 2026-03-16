@@ -21,7 +21,7 @@ const currMenu = {
   Company: 2
 }
 
-const TOKEN = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiYWRtaW4iLCJ1c2VyVHlwZSI6ImFkbWluIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiZXhwIjoxNzczMzIxMTI0fQ.yaA_pn4_K6D1XOVwOGEi8h8-KsmxvdoRFKjoRLUUGiw');
+const TOKEN = ref('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMsInVzZXJuYW1lIjoiYWRtaW4iLCJ1c2VyVHlwZSI6ImFkbWluIiwidG9rZW5UeXBlIjoiYWNjZXNzIiwiZXhwIjoxNzczNDA0NDUwfQ.mk3EDXijJBOeKyxDSpDWvBbXiRjg5Nei5InCr5zqHTk');
 
 const menuSelect = ref(1); // 1: 学生信息, 2: 企业信息
 
