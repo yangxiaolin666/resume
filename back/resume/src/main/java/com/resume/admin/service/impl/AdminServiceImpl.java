@@ -1,9 +1,13 @@
 package com.resume.admin.service.impl;
 
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.resume.admin.mapper.AdminMapper;
 import com.resume.admin.service.AdminService;
+import com.resume.company.service.SearchService;
 import com.resume.model.dto.BatchOperationResultDTO;
+import com.resume.model.dto.StudentDetailDTO;
+import com.resume.model.dto.StudentQueryDTO;
 import com.resume.model.entity.Company;
 import com.resume.model.entity.Student;
 import com.resume.model.entity.User;
@@ -24,12 +28,15 @@ import java.util.*;
  */
 @Service
 public class AdminServiceImpl implements AdminService {
-    
+
     @Autowired
     private AdminMapper adminMapper;
-    
+
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private SearchService searchService;
     
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -370,23 +377,29 @@ public class AdminServiceImpl implements AdminService {
         if (pageSize == null || pageSize < 1) {
             pageSize = 10;
         }
-        
+
         // 分页查询
         PageHelper.startPage(page, pageSize);
         List<Company> companies = adminMapper.selectCompaniesByPage(comName);
         int total = adminMapper.countCompanies(comName);
-        
+
         // 封装结果
         Map<String, Object> result = new HashMap<>();
         result.put("list", companies);
-        
+
         Map<String, Object> pagination = new HashMap<>();
         pagination.put("total", total);
         pagination.put("page", page);
         pagination.put("pageSize", pageSize);
         result.put("pagination", pagination);
-        
+
         return result;
+    }
+
+    @Override
+    public PageInfo<StudentDetailDTO> searchStudentDetails(StudentQueryDTO queryDTO) {
+        // 调用企业端接口查询学生详细信息
+        return searchService.getStudentDetailsByCondition(queryDTO);
     }
     
     /**

@@ -1,6 +1,8 @@
 package com.resume.admin.controller;
 
+import com.github.pagehelper.PageInfo;
 import com.resume.admin.service.AdminService;
+import com.resume.company.service.SearchService;
 import com.resume.model.dto.*;
 import com.resume.model.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,9 +20,12 @@ import java.util.Map;
 @RestController
 @RequestMapping("/admin")
 public class AdminController {
-    
+
     @Autowired
     private AdminService adminService;
+
+    @Autowired
+    private SearchService searchService;
     
     /**
      * 1. 导入学生数据
@@ -200,6 +205,20 @@ public class AdminController {
             @RequestParam(required = false, defaultValue = "10") Integer pageSize) {
         try {
             Map<String, Object> result = adminService.searchCompanies(companyName, page, pageSize);
+            return Result.success(result);
+        } catch (Exception e) {
+            return Result.error(500, "查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 9. 查找学生详细信息（调用企业端接口）
+     */
+    @Operation(summary = "查找学生详细信息")
+    @PostMapping("/searchStuDetail")
+    public Result<PageInfo<StudentDetailDTO>> searchStudentDetails(@RequestBody StudentQueryDTO queryDTO) {
+        try {
+            PageInfo<StudentDetailDTO> result = adminService.searchStudentDetails(queryDTO);
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(500, "查询失败: " + e.getMessage());
