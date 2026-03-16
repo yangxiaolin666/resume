@@ -1,9 +1,12 @@
 package com.resume.admin.mapper;
 
+import com.resume.model.dto.LanguageDTO;
 import com.resume.model.entity.Company;
 import com.resume.model.entity.Student;
+import com.resume.model.result.Result;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -12,7 +15,7 @@ import java.util.List;
  */
 @Mapper
 public interface AdminMapper {
-    
+
     // ============ 学生相关操作 ============
     
     /**
@@ -86,4 +89,22 @@ public interface AdminMapper {
      * 统计企业总数（支持名称模糊查询）
      */
     int countCompanies(@Param("comName") String comName);
+
+    /**
+     * 查询所有语言并返回
+     */
+    @Select("SELECT DISTINCT language_name FROM language")
+    List<String> getAllLanguages();
+
+    /**
+     * 添加语言
+     */
+    @Select("INSERT INTO language (language_name) VALUES (#{language})")
+    Result<?> addLanguage(String language);
+
+    /**
+     * 删除语言
+     */
+    @Select("DELETE FROM language WHERE language_name = #{language}")
+    Result<?> deleteLanguage(String language);
 }

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -222,6 +223,50 @@ public class AdminController {
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(500, "查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 10.  获取所有语言
+     */
+    @GetMapping("/getAllLanguage")
+    public Result<List<String>> getAllLanguage(){
+        return Result.success(adminService.getAllLanguages());
+    }
+
+    /**
+    * 11.  增加语言
+     */
+    @PostMapping("/addLanguage")
+    public Result<?> addLanguage(@RequestParam String language){
+        try {
+            if (language == null || language.isEmpty()) {
+                return Result.error(400, "语言不能为空");
+            }
+            if (adminService.getAllLanguages().contains(language)) {
+                return Result.error(400, "语言已存在");
+            }
+            return Result.success(adminService.addLanguage(language));
+        } catch (Exception e) {
+            return Result.error(500, "添加失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 12.删除语言
+     */
+    @PostMapping("/delLanguage")
+    public Result<?> delLanguage(@RequestParam String language){
+        try {
+            if (language == null || language.isEmpty()) {
+                return Result.error(400, "语言不能为空");
+            }
+            if (!adminService.getAllLanguages().contains(language)) {
+                return Result.error(400, "语言不存在");
+            }
+            return Result.success(adminService.delLanguage(language));
+        } catch (Exception e) {
+            return Result.error(500, "删除失败: " + e.getMessage());
         }
     }
 }

@@ -6,11 +6,13 @@ import com.resume.admin.mapper.AdminMapper;
 import com.resume.admin.service.AdminService;
 import com.resume.company.service.SearchService;
 import com.resume.model.dto.BatchOperationResultDTO;
+import com.resume.model.dto.LanguageDTO;
 import com.resume.model.dto.StudentDetailDTO;
 import com.resume.model.dto.StudentQueryDTO;
 import com.resume.model.entity.Company;
 import com.resume.model.entity.Student;
 import com.resume.model.entity.User;
+import com.resume.model.result.Result;
 import com.resume.user.mapper.UserMapper;
 import com.resume.utils.PasswordUtil;
 import org.apache.poi.ss.usermodel.*;
@@ -514,5 +516,29 @@ public class AdminServiceImpl implements AdminService {
             default:
                 return null;
         }
+    }
+
+    /**
+     * 获取所有语言
+     */
+    @Override
+    public List<String> getAllLanguages() {
+        return adminMapper.getAllLanguages();
+    }
+
+    /**
+     * 添加语言
+     */
+    @Override
+    public Result<?> addLanguage(String language){
+        return adminMapper.addLanguage(language);
+    }
+
+    /**
+     * 删除语言
+     */
+    @Override
+    public Result<?> delLanguage(String language){
+        return adminMapper.deleteLanguage(language);
     }
 }
