@@ -338,6 +338,7 @@ public class AdminController {
             return Result.success(adminService.delCertificate(certificate));
         } catch (Exception e) {
             return Result.error(500, "删除失败: " + e.getMessage());
+            
         }
     }
 }
