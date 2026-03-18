@@ -125,7 +125,17 @@
         </set>
         WHERE id = #{id}
     </update>
-    
+
+
+    <update id="updateStuPassword">
+        UPDATE user u
+            INNER JOIN student s ON u.user_id = s.user_id
+        SET u.password = #{password}
+        WHERE s.stu_id = #{stuId}
+    </update>
+
+
+
     <!-- 分页查询企业 -->
     <select id="selectCompaniesByPage" resultType="com.resume.model.entity.Company">
         SELECT id, com_name as comName, com_region as comRegion, user_id as userId

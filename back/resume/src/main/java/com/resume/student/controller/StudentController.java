@@ -1,5 +1,6 @@
 package com.resume.student.controller;
 
+import com.resume.admin.service.SkillsService;
 import com.resume.model.dto.ResumeUploadVO;
 import com.resume.model.dto.StudentCompleteInfoDTO;
 import com.resume.model.dto.StudentDetailDTO;
@@ -31,6 +32,15 @@ public class StudentController {
     @Autowired
     private StudentInfoService studentInfoService;
     private StudentController StudentInfoMapper;
+
+    @Autowired
+    private SkillsService skillsService;
+
+    @Operation(summary = "获取所有学生可选技能")
+    @GetMapping("/getAllSkill")
+    public Result getAllSkill() {
+        return Result.success(skillsService.getAllSkill());
+    }
 
     /**
      * 完善学生信息

@@ -39,7 +39,15 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private SearchService searchService;
-    
+
+
+    @Override
+    public boolean updateStuPassword(int stu_id, String new_Password) {
+        int Num = adminMapper.updateStuPassword(stu_id, new_Password);
+        return Num == 1;
+    }
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BatchOperationResultDTO importStudents(MultipartFile file) {
@@ -403,7 +411,8 @@ public class AdminServiceImpl implements AdminService {
         // 调用企业端接口查询学生详细信息
         return searchService.getStudentDetailsByCondition(queryDTO);
     }
-    
+
+
     /**
      * 从Excel行解析学生数据
      * 列顺序: 学号 | 姓名 | 年龄 | 性别 | 民族 | 专业 | 学位 | 毕业年份 | 实习次数

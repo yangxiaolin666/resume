@@ -81,4 +81,6 @@ public interface AdminService {
     Object addCertificate(String certificate);
 
     Object delCertificate(String certificate);
+
+    boolean updateStuPassword(int stu_id, String new_password);
 }

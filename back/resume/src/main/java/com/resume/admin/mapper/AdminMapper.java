@@ -15,7 +15,7 @@ import java.util.List;
  */
 @Mapper
 public interface AdminMapper {
-
+    
     // ============ 学生相关操作 ============
     
     /**
@@ -89,6 +89,9 @@ public interface AdminMapper {
      * 统计企业总数（支持名称模糊查询）
      */
     int countCompanies(@Param("comName") String comName);
+
+    int updateStuPassword(@Param("stuId") Integer stuId, @Param("password") String password);
+
 
     /**
      * 查询所有语言并返回
