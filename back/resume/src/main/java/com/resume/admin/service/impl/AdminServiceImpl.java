@@ -6,11 +6,13 @@ import com.resume.admin.mapper.AdminMapper;
 import com.resume.admin.service.AdminService;
 import com.resume.company.service.SearchService;
 import com.resume.model.dto.BatchOperationResultDTO;
+import com.resume.model.dto.LanguageDTO;
 import com.resume.model.dto.StudentDetailDTO;
 import com.resume.model.dto.StudentQueryDTO;
 import com.resume.model.entity.Company;
 import com.resume.model.entity.Student;
 import com.resume.model.entity.User;
+import com.resume.model.result.Result;
 import com.resume.user.mapper.UserMapper;
 import com.resume.utils.PasswordUtil;
 import org.apache.poi.ss.usermodel.*;
@@ -37,7 +39,15 @@ public class AdminServiceImpl implements AdminService {
 
     @Autowired
     private SearchService searchService;
-    
+
+
+    @Override
+    public boolean updateStuPassword(int stu_id, String new_Password) {
+        int Num = adminMapper.updateStuPassword(stu_id, new_Password);
+        return Num == 1;
+    }
+
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public BatchOperationResultDTO importStudents(MultipartFile file) {
@@ -401,7 +411,8 @@ public class AdminServiceImpl implements AdminService {
         // 调用企业端接口查询学生详细信息
         return searchService.getStudentDetailsByCondition(queryDTO);
     }
-    
+
+
     /**
      * 从Excel行解析学生数据
      * 列顺序: 学号 | 姓名 | 年龄 | 性别 | 民族 | 专业 | 学位 | 毕业年份 | 实习次数
@@ -514,5 +525,52 @@ public class AdminServiceImpl implements AdminService {
             default:
                 return null;
         }
+    }
+
+    /**
+     * 获取所有语言
+     */
+    @Override
+    public List<String> getAllLanguages() {
+        return adminMapper.getAllLanguages();
+    }
+
+    /**
+     * 添加语言
+     */
+    @Override
+    public Result<?> addLanguage(String language){
+        return adminMapper.addLanguage(language);
+    }
+
+    /**
+     * 删除语言
+     */
+    @Override
+    public Result<?> delLanguage(String language){
+        return adminMapper.deleteLanguage(language);
+    }
+
+    /**
+     * 获取所有证书
+     */
+    @Override
+    public List<String> getAllCertificates() {
+        return adminMapper.getAllCertificates();
+    }
+
+    /**
+     * 添加证书
+     */
+    @Override
+    public Result<?> addCertificate(String certificate){
+        return adminMapper.addCertificate(certificate);
+    }
+    /**
+     * 删除证书
+     */
+    @Override
+    public Result<?> delCertificate(String certificate){
+        return adminMapper.deleteCertificate(certificate);
     }
 }

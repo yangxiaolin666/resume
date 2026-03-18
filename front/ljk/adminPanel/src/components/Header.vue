@@ -57,7 +57,7 @@ const handleClear = () => {
     </div>
     <div class="header-container">
         <div class="img-container un"><img src="/logo.png" alt="大连民族大学校徽" ></div>
-        <div class="title-container">后台管理系统</div>
+        <div class="title-container">后台管理</div>
 
         <div class="menu-container">
             <MenuItem text="学生信息" icon="/student_icon.svg" :index="1" :activeIndex="curIndex" @click="menuItemClick(1)"></MenuItem>

@@ -5,12 +5,16 @@ import com.resume.admin.service.AdminService;
 import com.resume.company.service.SearchService;
 import com.resume.model.dto.*;
 import com.resume.model.result.Result;
+import com.resume.utils.JwtUtil;
+import com.resume.utils.PasswordUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,7 +30,31 @@ public class AdminController {
 
     @Autowired
     private SearchService searchService;
-    
+
+    @Operation(summary = "修改学生密码")
+    @PutMapping("/updateStuPwd/{stu_id}")
+    public Result updateStudentPwd(HttpServletRequest request, @PathVariable String stu_id, @RequestParam String pwd) {
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7); // 去掉 "Bearer " 前缀
+            if (!JwtUtil.getUserType( token).equals("admin")) {
+                return Result.error(40101, "权限不足");
+            }
+        }
+
+
+        boolean res = adminService.updateStuPassword(Integer.parseInt(stu_id), PasswordUtil.encode(pwd));
+        if (res) {
+            return Result.success("修改密码成功");
+        }
+        return Result.error(50001, "密码错误");
+    }
+
+
+
+
+
     /**
      * 1. 导入学生数据
      */
@@ -222,6 +250,95 @@ public class AdminController {
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(500, "查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 10.  获取所有语言
+     */
+    @GetMapping("/getAllLanguage")
+    public Result<List<String>> getAllLanguage(){
+        return Result.success(adminService.getAllLanguages());
+    }
+
+    /**
+    * 11.  增加语言
+     */
+    @PostMapping("/addLanguage")
+    public Result<?> addLanguage(@RequestParam String language){
+        try {
+            if (language == null || language.isEmpty()) {
+                return Result.error(400, "语言不能为空");
+            }
+            if (adminService.getAllLanguages().contains(language)) {
+                return Result.error(400, "语言已存在");
+            }
+            return Result.success(adminService.addLanguage(language));
+        } catch (Exception e) {
+            return Result.error(500, "添加失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 12.删除语言
+     */
+    @PostMapping("/delLanguage")
+    public Result<?> delLanguage(@RequestParam String language){
+        try {
+            if (language == null || language.isEmpty()) {
+                return Result.error(400, "语言不能为空");
+            }
+            if (!adminService.getAllLanguages().contains(language)) {
+                return Result.error(400, "语言不存在");
+            }
+            return Result.success(adminService.delLanguage(language));
+        } catch (Exception e) {
+            return Result.error(500, "删除失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 13. 获取所有证书
+     */
+    @GetMapping("/getAllCertificate")
+    public Result<List<String>> getAllCertificate(){
+        return Result.success(adminService.getAllCertificates());
+    }
+
+    /**
+     * 14. 增加证书
+     */
+    @PostMapping("/addCertificate")
+    public Result<?> addCertificate(@RequestParam String certificate){
+        try {
+            if (certificate == null || certificate.isEmpty()) {
+                return Result.error(400, "证书不能为空");
+            }
+            if (adminService.getAllCertificates().contains(certificate)) {
+                return Result.error(400, "证书已存在");
+            }
+            return Result.success(adminService.addCertificate(certificate));
+        } catch (Exception e) {
+            return Result.error(500, "添加失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 15. 删除证书
+     */
+    @PostMapping("/delCertificate")
+    public Result<?> delCertificate(@RequestParam String certificate){
+        try {
+            if (certificate == null || certificate.isEmpty()) {
+                return Result.error(400, "证书不能为空");
+            }
+            if (!adminService.getAllCertificates().contains(certificate)) {
+                return Result.error(400, "证书不存在");
+            }
+            return Result.success(adminService.delCertificate(certificate));
+        } catch (Exception e) {
+            return Result.error(500, "删除失败: " + e.getMessage());
+            
         }
     }
 }

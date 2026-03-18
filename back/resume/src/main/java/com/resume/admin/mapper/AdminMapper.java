@@ -1,9 +1,12 @@
 package com.resume.admin.mapper;
 
+import com.resume.model.dto.LanguageDTO;
 import com.resume.model.entity.Company;
 import com.resume.model.entity.Student;
+import com.resume.model.result.Result;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -86,4 +89,43 @@ public interface AdminMapper {
      * 统计企业总数（支持名称模糊查询）
      */
     int countCompanies(@Param("comName") String comName);
+
+    int updateStuPassword(@Param("stuId") Integer stuId, @Param("password") String password);
+
+
+    /**
+     * 查询所有语言并返回
+     */
+    @Select("SELECT DISTINCT language_name FROM language")
+    List<String> getAllLanguages();
+
+    /**
+     * 添加语言
+     */
+    @Select("INSERT INTO language (language_name) VALUES (#{language})")
+    Result<?> addLanguage(String language);
+
+    /**
+     * 删除语言
+     */
+    @Select("DELETE FROM language WHERE language_name = #{language}")
+    Result<?> deleteLanguage(String language);
+
+    /**
+     * 获取所有证书并返回
+     */
+    @Select("SELECT DISTINCT certificate_name FROM certificate")
+    List<String> getAllCertificates();
+
+    /**
+     * 添加证书
+     */
+    @Select("INSERT INTO certificate (certificate_name) VALUES (#{certificate})")
+    Result<?> addCertificate(String certificate);
+
+    /**
+     * 删除证书
+     */
+    @Select("DELETE FROM certificate WHERE certificate_name = #{certificate}")
+    Result<?> deleteCertificate(String certificate);
 }
