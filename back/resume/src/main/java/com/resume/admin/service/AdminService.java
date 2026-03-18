@@ -75,4 +75,10 @@ public interface AdminService {
     Result<?> addLanguage(String language);
 
     Result<?> delLanguage(String language);
+
+    List<String> getAllCertificates();
+
+    Object addCertificate(String certificate);
+
+    Object delCertificate(String certificate);
 }

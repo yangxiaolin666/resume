@@ -541,4 +541,27 @@ public class AdminServiceImpl implements AdminService {
     public Result<?> delLanguage(String language){
         return adminMapper.deleteLanguage(language);
     }
+
+    /**
+     * 获取所有证书
+     */
+    @Override
+    public List<String> getAllCertificates() {
+        return adminMapper.getAllCertificates();
+    }
+
+    /**
+     * 添加证书
+     */
+    @Override
+    public Result<?> addCertificate(String certificate){
+        return adminMapper.addCertificate(certificate);
+    }
+    /**
+     * 删除证书
+     */
+    @Override
+    public Result<?> delCertificate(String certificate){
+        return adminMapper.deleteCertificate(certificate);
+    }
 }

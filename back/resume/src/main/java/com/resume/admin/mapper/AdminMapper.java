@@ -107,4 +107,22 @@ public interface AdminMapper {
      */
     @Select("DELETE FROM language WHERE language_name = #{language}")
     Result<?> deleteLanguage(String language);
+
+    /**
+     * 获取所有证书并返回
+     */
+    @Select("SELECT DISTINCT certificate_name FROM certificate")
+    List<String> getAllCertificates();
+
+    /**
+     * 添加证书
+     */
+    @Select("INSERT INTO certificate (certificate_name) VALUES (#{certificate})")
+    Result<?> addCertificate(String certificate);
+
+    /**
+     * 删除证书
+     */
+    @Select("DELETE FROM certificate WHERE certificate_name = #{certificate}")
+    Result<?> deleteCertificate(String certificate);
 }

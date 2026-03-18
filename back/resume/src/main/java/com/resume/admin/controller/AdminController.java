@@ -269,4 +269,48 @@ public class AdminController {
             return Result.error(500, "删除失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 13. 获取所有证书
+     */
+    @GetMapping("/getAllCertificate")
+    public Result<List<String>> getAllCertificate(){
+        return Result.success(adminService.getAllCertificates());
+    }
+
+    /**
+     * 14. 增加证书
+     */
+    @PostMapping("/addCertificate")
+    public Result<?> addCertificate(@RequestParam String certificate){
+        try {
+            if (certificate == null || certificate.isEmpty()) {
+                return Result.error(400, "证书不能为空");
+            }
+            if (adminService.getAllCertificates().contains(certificate)) {
+                return Result.error(400, "证书已存在");
+            }
+            return Result.success(adminService.addCertificate(certificate));
+        } catch (Exception e) {
+            return Result.error(500, "添加失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 15. 删除证书
+     */
+    @PostMapping("/delCertificate")
+    public Result<?> delCertificate(@RequestParam String certificate){
+        try {
+            if (certificate == null || certificate.isEmpty()) {
+                return Result.error(400, "证书不能为空");
+            }
+            if (!adminService.getAllCertificates().contains(certificate)) {
+                return Result.error(400, "证书不存在");
+            }
+            return Result.success(adminService.delCertificate(certificate));
+        } catch (Exception e) {
+            return Result.error(500, "删除失败: " + e.getMessage());
+        }
+    }
 }
