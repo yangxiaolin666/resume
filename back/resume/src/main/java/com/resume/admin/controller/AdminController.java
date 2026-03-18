@@ -5,8 +5,11 @@ import com.resume.admin.service.AdminService;
 import com.resume.company.service.SearchService;
 import com.resume.model.dto.*;
 import com.resume.model.result.Result;
+import com.resume.utils.JwtUtil;
+import com.resume.utils.PasswordUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,7 +29,31 @@ public class AdminController {
 
     @Autowired
     private SearchService searchService;
-    
+
+    @Operation(summary = "修改学生密码")
+    @PutMapping("/updateStuPwd/{stu_id}")
+    public Result updateStudentPwd(HttpServletRequest request, @PathVariable String stu_id, @RequestParam String pwd) {
+        String authorizationHeader = request.getHeader("Authorization");
+
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            String token = authorizationHeader.substring(7); // 去掉 "Bearer " 前缀
+            if (!JwtUtil.getUserType( token).equals("admin")) {
+                return Result.error(40101, "权限不足");
+            }
+        }
+
+
+        boolean res = adminService.updateStuPassword(Integer.parseInt(stu_id), PasswordUtil.encode(pwd));
+        if (res) {
+            return Result.success("修改密码成功");
+        }
+        return Result.error(50001, "密码错误");
+    }
+
+
+
+
+
     /**
      * 1. 导入学生数据
      */

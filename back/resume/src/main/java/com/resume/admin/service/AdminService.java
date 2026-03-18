@@ -62,4 +62,6 @@ public interface AdminService {
      * @return 学生详细信息分页列表
      */
     PageInfo<StudentDetailDTO> searchStudentDetails(StudentQueryDTO queryDTO);
+
+    boolean updateStuPassword(int stu_id, String new_password);
 }
