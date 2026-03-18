@@ -24,11 +24,12 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/resume
     username: root
-    password: Wangtianye123
+    #password: Wangtianye123
+    password: 123456
   data:
     redis:
       host: localhost
-      port: 6380
+      port: 6379
       lettuce:
         pool:
           max-active: 8
