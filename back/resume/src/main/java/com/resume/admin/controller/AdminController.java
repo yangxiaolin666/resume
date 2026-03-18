@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -249,6 +250,95 @@ public class AdminController {
             return Result.success(result);
         } catch (Exception e) {
             return Result.error(500, "查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 10.  获取所有语言
+     */
+    @GetMapping("/getAllLanguage")
+    public Result<List<String>> getAllLanguage(){
+        return Result.success(adminService.getAllLanguages());
+    }
+
+    /**
+    * 11.  增加语言
+     */
+    @PostMapping("/addLanguage")
+    public Result<?> addLanguage(@RequestParam String language){
+        try {
+            if (language == null || language.isEmpty()) {
+                return Result.error(400, "语言不能为空");
+            }
+            if (adminService.getAllLanguages().contains(language)) {
+                return Result.error(400, "语言已存在");
+            }
+            return Result.success(adminService.addLanguage(language));
+        } catch (Exception e) {
+            return Result.error(500, "添加失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 12.删除语言
+     */
+    @PostMapping("/delLanguage")
+    public Result<?> delLanguage(@RequestParam String language){
+        try {
+            if (language == null || language.isEmpty()) {
+                return Result.error(400, "语言不能为空");
+            }
+            if (!adminService.getAllLanguages().contains(language)) {
+                return Result.error(400, "语言不存在");
+            }
+            return Result.success(adminService.delLanguage(language));
+        } catch (Exception e) {
+            return Result.error(500, "删除失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 13. 获取所有证书
+     */
+    @GetMapping("/getAllCertificate")
+    public Result<List<String>> getAllCertificate(){
+        return Result.success(adminService.getAllCertificates());
+    }
+
+    /**
+     * 14. 增加证书
+     */
+    @PostMapping("/addCertificate")
+    public Result<?> addCertificate(@RequestParam String certificate){
+        try {
+            if (certificate == null || certificate.isEmpty()) {
+                return Result.error(400, "证书不能为空");
+            }
+            if (adminService.getAllCertificates().contains(certificate)) {
+                return Result.error(400, "证书已存在");
+            }
+            return Result.success(adminService.addCertificate(certificate));
+        } catch (Exception e) {
+            return Result.error(500, "添加失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 15. 删除证书
+     */
+    @PostMapping("/delCertificate")
+    public Result<?> delCertificate(@RequestParam String certificate){
+        try {
+            if (certificate == null || certificate.isEmpty()) {
+                return Result.error(400, "证书不能为空");
+            }
+            if (!adminService.getAllCertificates().contains(certificate)) {
+                return Result.error(400, "证书不存在");
+            }
+            return Result.success(adminService.delCertificate(certificate));
+        } catch (Exception e) {
+            return Result.error(500, "删除失败: " + e.getMessage());
+            
         }
     }
 }
