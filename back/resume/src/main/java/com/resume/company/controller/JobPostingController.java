@@ -8,6 +8,7 @@ import com.resume.model.dto.JobPostingQueryDTO;
 import com.resume.model.entity.Company;
 import com.resume.model.entity.JobPosting;
 import com.resume.model.result.Result;
+import com.resume.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -56,6 +57,7 @@ public class JobPostingController {
         if (jobPosting.getTitle() == null || jobPosting.getTitle().trim().isEmpty()) {
             return Result.error(400, "招聘标题不能为空");
         }
+        System.out.println(jobPosting.getExternalLink());
 
         // 设置企业ID
         jobPosting.setComId(comId);

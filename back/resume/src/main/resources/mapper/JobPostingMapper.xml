@@ -30,6 +30,9 @@
         FROM job_postings jp
         LEFT JOIN company c ON jp.com_id = c.id
         WHERE 1=1
+        <if test="comId != null">
+            AND jp.com_id = #{comId}
+        </if>
         <if test="status != null and status != ''">
             AND jp.status = #{status}
         </if>

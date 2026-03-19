@@ -34,6 +34,7 @@ public class JobPostingServiceImpl implements JobPostingService {
         if (jobPosting.getTitle() == null || jobPosting.getTitle().trim().isEmpty()) {
             throw new RuntimeException("招聘标题不能为空");
         }
+        //System.out.println(jobPosting.getExternalLink());
 
         // 验证企业ID是否存在
         if (jobPosting.getComId() == null) {

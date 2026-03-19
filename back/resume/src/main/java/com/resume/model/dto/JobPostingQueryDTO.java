@@ -30,4 +30,9 @@ public class JobPostingQueryDTO implements Serializable {
      * 关键词搜索（职位标题模糊查询）
      */
     private String keyword;
+
+    /**
+     * 企业ID（用于查询企业的招聘信息）
+     */
+    private Integer comId;
 }

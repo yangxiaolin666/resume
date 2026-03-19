@@ -51,9 +51,10 @@ public interface JobPostingService {
     /**
      * 查询企业的所有招聘信息
      * @param status 招聘状态（可选）
+     * @param comId 企业ID
      * @return 招聘信息列表
      */
-    List<JobPostingDTO> getCompanyJobPostings(String status);
+    List<JobPostingDTO> getCompanyJobPostings(String status, Integer comId);
 
     /**
      * 修改招聘信息状态

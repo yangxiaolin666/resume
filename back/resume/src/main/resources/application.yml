@@ -24,11 +24,11 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/resume
     username: root
-    password: 123456
+    password: Wangtianye123
   data:
     redis:
       host: localhost
-      port: 6379
+      port: 6380
       lettuce:
         pool:
           max-active: 8
@@ -37,6 +37,9 @@ spring:
       retry:
         max-attempts: 3  # 最大重试次数
         initial-interval: 1000ms  # 首次重试间隔
+
+  jackson:
+    property-naming-strategy: SNAKE_CASE
 
 knife4j:
   enable: true
