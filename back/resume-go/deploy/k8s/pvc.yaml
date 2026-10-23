@@ -1,0 +1,15 @@
+# 简历 / 聊天图片的持久化存储。
+#
+# 注意：ReadWriteOnce 只能被一个节点挂载，所以 Deployment 副本数建议为 1。
+# 如果要横向扩容多个副本，应该把文件放到对象存储（OSS/S3）或 NAS（ReadWriteMany）。
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: resume-uploads-pvc
+  namespace: recruit
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi

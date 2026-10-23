@@ -73,11 +73,35 @@
             </el-tag>
           </header>
 
-          <div ref="messageBox" class="message-box">
-            <div v-if="hasMore" class="load-more">
-              <el-button link type="primary" :loading="loadingMore" @click="loadMore">
-                加载更早的消息
-              </el-button>
+          <!-- 置顶简历小浮窗：学生看自己的简历，企业看当前学生的简历 -->
+          <div
+            v-if="pinnedResume"
+            class="pinned-resume"
+            title="点击放大简历"
+            @click="openPinnedResume"
+          >
+            <div class="pinned-thumb">
+              <iframe
+                v-if="isPdfResume(pinnedResume.url)"
+                :src="resumePreviewSrc(pinnedResume.url)"
+                loading="lazy"
+                title="置顶简历"
+              ></iframe>
+              <el-icon v-else><Document /></el-icon>
+              <span class="pinned-mask">点击放大</span>
+            </div>
+            <div class="pinned-label">{{ pinnedResume.label }}</div>
+          </div>
+
+          <div
+            ref="messageBox"
+            class="message-box"
+            @scroll="onMessageScroll"
+            @wheel="onMessageWheel"
+          >
+            <div v-if="loadingMore" class="load-more">
+              <el-icon class="is-loading"><Loading /></el-icon>
+              <span>加载中…</span>
             </div>
 
             <el-empty
@@ -104,7 +128,7 @@
               <div class="message-body">
                 <div class="message-meta">
                   <span>{{ isMine(msg) ? '我' : msg.senderName }}</span>
-                  <span>{{ shortTime(msg.createdAt) }}</span>
+                  <span>{{ messageTime(msg.createdAt) }}</span>
                 </div>
                 <div v-if="msg.msgType === 'image'" class="image-bubble">
                   <el-image
@@ -114,6 +138,30 @@
                     fit="contain"
                     preview-teleported
                   />
+                </div>
+                <!-- 简历消息：气泡内直接预览，点击在当前页放大（不跳转新页面） -->
+                <div
+                  v-else-if="msg.msgType === 'resume'"
+                  class="resume-bubble"
+                  title="点击放大预览"
+                  @click="openResumePreview(msg)"
+                >
+                  <div class="resume-preview">
+                    <iframe
+                      v-if="isPdfResume(msg.content)"
+                      :src="resumePreviewSrc(msg.content)"
+                      loading="lazy"
+                      title="简历预览"
+                    ></iframe>
+                    <div v-else class="resume-file-icon">
+                      <el-icon><Document /></el-icon>
+                    </div>
+                    <span class="resume-mask">点击放大</span>
+                  </div>
+                  <div class="resume-info">
+                    <strong>个人简历</strong>
+                    <span>{{ isPdfResume(msg.content) ? 'PDF 简历' : 'Word 简历' }}</span>
+                  </div>
                 </div>
                 <div v-else class="message-bubble">{{ msg.content }}</div>
               </div>
@@ -163,6 +211,18 @@
                   @click="triggerImage"
                 >
                   <el-icon><Picture /></el-icon>
+                </button>
+                <!-- 只有学生有简历，企业端不显示这个按钮 -->
+                <button
+                  v-if="myType === 'student'"
+                  type="button"
+                  class="tool-btn"
+                  :class="{ 'is-disabled': !canSendResume }"
+                  :title="canSendResume ? '发送简历' : '对方回复前只能发送一次简历'"
+                  :disabled="sendingResume"
+                  @click="handleSendResume"
+                >
+                  <el-icon><Document /></el-icon>
                 </button>
                 <span class="composer-hint">Enter 发送，Ctrl + Enter 换行</span>
               </div>
@@ -343,6 +403,32 @@
         <el-empty v-else-if="!profileLoading" description="暂无资料" :image-size="100" />
       </div>
     </el-dialog>
+
+    <!-- 简历放大预览：在当前页面弹窗展示，不跳转 -->
+    <el-dialog
+      v-model="resumePreviewVisible"
+      title="简历预览"
+      width="min(920px, 92vw)"
+      top="3vh"
+      destroy-on-close
+    >
+      <div v-if="isPdfResume(resumePreviewUrl)" class="resume-preview-full">
+        <iframe :src="resumePreviewSrc(resumePreviewUrl)" title="简历预览"></iframe>
+      </div>
+      <div v-else class="resume-preview-fallback">
+        <el-icon class="fallback-icon"><Document /></el-icon>
+        <p>Word 简历暂不支持在浏览器内预览，请下载后查看</p>
+        <el-button type="primary" tag="a" :href="resumePreviewUrl" target="_blank" download>
+          下载查看
+        </el-button>
+      </div>
+      <template #footer>
+        <div class="resume-dialog-footer">
+          <el-button tag="a" :href="resumePreviewUrl" target="_blank" download>下载简历</el-button>
+          <el-button type="primary" @click="resumePreviewVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -350,16 +436,18 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Picture, Sunny } from '@element-plus/icons-vue'
+import { Picture, Sunny, Loading, Document } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { setUnreadTotal } from '@/stores/chatUnread'
 import { ChatSocket } from '@/utils/chatSocket'
 import { API_BASE_URL } from '@/utils/request'
+import { getMyResume } from '@/api/student'
 import {
   getChatPeers,
   getChatMessages,
   getConversations,
   getPeerProfile,
+  getResumePermission,
   markChatRead,
   sendChatMessage,
   uploadChatImage
@@ -371,6 +459,16 @@ const userStore = useUserStore()
 
 const myId = computed(() => Number(userStore.userId))
 const myType = computed(() => userStore.userType)
+
+// 顶部置顶浮窗展示的简历：
+//   学生端 -> 自己的最新简历（企业没有简历）
+//   企业端 -> 当前会话学生的简历
+const pinnedResume = computed(() => {
+  if (myType.value === 'student') {
+    return myResume.value?.url ? { url: myResume.value.url, label: '我的简历' } : null
+  }
+  return peerResume.value
+})
 
 const conversations = ref([])
 const peers = ref([])
@@ -390,6 +488,7 @@ const connectionStatus = ref('closed')
 // ---------- 表情与图片 ----------
 const showEmoji = ref(false)
 const uploading = ref(false)
+const sendingResume = ref(false)
 const fileInputRef = ref(null)
 const emojiPanelRef = ref(null)
 const emojiBtnRef = ref(null)
@@ -398,6 +497,15 @@ const emojiBtnRef = ref(null)
 const profileVisible = ref(false)
 const profileLoading = ref(false)
 const profile = ref(null)
+
+// ---------- 简历放大预览 ----------
+const resumePreviewVisible = ref(false)
+const resumePreviewUrl = ref('')
+
+// ---------- 置顶简历 & 发送频控 ----------
+const myResume = ref(null)        // 学生：自己的最新简历
+const peerResume = ref(null)      // 企业：当前聊天学生的简历
+const canSendResume = ref(true)   // 学生：对方回复前是否还能发简历
 const emojis = [
   '😀', '😄', '😁', '😆', '😅', '😂', '🤣', '😊',
   '😍', '😘', '😎', '🤔', '😐', '😴', '😭', '😡',
@@ -456,16 +564,101 @@ function shortTime(value) {
   return `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
+// 消息气泡上的时间：日期在前、时间在后，不显示年份
+function messageTime(value) {
+  if (!value) return ''
+  const date = new Date(String(value).replace(' ', 'T'))
+  if (Number.isNaN(date.getTime())) return String(value)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
 function imageUrl(path) {
   if (!path) return ''
   return /^https?:\/\//.test(path) ? path : API_BASE_URL + path
 }
 
-// 简历文件在数据库里可能是 uploads\resume\x.pdf 这种反斜杠路径，统一转成 URL
+// 简历文件在数据库里可能是 uploads\resume\x.pdf 这种反斜杠路径，统一转成 URL。
+// 注意：放大弹窗会把已经转换过的地址再传进来一次，所以这里必须先判断
+// 是否已经带代理前缀，否则会拼成 /api-backend/api-backend/... 导致 404。
 function resumeUrl(path) {
   if (!path) return ''
   if (/^https?:\/\//.test(path)) return path
-  return API_BASE_URL + '/' + String(path).replace(/\\/g, '/').replace(/^\/+/, '')
+  const clean = String(path).replace(/\\/g, '/')
+  if (clean.startsWith('/api-backend/')) return clean
+  return API_BASE_URL + '/' + clean.replace(/^\/+/, '')
+}
+
+// 判断简历是否为 PDF（Word 无法在浏览器内直接渲染）
+function isPdfResume(path) {
+  const clean = String(path || '').split(/[?#]/)[0]
+  return clean.toLowerCase().endsWith('.pdf')
+}
+
+// 内嵌预览时隐藏 PDF 工具栏，只展示页面内容
+function resumePreviewSrc(path) {
+  const url = resumeUrl(path)
+  if (!url) return ''
+  return `${url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`
+}
+
+// 点击简历气泡：在当前页面弹窗放大
+function openResumePreview(msg) {
+  const url = resumeUrl(msg.content)
+  if (!url) return
+  resumePreviewUrl.value = url
+  resumePreviewVisible.value = true
+}
+
+// ---------- 置顶简历 & 发送频控 ----------
+// 学生端加载自己的最新简历；没有简历时静默忽略，不弹错误提示
+async function loadMyResume() {
+  if (myType.value !== 'student') return
+  try {
+    const { data } = await getMyResume({ silent: true })
+    myResume.value = data.data?.url ? data.data : null
+  } catch (e) {
+    myResume.value = null
+  }
+}
+
+// 企业端加载当前聊天学生的简历（用于顶部置顶浮窗）
+async function loadPeerResume(peerId, peerType) {
+  peerResume.value = null
+  if (myType.value !== 'company' || peerType !== 'student') return
+  try {
+    const { data } = await getPeerProfile(peerId, 'student')
+    const stored = data.data?.student?.resume?.resume
+    if (stored) {
+      peerResume.value = { url: stored, label: '对方简历' }
+    }
+  } catch (e) {
+    // 学生没上传简历或资料异常时，不显示浮窗
+  }
+}
+
+// 学生端查询「对方回复前只能发一次简历」的剩余额度。
+// 后端是最终裁判，这里只决定按钮是否置灰。
+async function refreshResumePermission() {
+  if (myType.value !== 'student' || !current.value) {
+    canSendResume.value = true
+    return
+  }
+  try {
+    const { data } = await getResumePermission({
+      peerId: current.value.peerId,
+      peerType: current.value.peerType
+    })
+    canSendResume.value = !!data.data?.canSend
+  } catch (e) {
+    // 查询失败不阻塞发送，后端仍会校验
+    canSendResume.value = true
+  }
+}
+
+function openPinnedResume() {
+  if (!pinnedResume.value?.url) return
+  openResumePreview({ content: pinnedResume.value.url })
 }
 
 async function openProfile(peerId, peerType) {
@@ -488,7 +681,12 @@ function openSenderProfile(msg) {
 }
 
 function lastMessageText(item) {
-  const body = item.lastMsgType === 'image' ? '[图片]' : item.lastMessage
+  const body =
+    item.lastMsgType === 'image'
+      ? '[图片]'
+      : item.lastMsgType === 'resume'
+        ? '[简历]'
+        : item.lastMessage
   return `${item.lastFromMe ? '我：' : ''}${body}`
 }
 
@@ -551,6 +749,36 @@ async function onImageSelected(event) {
   }
 }
 
+// ---------- 发送简历 ----------
+// 学生点击「简历」按钮：先取自己最新上传的简历，再作为一条 msgType=resume 的消息发出。
+// 消息内容只存简历地址，对方点击卡片即可查看/下载。
+async function handleSendResume() {
+  if (!current.value || sendingResume.value) return
+  if (!canSendResume.value) {
+    ElMessage.warning('对方回复前只能发送一次简历，请等待对方回复')
+    return
+  }
+  sendingResume.value = true
+  try {
+    const { data } = await getMyResume({ silent: true })
+    const resume = data.data
+    if (!resume?.url) {
+      ElMessage.warning('你还没有上传简历，请先到个人中心上传')
+      return
+    }
+    const ok = await sendPayload(resume.url, 'resume')
+    if (ok) {
+      ElMessage.success('简历已发送')
+      // 乐观更新：对方回复前按钮置灰，避免重复点击
+      canSendResume.value = false
+    }
+  } catch (e) {
+    // 请求拦截器已经弹出错误提示（例如尚未上传简历），这里不再重复提示
+  } finally {
+    sendingResume.value = false
+  }
+}
+
 // ---------- 数据加载 ----------
 async function loadConversations() {
   const res = await getConversations()
@@ -597,6 +825,10 @@ async function loadMessages(reset) {
 async function selectPeer(peer) {
   const peerId = Number(peer.peerId ?? peer.userId)
   const peerType = peer.peerType ?? peer.userType
+  // 已经在和这个人聊天时，重复点击左侧会话不做任何事：
+  // 避免重新拉历史消息、清空列表、重新滚动，看起来像“页面刷新”。
+  if (isCurrent(peerId, peerType)) return
+
   const existing = conversations.value.find(
     (c) => Number(c.peerId) === peerId && c.peerType === peerType
   )
@@ -610,6 +842,8 @@ async function selectPeer(peer) {
   hasMore.value = false
 
   await loadMessages(true)
+  // 学生端查询简历发送额度；企业端加载当前学生的简历用于置顶浮窗
+  await Promise.all([refreshResumePermission(), loadPeerResume(peerId, peerType)])
   await markCurrentRead()
   clearUnread(peerId, peerType)
   scrollToBottom()
@@ -651,6 +885,22 @@ function syncUnreadTotal() {
   setUnreadTotal(
     conversations.value.reduce((sum, item) => sum + (Number(item.unread) || 0), 0)
   )
+}
+
+// 距离顶部多少像素内视为“滑到顶部”，自动加载更早的消息
+const LOAD_MORE_THRESHOLD = 24
+
+function onMessageScroll() {
+  const box = messageBox.value
+  if (!box || loadingMore.value || !hasMore.value) return
+  if (box.scrollTop <= LOAD_MORE_THRESHOLD) loadMore()
+}
+
+function onMessageWheel(event) {
+  const box = messageBox.value
+  if (!box || loadingMore.value || !hasMore.value) return
+  // 已经在顶部还继续向上滑时，直接加载更早的消息
+  if (event.deltaY < 0 && box.scrollTop <= LOAD_MORE_THRESHOLD) loadMore()
 }
 
 async function loadMore() {
@@ -696,6 +946,8 @@ function connectSocket() {
 function handleSocketMessage(msg) {
   if (msg.type === 'error') {
     ElMessage.error(msg.message || '消息发送失败')
+    // 可能是简历频控被后端拒绝，刷新一下按钮状态
+    refreshResumePermission()
     return
   }
   if (msg.type !== 'message' || !msg.data) return
@@ -712,6 +964,8 @@ function handleSocketMessage(msg) {
     }
     if (!isMine(message)) {
       markCurrentRead()
+      // 对方回复后，学生可以再次发送简历
+      refreshResumePermission()
     }
   }
   scheduleRefreshConversations()
@@ -842,6 +1096,8 @@ onMounted(async () => {
 
   await loadConversations()
   await loadPeers()
+  // 学生端：加载自己的简历，用于顶部置顶浮窗
+  await loadMyResume()
   connectSocket()
   // 每 8 秒刷新一次对方的在线/离线状态
   presenceTimer = setInterval(refreshPresence, 8000)
@@ -1008,12 +1264,80 @@ onBeforeUnmount(() => {
 
 /* 右侧聊天区 */
 .chat-main {
+  position: relative;
   flex: 1;
   min-width: 0;
   min-height: 0;
   display: flex;
   flex-direction: column;
   background: var(--el-bg-color-page);
+}
+
+/* 顶部置顶简历小浮窗 */
+.pinned-resume {
+  position: absolute;
+  top: 74px;
+  right: 16px;
+  z-index: 12;
+  width: 148px;
+  padding: 6px;
+  background: var(--el-bg-color-overlay, var(--el-bg-color));
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 10px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  cursor: zoom-in;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.pinned-resume:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+}
+
+.pinned-thumb {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 96px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+  color: var(--el-color-primary);
+  font-size: 32px;
+}
+
+.pinned-thumb iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+  pointer-events: none;
+}
+
+.pinned-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.38);
+  color: #fff;
+  font-size: 11px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pinned-resume:hover .pinned-mask {
+  opacity: 1;
+}
+
+.pinned-label {
+  padding: 6px 2px 2px;
+  font-size: 12px;
+  color: var(--el-text-color-primary);
+  text-align: center;
 }
 
 .chat-header {
@@ -1056,7 +1380,13 @@ onBeforeUnmount(() => {
 }
 
 .load-more {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
 .message-row {
@@ -1159,6 +1489,11 @@ onBeforeUnmount(() => {
   opacity: 0.5;
 }
 
+/* 简历额度用完：按钮变淡，但仍可点击并提示原因 */
+.tool-btn.is-disabled {
+  opacity: 0.45;
+}
+
 .emoji-btn {
   font-size: 18px;
   line-height: 1;
@@ -1211,6 +1546,122 @@ onBeforeUnmount(() => {
 .image-bubble .chat-image :deep(img) {
   max-width: 100%;
   height: auto;
+}
+
+/* 简历消息：气泡内直接预览，点击放大 */
+.resume-bubble {
+  width: 220px;
+  padding: 8px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 8px;
+  cursor: zoom-in;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.resume-bubble:hover {
+  border-color: var(--el-color-primary-light-5);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.message-row.mine .resume-bubble {
+  background: var(--el-color-primary-light-9);
+  border-color: var(--el-color-primary-light-5);
+}
+
+.resume-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 260px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--el-fill-color-lighter);
+}
+
+/* 内嵌的 PDF 预览不接收鼠标事件，保证点击整个气泡都能触发放大 */
+.resume-preview iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+  pointer-events: none;
+}
+
+.resume-file-icon {
+  font-size: 64px;
+  color: var(--el-color-primary);
+}
+
+.resume-mask {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.38);
+  color: #fff;
+  font-size: 13px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.resume-bubble:hover .resume-mask {
+  opacity: 1;
+}
+
+.resume-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 4px 2px;
+}
+
+.resume-info strong {
+  font-size: 14px;
+  color: var(--el-text-color-primary);
+}
+
+.resume-info span {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+}
+
+/* 放大预览弹窗 */
+.resume-preview-full {
+  /* 适配小屏幕：弹窗总高度不超过视口，避免顶部溢出 */
+  height: calc(80vh - 150px);
+  min-height: 240px;
+}
+
+.resume-preview-full iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: #fff;
+}
+
+.resume-preview-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 60px 0;
+  color: var(--el-text-color-secondary);
+}
+
+.resume-preview-fallback .fallback-icon {
+  font-size: 64px;
+  color: var(--el-color-primary);
+}
+
+.resume-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .composer-hint {

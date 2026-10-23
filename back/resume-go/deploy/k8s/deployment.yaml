@@ -1,0 +1,92 @@
+# 应用部署。
+#
+# 【关键字段】
+#  - envFrom：把 ConfigMap 和 Secret 一次性注入成环境变量；
+#  - readinessProbe：没准备好就不接流量（滚动更新时非常关键）；
+#  - livenessProbe：进程卡死时让 kubelet 重启容器；
+#  - resources：必须设置 requests/limits，调度器才能合理分配资源。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: resume-go
+  namespace: recruit
+  labels:
+    app: resume-go
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: resume-go
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: resume-go
+    spec:
+      containers:
+        - name: resume-go
+          image: resume-go:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8081
+            - name: grpc
+              containerPort: 9091
+          envFrom:
+            - configMapRef:
+                name: resume-go-config
+            - secretRef:
+                name: resume-go-secret
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/uploads
+          readinessProbe:
+            httpGet:
+              path: /stu/statistics
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /stu/statistics
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: resume-uploads-pvc
+---
+# Service：给 Deployment 提供一个稳定的虚拟 IP 和 DNS 名称。
+# 因为 gRPC 客户端连的是 127.0.0.1，这里主要暴露 HTTP；
+# 如果拆成独立 gRPC 服务，把 grpc 端口也放进同一个 Service 即可。
+apiVersion: v1
+kind: Service
+metadata:
+  name: resume-go
+  namespace: recruit
+spec:
+  type: ClusterIP
+  selector:
+    app: resume-go
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
+    - name: grpc
+      port: 9091
+      targetPort: grpc

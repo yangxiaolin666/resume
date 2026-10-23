@@ -223,8 +223,11 @@ const toggleTheme = () => {
 }
 
 .content-area {
-  margin-top: 80px;
-  min-height: calc(100vh - 80px);
+  /* 顶部导航 fixed，用 padding 顶开而不是 margin：
+     margin-top 会与 #app 发生外边距塌陷，导致页面底部多出一片空白 */
+  padding-top: 80px;
+  box-sizing: border-box;
+  min-height: 100vh;
 }
 
 .menu-item {

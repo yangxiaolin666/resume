@@ -1,0 +1,7 @@
+# 构建镜像时排除本地文件，减小构建上下文、避免把用户上传内容打进镜像
+.git
+.idea
+uploads
+*.exe
+*.log
+deploy

@@ -17,10 +17,12 @@ const HEARTBEAT_INTERVAL = 25000
 const HEARTBEAT_TIMEOUT = 35000
 
 function buildWsUrl(token) {
-  // API_BASE_URL 形如 http://127.0.0.1:8081
+  // API_BASE_URL 可能是绝对地址（http://127.0.0.1:8081），
+  // 也可能是开发环境的代理前缀（/api-backend）。
+  // 相对地址需要补上当前页面 origin，再拼 WebSocket 路径。
   let base = API_BASE_URL
   if (!/^https?:\/\//.test(base)) {
-    base = window.location.origin
+    base = window.location.origin + (base.startsWith('/') ? base : `/${base}`)
   }
   const wsBase = base.replace(/^http/, 'ws')
   return `${wsBase}/chat/ws?token=${encodeURIComponent(token)}`
@@ -133,7 +135,7 @@ export class ChatSocket {
     return false
   }
 
-  // 发送聊天消息（msgType: text / image）
+  // 发送聊天消息（msgType: text / image / resume）
   sendMessage(receiverId, receiverType, content, msgType = 'text') {
     return this.send({
       type: 'message',

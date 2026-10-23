@@ -1,0 +1,21 @@
+# 非敏感配置。敏感信息（数据库密码、JWT 密钥）放在 Secret 里。
+#
+# 【生产环境注意】
+# DB_HOST / REDIS_ADDR / RABBITMQ_URL 应该指向集群内中间件 Service
+# 或云厂商的托管实例，不要把 MySQL 以容器方式跑在业务 Deployment 里。
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: resume-go-config
+  namespace: recruit
+data:
+  SERVER_PORT: "8081"
+  GRPC_PORT: "9091"
+  GRPC_INTERNAL: "127.0.0.1:9091"
+  DB_HOST: "mysql.recruit.svc.cluster.local"
+  DB_PORT: "3306"
+  DB_NAME: "resume"
+  UPLOAD_DIR: "/app/uploads/resume"
+  REDIS_ADDR: "redis.recruit.svc.cluster.local:6379"
+  RABBITMQ_URL: "amqp://guest:guest@rabbitmq.recruit.svc.cluster.local:5672/"
+  TZ: "Asia/Shanghai"

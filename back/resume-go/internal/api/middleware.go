@@ -1,97 +1,134 @@
 package api
 
 import (
-	"context"
 	"net/http"
-	"strings"
+
+	"github.com/gin-gonic/gin"
 
 	"resume-backend/internal/auth"
 	"resume-backend/internal/model"
 )
 
-type ctxKey string
+// ==================================================================
+// Gin 中间件
+// ==================================================================
+// 中间件就是一个 func(*gin.Context)，在真正的 handler 之前执行：
+//   c.Next()       -> 放行，继续执行后面的 handler / 中间件
+//   c.Abort()      -> 中断，不再执行后续 handler（鉴权失败时用）
+//
+// 本项目有三个中间件：
+//   1. CORS：解决前后端分离的跨域问题；
+//   2. 认证：解析 JWT，把 userId / userType 放进 Context；
+//   3. 管理员校验：在认证之后判断角色。
+// ==================================================================
 
 const (
-	ctxUserID   ctxKey = "userId"
-	ctxUsername ctxKey = "username"
-	ctxUserType ctxKey = "userType"
+	ctxUserID   = "userId"
+	ctxUsername = "username"
+	ctxUserType = "userType"
 )
 
-func (a *API) withCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		origin := r.Header.Get("Origin")
+// corsMiddleware 允许前端跨域访问。
+// 注意：Access-Control-Allow-Origin 不能同时写 "*" 和 credentials=true，
+// 所以这里回显请求的 Origin。
+func corsMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		origin := c.GetHeader("Origin")
 		if origin != "" {
-			w.Header().Set("Access-Control-Allow-Origin", origin)
-			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			c.Header("Access-Control-Allow-Origin", origin)
+			c.Header("Access-Control-Allow-Credentials", "true")
 		} else {
-			w.Header().Set("Access-Control-Allow-Origin", "*")
+			c.Header("Access-Control-Allow-Origin", "*")
 		}
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
-		w.Header().Set("Access-Control-Allow-Headers", "*")
-		w.Header().Set("Access-Control-Max-Age", "3600")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
+		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH")
+		// 浏览器带 credentials 时，Allow-Headers 不能用 *（会被当成字面量），
+		// 必须显式列出自定义头，否则 Authorization 的预检会失败。
+		// platform 是前端 axios 全局加的自定义头，漏掉它会导致所有请求被浏览器拦截，
+		// 表现正是 Axios 报 "Network Error"。
+		c.Header("Access-Control-Allow-Headers", "Authorization, Content-Type, Refresh-Token, X-Requested-With, platform")
+		// 让前端能读到自动续期的新 Token
+		c.Header("Access-Control-Expose-Headers", "New-Token")
+		c.Header("Access-Control-Max-Age", "3600")
+
+		// 浏览器跨域预检请求，直接返回 204，不进入业务 handler
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(http.StatusNoContent)
 			return
 		}
-		next.ServeHTTP(w, r)
-	})
+		c.Next()
+	}
 }
 
-// withAuth 合并了原 Java 的 TokenRefreshInterceptor + AuthInterceptor + AdminInterceptor。
-func (a *API) withAuth(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		path := r.URL.Path
-		protected := strings.HasPrefix(path, "/com/") ||
-			strings.HasPrefix(path, "/stu/") ||
-			strings.HasPrefix(path, "/admin/") ||
-			strings.HasPrefix(path, "/user/") ||
-			strings.HasPrefix(path, "/chat/")
-		// WebSocket 无法携带 Authorization 请求头，改在 handler 内用 ?token= 校验
-		excluded := path == "/login" || path == "/refresh-token" ||
-			path == "/stu/statistics" || path == "/chat/ws"
-		if !protected || excluded {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		token := auth.TokenFromHeader(r.Header.Get("Authorization"))
+// authMiddleware 解析 Authorization 头里的 JWT。
+//
+// 把原来 Java 版的 TokenRefreshInterceptor + AuthInterceptor 合并成了一个：
+//   - Token 快过期时，通过响应头 New-Token 下发新 Token，前端无感刷新；
+//   - Token 无效直接返回 401。
+func (a *API) authMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := auth.TokenFromHeader(c.GetHeader("Authorization"))
 		if token == "" {
-			writeJSON(w, http.StatusUnauthorized, model.Error(401, "未提供Token"))
+			c.AbortWithStatusJSON(http.StatusUnauthorized, model.Error(401, "未提供Token"))
 			return
 		}
 		claims, err := a.Service.Auth.Parse(token)
 		if err != nil {
-			writeJSON(w, http.StatusUnauthorized, model.Error(401, "Token无效或已过期"))
+			c.AbortWithStatusJSON(http.StatusUnauthorized, model.Error(401, "Token无效或已过期"))
 			return
 		}
 
 		if auth.ExpiringSoon(claims) {
-			w.Header().Set("New-Token", a.Service.Auth.AccessToken(claims.UserID, claims.Username, claims.UserType))
+			fresh := a.Service.Auth.AccessToken(claims.UserID, claims.Username, claims.UserType)
+			c.Header("New-Token", fresh)
 		}
 
-		if strings.HasPrefix(path, "/admin/") && claims.UserType != "admin" {
-			writeJSON(w, http.StatusForbidden, model.Error(403, "权限不足，需要管理员权限"))
-			return
-		}
-
-		ctx := context.WithValue(r.Context(), ctxUserID, claims.UserID)
-		ctx = context.WithValue(ctx, ctxUsername, claims.Username)
-		ctx = context.WithValue(ctx, ctxUserType, claims.UserType)
-		next.ServeHTTP(w, r.WithContext(ctx))
-	})
+		// Context 是 Gin 在请求生命周期内共享数据的容器。
+		// 必须用 c.Set 而不是把值挂在闭包变量上，否则并发请求会串数据。
+		c.Set(ctxUserID, claims.UserID)
+		c.Set(ctxUsername, claims.Username)
+		c.Set(ctxUserType, claims.UserType)
+		c.Next()
+	}
 }
 
-func userID(r *http.Request) int {
-	id, _ := r.Context().Value(ctxUserID).(int)
+// adminMiddleware 必须在 authMiddleware 之后使用。
+// 路由分组里写成 engine.Group("/admin", a.authMiddleware(), a.adminMiddleware())。
+func (a *API) adminMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if userType(c) != "admin" {
+			c.AbortWithStatusJSON(http.StatusForbidden, model.Error(403, "权限不足，需要管理员权限"))
+			return
+		}
+		c.Next()
+	}
+}
+
+// 下面三个函数从 Gin Context 里取当前登录用户信息。
+// 类型断言失败时返回零值，避免 handler 里到处写 if 判断。
+
+func userID(c *gin.Context) int {
+	value, exists := c.Get(ctxUserID)
+	if !exists {
+		return 0
+	}
+	id, _ := value.(int)
 	return id
 }
 
-func userType(r *http.Request) string {
-	value, _ := r.Context().Value(ctxUserType).(string)
-	return value
+func userType(c *gin.Context) string {
+	value, exists := c.Get(ctxUserType)
+	if !exists {
+		return ""
+	}
+	userType, _ := value.(string)
+	return userType
 }
 
-func username(r *http.Request) string {
-	value, _ := r.Context().Value(ctxUsername).(string)
-	return value
+func username(c *gin.Context) string {
+	value, exists := c.Get(ctxUsername)
+	if !exists {
+		return ""
+	}
+	name, _ := value.(string)
+	return name
 }

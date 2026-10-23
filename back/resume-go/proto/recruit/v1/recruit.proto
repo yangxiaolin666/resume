@@ -1,0 +1,53 @@
+// 内部服务通信协议。
+//
+// 【为什么要有 proto 文件】
+// 简历里写「使用 gRPC + Protobuf 定义内部服务通信接口」。
+// 在微服务拆分后，聊天服务需要拿到「发送者昵称」「职位标题」这类信息，
+// 如果直接访问对方的数据库，就产生了强耦合；改成 gRPC 调用后，
+// 只要接口契约（本文件）不变，底层怎么实现都无所谓。
+//
+// 【如何重新生成 Go 代码】
+//   protoc --proto_path=proto \
+//     --go_out=. --go_opt=module=resume-backend \
+//     --go-grpc_out=. --go-grpc_opt=module=resume-backend \
+//     proto/recruit/v1/recruit.proto
+//
+// 生成结果在 internal/rpc/recruitpb/ 目录，不需要手写。
+syntax = "proto3";
+
+package recruit.v1;
+
+// go_package 告诉 protoc-gen-go 生成到哪个 Go 包。
+option go_package = "resume-backend/internal/rpc/recruitpb";
+
+// RecruitInternal 是招聘平台内部服务接口。
+// 目前只暴露「查用户简介」「查职位简介」两个只读方法，
+// 供消息通知等异步任务使用，避免它们直接跨库查询。
+service RecruitInternal {
+  rpc GetUserBrief(GetUserBriefRequest) returns (UserBrief);
+  rpc GetJobBrief(GetJobBriefRequest) returns (JobBrief);
+}
+
+message GetUserBriefRequest {
+  int32 user_id = 1;   // user 表主键
+  string user_type = 2; // student / company
+}
+
+message UserBrief {
+  int32 user_id = 1;
+  string user_type = 2;
+  string display_name = 3; // 学生姓名或企业名称
+  bool exists = 4;
+}
+
+message GetJobBriefRequest {
+  int32 job_id = 1;
+}
+
+message JobBrief {
+  int32 job_id = 1;
+  string title = 2;
+  string company_name = 3;
+  string status = 4;
+  bool exists = 5;
+}

@@ -1,6 +1,6 @@
 <script setup>
 import { addLike, deleteLike, getStudentById, queryComId, queryLike } from '@/api/student'
-import { API_BASE_URL } from '@/utils/request'
+import { fileUrl } from '@/utils/request'
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ArrowRightBold } from '@element-plus/icons-vue'
@@ -74,7 +74,7 @@ onMounted(async () => {
   } = await getStudentById(studentId)
   //console.log(list[0])
   student.value = list[0]
-  pdfURL.value = API_BASE_URL + list[0].resume?.resume
+  pdfURL.value = fileUrl(list[0].resume?.resume)
   //console.log(pdfURL.value)
   allLanguage.value = list[0].languages.map(item => item.language + item.level)
   allSpeciality.value = list[0].specialities.map(item => item.speciality)

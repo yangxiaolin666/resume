@@ -27,3 +27,7 @@ export const uploadChatImage = (file) => {
 }
 
 export const markChatRead = (data) => request.post('/chat/read', data)
+
+// 查询当前学生是否还能给该企业发简历（对方回复前只能发一次）
+export const getResumePermission = (params) =>
+  request.get('/chat/resume-permission', { params })

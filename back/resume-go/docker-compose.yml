@@ -1,0 +1,106 @@
+# 本地一键启动：MySQL + Redis + RabbitMQ + Go 应用
+#
+# 使用方式：
+#   docker compose up -d --build
+#   前端仍按原地址访问 http://localhost:8081
+#
+# 【网络说明】
+# 容器之间通过「服务名」互相访问：mysql / redis / rabbitmq，
+# 这就是 Docker Compose 内置 DNS 的作用，不需要记 IP。
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: resume-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: Wangtianye123
+      MYSQL_DATABASE: resume
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 首次启动时按文件名顺序执行；已经初始化过的数据卷不会重复执行
+      - ../resume.sql:/docker-entrypoint-initdb.d/01-resume.sql:ro
+      - ./schema.sql:/docker-entrypoint-initdb.d/02-schema.sql:ro
+      - ./seed_accounts.sql:/docker-entrypoint-initdb.d/03-seed-accounts.sql:ro
+      - ./seed_statistics.sql:/docker-entrypoint-initdb.d/04-seed-statistics.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-pWangtianye123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: resume-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: resume-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"    # AMQP 协议端口
+      - "15672:15672"  # 管理后台 http://localhost:15672
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: resume-go
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8081"
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: root
+      DB_PASSWORD: Wangtianye123
+      DB_NAME: resume
+      UPLOAD_DIR: /app/uploads/resume
+      JWT_SECRET: resume_secret_key_2024
+      REDIS_ADDR: redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672/
+      GRPC_PORT: "9091"
+      GRPC_INTERNAL: 127.0.0.1:9091
+      TZ: Asia/Shanghai
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./uploads:/app/uploads
+
+volumes:
+  mysql-data:
+  redis-data:
+  rabbitmq-data:

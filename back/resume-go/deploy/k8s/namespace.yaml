@@ -1,0 +1,5 @@
+# 独立的命名空间，避免和其他业务混在一起
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: recruit

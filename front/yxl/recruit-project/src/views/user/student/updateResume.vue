@@ -4,7 +4,7 @@ import { onMounted, ref, computed, watch } from 'vue'
 import { ArrowRightBold, UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getStudentById, updateResume, completeInfo, getStatics } from '@/api/student'
-import { API_BASE_URL } from '@/utils/request'
+import { fileUrl } from '@/utils/request'
 import { getProvinces, getCitiesByProvince } from '@/api/area'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -121,6 +121,7 @@ const cityOptions = ref([])
 const selectedProvince = ref('')
 const selectedCity = ref('')
 const pdfURL = ref()
+const resumePreviewVisible = ref(false)
 onMounted(async () => {
   const {
     data: {
@@ -129,7 +130,7 @@ onMounted(async () => {
   } = await getStudentById(userId)
   all.value = list[0]
   console.log(all.value);
-  pdfURL.value = API_BASE_URL + all.value.resume.resume
+  pdfURL.value = fileUrl(all.value.resume?.resume)
 
   allSpeciality.value = all.value.specialities.map(item => item.speciality)
 
@@ -140,8 +141,8 @@ onMounted(async () => {
   allJob.value = [...new Set(allTag.value.jobs.map(item => item.name))]
   allSpecial.value = [...new Set(allTag.value.specialities.map(item => item.name))]
 
-  // 初始化已选择的标签
-  selectedSkills.value = all.value.specialities
+  // 初始化已选择的标签（接口返回的是 { speciality } 对象，需要转成字符串数组）
+  selectedSkills.value = all.value.specialities.map(item => item.speciality)
   selectedLanguages.value = all.value.languages.map(item => item.language + '-' + item.level)
   selectedJobs.value = all.value.jobs.map(item => item.post)
   selectedCities.value = all.value.cities || []
@@ -644,13 +645,25 @@ const updateChange = async () => {
           <div class="el-upload__tip" style="margin-right: 100px;">
             <p>可提交格式:PDF、DOC、DOCX</p>
             <p>限制提交一个文件,新文件将覆盖旧文件</p>
-            <el-link v-if="all.resume?.resume" :href="pdfURL" type="primary">点击查看上一次提交的简历</el-link>
+            <el-link v-if="all.resume?.resume" type="primary" @click="resumePreviewVisible = true">点击查看上一次提交的简历</el-link>
           </div>
         </template>
       </el-upload>
 
     </el-splitter-panel>
   </el-splitter>
+
+  <!-- 上一次提交的简历预览：用弹窗内嵌，避免新标签被浏览器拦截 -->
+  <el-dialog
+    v-model="resumePreviewVisible"
+    title="上一次提交的简历"
+    width="72%"
+    top="5vh"
+    destroy-on-close
+  >
+    <iframe v-if="pdfURL" :src="pdfURL" class="resume-preview" title="简历预览"></iframe>
+    <el-empty v-else description="还没有上传过简历" :image-size="90" />
+  </el-dialog>
 </template>
 
 <style scoped lang="scss">
@@ -708,5 +721,11 @@ h4 {
       font-size: 30px;
     }
   }
+}
+
+.resume-preview {
+  width: 100%;
+  height: 70vh;
+  border: none;
 }
 </style>

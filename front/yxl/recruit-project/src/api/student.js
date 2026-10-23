@@ -75,6 +75,10 @@ export const updateResume=((resumeFile)=>{
 export const getResume=(()=>{
   return request.get('/uploads/resume')
 })
+
+// 当前学生最新上传的简历（聊天里「发送简历」使用）
+// config 可传 { silent: true }，页面初始化时没简历也不弹错误提示
+export const getMyResume = (config = {}) => request.get('/stu/resume/latest', config)
 export const addLike=(list)=>{
   return request.post('/com/LikeAdd',
     list
