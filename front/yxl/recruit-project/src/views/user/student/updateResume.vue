@@ -4,6 +4,7 @@ import { onMounted, ref, computed, watch } from 'vue'
 import { ArrowRightBold, UploadFilled } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { getStudentById, updateResume, completeInfo, getStatics } from '@/api/student'
+import { API_BASE_URL } from '@/utils/request'
 import { getProvinces, getCitiesByProvince } from '@/api/area'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
@@ -128,7 +129,7 @@ onMounted(async () => {
   } = await getStudentById(userId)
   all.value = list[0]
   console.log(all.value);
-  pdfURL.value = "http://81.70.199.174:8081" + all.value.resume.resume
+  pdfURL.value = API_BASE_URL + all.value.resume.resume
 
   allSpeciality.value = all.value.specialities.map(item => item.speciality)
 

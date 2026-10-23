@@ -66,8 +66,8 @@ import {
   LegendComponent,
   GridComponent
 } from "echarts/components";
-import VChart, { THEME_KEY } from "vue-echarts";
-import { ref, defineComponent, onMounted, computed, shallowRef, watchEffect } from "vue";
+import VChart from "vue-echarts";
+import { ref, defineComponent, onMounted, onUnmounted, computed, shallowRef, watchEffect } from "vue";
 import * as echarts from "echarts";
 import { getStatics } from "@/api/student";
 
@@ -89,20 +89,35 @@ export default defineComponent({
   components: {
     VChart
   },
-  provide: {
-    [THEME_KEY]: "light"
-  },
   setup: () => {
     // 使用shallowRef减少响应式开销
     const chartData = shallowRef(null)
     const loading = ref(true)
-    
+    // 跟随全局暗黑模式，图表文字在暗黑模式下显示为白色
+    const isDark = ref(window.getDarkMode ? window.getDarkMode() : false)
+    let themeObserver = null
     // 缓存计算选项，避免重复计算
     const chartOptions = shallowRef({})
+
+    const getChartTheme = (dark) => ({
+      text: dark ? "#ffffff" : "#303133",
+      axis: dark ? "rgba(255, 255, 255, 0.85)" : "#606266",
+      axisLine: dark ? "rgba(255, 255, 255, 0.35)" : "#d9d9d9",
+      splitLine: dark ? "rgba(255, 255, 255, 0.18)" : "#e0e6f1",
+      tooltip: dark
+        ? {
+            backgroundColor: "#1f1f1f",
+            borderColor: "#4c4c4c",
+            textStyle: { color: "#ffffff" }
+          }
+        : {}
+    })
+
     // 数据预处理和选项生成
-    const generateChartOptions = (data) => {
+    const generateChartOptions = (data, dark) => {
       if (!data) return {}
-      
+      const theme = getChartTheme(dark)
+
       const specialities = data.specialities?.slice(0, 10) || []
       const internships = data.internships?.slice(0, 10) || []
       const jobs = data.jobs?.slice(0, 10) || []
@@ -110,13 +125,23 @@ export default defineComponent({
       
       return {
         radarOption: {
-          title: { text: "应届生技能水平雷达图", left: "center" },
-          tooltip: {},
+          title: { text: "应届生技能水平雷达图", left: "center", textStyle: { color: theme.text } },
+          tooltip: { ...theme.tooltip },
           radar: {
             indicator: specialities.map(item => ({
               name: item.name,
               value: item.value
-            }))
+            })),
+            axisName: { color: theme.text },
+            axisLine: { lineStyle: { color: theme.axisLine } },
+            splitLine: { lineStyle: { color: theme.splitLine } },
+            splitArea: {
+              areaStyle: {
+                color: dark
+                  ? ["rgba(255, 255, 255, 0.04)", "rgba(255, 255, 255, 0.08)"]
+                  : ["rgba(250, 250, 250, 0.3)", "rgba(200, 200, 200, 0.3)"]
+              }
+            }
           },
           series: [{
             type: "radar",
@@ -128,21 +153,24 @@ export default defineComponent({
           }]
         },
         pieOptionSpecialities: {
-          title: { text: "应届生实习经历", left: "center" },
+          title: { text: "应届生实习经历", left: "center", textStyle: { color: theme.text } },
           tooltip: {
             trigger: "item",
-            formatter: "{a} <br/>{b} : {c} ({d}%)"
+            formatter: "{a} <br/>{b} : {c} ({d}%)",
+            ...theme.tooltip
           },
           legend: {
             orient: "vertical",
             left: "left",
-            data: internships.map(item => item.company)
+            data: internships.map(item => item.company),
+            textStyle: { color: theme.text }
           },
           series: [{
             name: "实习公司分布",
             type: "pie",
             radius: "55%",
             center: ["50%", "60%"],
+            label: { color: theme.text },
             data: internships.map(item => ({
               value: item.value,
               name: item.company
@@ -157,21 +185,24 @@ export default defineComponent({
           }]
         },
         pieOptionJobs: {
-          title: { text: "应届生意向工作分布", left: "center" },
+          title: { text: "应届生意向工作分布", left: "center", textStyle: { color: theme.text } },
           tooltip: {
             trigger: "item",
-            formatter: "{a} <br/>{b} : {c} ({d}%)"
+            formatter: "{a} <br/>{b} : {c} ({d}%)",
+            ...theme.tooltip
           },
           legend: {
             orient: "vertical",
             left: "left",
-            data: jobs.map(item => item.name)
+            data: jobs.map(item => item.name),
+            textStyle: { color: theme.text }
           },
           series: [{
             name: "工作意向分布",
             type: "pie",
             radius: "55%",
             center: ["50%", "60%"],
+            label: { color: theme.text },
             data: jobs.map(item => ({
               value: item.value,
               name: item.name
@@ -186,12 +217,13 @@ export default defineComponent({
           }]
         },
         barOption: {
-          title: { text: "应届生意向就业城市", left: "center" },
+          title: { text: "应届生意向就业城市", left: "center", textStyle: { color: theme.text } },
           tooltip: {
             trigger: "axis",
-            axisPointer: { type: "shadow" }
+            axisPointer: { type: "shadow" },
+            ...theme.tooltip
           },
-          legend: { data: ["意向人数"], top: "10%" },
+          legend: { data: ["意向人数"], top: "10%", textStyle: { color: theme.text } },
           grid: {
             left: "3%",
             right: "4%",
@@ -200,9 +232,16 @@ export default defineComponent({
           },
           xAxis: {
             type: "category",
-            data: cities.map(item => item.name)
+            data: cities.map(item => item.name),
+            axisLabel: { color: theme.axis },
+            axisLine: { lineStyle: { color: theme.axisLine } }
           },
-          yAxis: { type: "value" },
+          yAxis: {
+            type: "value",
+            axisLabel: { color: theme.axis },
+            axisLine: { lineStyle: { color: theme.axisLine } },
+            splitLine: { lineStyle: { color: theme.splitLine } }
+          },
           series: [{
             name: "意向人数",
             type: "bar",
@@ -211,17 +250,19 @@ export default defineComponent({
           }]
         },
         gradientAreaOption: {
-          title: { text: "阶段技能发展趋势", left: "center" },
+          title: { text: "阶段技能发展趋势", left: "center", textStyle: { color: theme.text } },
           tooltip: {
             trigger: "axis",
             axisPointer: {
               type: "cross",
               label: { backgroundColor: "#6a7985" }
-            }
+            },
+            ...theme.tooltip
           },
           legend: {
             data: specialities.map(item => item.name),
-            top: "10%"
+            top: "10%",
+            textStyle: { color: theme.text }
           },
           grid: {
             left: "3%",
@@ -232,9 +273,16 @@ export default defineComponent({
           xAxis: [{
             type: "category",
             boundaryGap: false,
-            data: ["大一", "大二", "大三", "大四", "研一", "研二"]
+            data: ["大一", "大二", "大三", "大四", "研一", "研二"],
+            axisLabel: { color: theme.axis },
+            axisLine: { lineStyle: { color: theme.axisLine } }
           }],
-          yAxis: [{ type: "value" }],
+          yAxis: [{
+            type: "value",
+            axisLabel: { color: theme.axis },
+            axisLine: { lineStyle: { color: theme.axisLine } },
+            splitLine: { lineStyle: { color: theme.splitLine } }
+          }],
           series: specialities.map((item, index) => ({
             name: item.name,
             type: "line",
@@ -266,12 +314,20 @@ export default defineComponent({
     // 监听数据变化，生成选项
     watchEffect(() => {
       if (chartData.value) {
-        chartOptions.value = generateChartOptions(chartData.value)
+        chartOptions.value = generateChartOptions(chartData.value, isDark.value)
       }
     })
     
     // 数据加载
     onMounted(async () => {
+      // 监听 <html> 的 dark class，切换主题时同步图表文字颜色
+      themeObserver = new MutationObserver(() => {
+        isDark.value = document.documentElement.classList.contains("dark")
+      })
+      themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"]
+      })
       try {
         loading.value = true
         const { data: { data } } = await getStatics()
@@ -281,6 +337,13 @@ export default defineComponent({
         console.error('加载统计数据失败:', error)
       } finally {
         loading.value = false
+      }
+    })
+
+    onUnmounted(() => {
+      if (themeObserver) {
+        themeObserver.disconnect()
+        themeObserver = null
       }
     })
     // 返回响应式选项

@@ -16,7 +16,7 @@ const loginTo = async () => {
     data: { data }
   } = await loginToR(username.value, password.value, userType.value)
   console.log(data)
-  userStore.setAll(data.userId,data.username, data.userType, data.token)
+  userStore.setAll(data.userId,data.username, data.userType, data.token, data.displayName)
   ElMessage({
     message: '登录成功',
     type: 'success',
@@ -26,7 +26,7 @@ const loginTo = async () => {
     if (userType.value === 'admin') {
       loginToAdmin()
     } else {
-      router.push('/showData')
+      router.push('/chat')
     }
   }, 1100)
 }
@@ -42,7 +42,8 @@ const loginToAdmin = () => {
   }
 
   const encodeToken = encodeURIComponent(adminToken)
-  const adminUrl = `http://47.93.133.36/admin/?token=${encodeToken}`
+  const adminBaseUrl = import.meta.env.VITE_ADMIN_URL || 'http://47.93.133.36'
+  const adminUrl = `${adminBaseUrl}/admin/?token=${encodeToken}`
   window.location.replace(adminUrl)
 }
 

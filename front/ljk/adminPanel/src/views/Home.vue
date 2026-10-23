@@ -14,7 +14,8 @@ import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 
-const backendUrl = 'http://81.70.199.174:8081'
+const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://81.70.199.174:8081'
+const loginUrl = import.meta.env.VITE_LOGIN_URL || 'http://47.93.133.36'
 
 const currMenu = {
   Student: 1,
@@ -45,7 +46,7 @@ const handleLogout = () => {
   console.log("退出登录");
   localStorage.removeItem('token')
   TOKEN.value = ''
-  window.location.replace("http://47.93.133.36/");
+  window.location.replace(loginUrl);
 }
 
 
@@ -540,7 +541,7 @@ const handleEdit = (currItem) => {
             :file-list="fileList"
             :before-remove="beforeRemove"
             :headers="uploadHeaders"
-            :action="menuSelect === 1 ? backendUrl + '/addStu' : backendUrl + '/addCom'"
+            :action="menuSelect === 1 ? backendUrl + '/admin/addStu' : backendUrl + '/admin/addCom'"
             :on-success="handleUploadSuccess"
             :on-error="handleUploadError"
             :before-upload="beforeUpload"

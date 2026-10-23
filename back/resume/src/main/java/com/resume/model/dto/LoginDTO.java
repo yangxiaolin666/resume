@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -30,5 +31,6 @@ public class LoginDTO {
      * 用户类型（student/company/admin）
      */
     @NotBlank(message = "用户类型不能为空")
+    @JsonProperty("userType")
     private String userType;
 }

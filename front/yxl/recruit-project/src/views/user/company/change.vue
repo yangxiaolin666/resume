@@ -1,176 +1,230 @@
 <script setup>
-import { ref } from 'vue'
-import IconSchool from '@/components/IconSchool.vue'
-import { User, Lock } from '@element-plus/icons-vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
-import { changePwd } from '@/api/login'
-const username = ref('')
-const password = ref('')
-const newPassword = ref('')
-const rePassword = ref('')
-const userStore = useUserStore()
+import { changePwd, getMyProfile, renameSelf } from '@/api/login'
+import { useUserStore } from '@/stores/user'
+
 const router = useRouter()
-const change = async () => {
-  const res = await changePwd(password.value, newPassword.value, rePassword.value)
-  console.log(res)
-  ElMessage({
-    type: 'success',
-    message: '修改成功,请重新登录',
-    duration: 1000
-  })
-  userStore.setAll('', '', '')
-  setTimeout(() => router.push('/login'), 1100)
+const userStore = useUserStore()
+
+const roleText = computed(() => (userStore.userType === 'student' ? '学生' : '企业'))
+
+// ---------- 基本信息：昵称 ----------
+const nickname = ref(userStore.displayName || userStore.username)
+const savingName = ref(false)
+
+onMounted(async () => {
+  try {
+    const { data } = await getMyProfile()
+    userStore.setDisplayName(data.data.displayName)
+    nickname.value = data.data.displayName
+  } catch (e) {
+    // 获取失败时沿用本地缓存的昵称
+  }
+})
+
+async function saveNickname() {
+  const name = nickname.value.trim()
+  if (!name) {
+    ElMessage.warning('昵称不能为空')
+    return
+  }
+  if (name === userStore.displayName) {
+    ElMessage.info('昵称没有变化')
+    return
+  }
+  savingName.value = true
+  try {
+    const { data } = await renameSelf(name)
+    userStore.setDisplayName(data.data.displayName)
+    nickname.value = data.data.displayName
+    ElMessage.success('昵称已更新')
+  } finally {
+    savingName.value = false
+  }
+}
+
+// ---------- 修改密码 ----------
+const pwdFormRef = ref(null)
+const changingPwd = ref(false)
+const pwdForm = reactive({
+  oldPwd: '',
+  newPwd: '',
+  rePwd: ''
+})
+const pwdRules = {
+  oldPwd: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+  newPwd: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度应为 6~20 位', trigger: 'blur' }
+  ],
+  rePwd: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value !== pwdForm.newPwd) {
+          callback(new Error('两次填写的新密码不一致'))
+          return
+        }
+        callback()
+      },
+      trigger: 'blur'
+    }
+  ]
+}
+
+async function submitPassword() {
+  if (!pwdFormRef.value) return
+  const valid = await pwdFormRef.value.validate().catch(() => false)
+  if (!valid) return
+
+  changingPwd.value = true
+  try {
+    await changePwd(pwdForm.oldPwd, pwdForm.newPwd, pwdForm.rePwd)
+    ElMessage.success('密码修改成功，请重新登录')
+    userStore.clear()
+    setTimeout(() => router.push('/login'), 1000)
+  } finally {
+    changingPwd.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="login-container">
-    <div class="login-box">
-      <!-- 左侧导航栏 -->
-      <div class="login-sidebar">
-        <IconSchool style="margin-left: 40px;
-        width:120px;height: 120px;stroke: white;" />
-        <div class="logo">
-          修改密码
-        </div>
-      </div>
-      <div class="login-form-container">
-        <div class="login-form">
-          <h2>
-            原密码修改密码
-          </h2>
-          <el-form :model="{ username, password }" label-width="0">
-            <el-form-item>
-              <el-input v-model="username" placeholder="请输入账号" :prefix-icon="User" style="width: 300px; height: 40px" />
-            </el-form-item>
-            <el-form-item>
-              <el-input v-model="password" type="password" placeholder="请输入原密码" :prefix-icon="Lock" show-password
-                style="width: 300px; height: 40px" />
-            </el-form-item>
-            <el-form-item>
-              <el-input v-model="newPassword" type="password" placeholder="请输入新密码" :prefix-icon="Lock" show-password
-                style="width: 300px; height: 40px" />
-            </el-form-item>
-            <el-form-item>
-              <el-input v-model="rePassword" type="password" placeholder="请确认新密码" :prefix-icon="Lock" show-password
-                style="width: 300px; height: 40px" />
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" style="width: 300px; height: 45px" @click="change">
-                修改
-              </el-button>
-            </el-form-item>
-          </el-form>
-        </div>
-      </div>
+  <div class="profile-page">
+    <div class="profile-card">
+      <header class="profile-header">
+        <h2>修改个人信息</h2>
+        <p>维护你在平台上的昵称与登录密码</p>
+      </header>
+
+      <section class="profile-section">
+        <h3>基本信息</h3>
+        <el-form label-width="90px" label-position="left">
+          <el-form-item label="登录账号">
+            <el-input :model-value="userStore.username" disabled />
+          </el-form-item>
+          <el-form-item label="身份">
+            <el-tag effect="plain">{{ roleText }}</el-tag>
+          </el-form-item>
+          <el-form-item label="昵称">
+            <el-input
+              v-model="nickname"
+              maxlength="20"
+              show-word-limit
+              placeholder="请输入昵称"
+              @keyup.enter="saveNickname"
+            />
+            <span class="field-tip">昵称会显示在右上角和聊天窗口中，登录账号不会改变</span>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="savingName" @click="saveNickname">
+              保存昵称
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </section>
+
+      <el-divider />
+
+      <section class="profile-section">
+        <h3>修改密码</h3>
+        <el-form
+          ref="pwdFormRef"
+          :model="pwdForm"
+          :rules="pwdRules"
+          label-width="90px"
+          label-position="left"
+        >
+          <el-form-item label="原密码" prop="oldPwd">
+            <el-input v-model="pwdForm.oldPwd" type="password" show-password placeholder="请输入原密码" />
+          </el-form-item>
+          <el-form-item label="新密码" prop="newPwd">
+            <el-input v-model="pwdForm.newPwd" type="password" show-password placeholder="6~20 位新密码" />
+          </el-form-item>
+          <el-form-item label="确认密码" prop="rePwd">
+            <el-input v-model="pwdForm.rePwd" type="password" show-password placeholder="请再次输入新密码" />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" :loading="changingPwd" @click="submitPassword">
+              确认修改
+            </el-button>
+          </el-form-item>
+        </el-form>
+      </section>
     </div>
   </div>
 </template>
 
 <style scoped>
-.login-container {
-  width: 100vw;
-  height: 100vh;
-  background-size: cover;
-  background-position: center;
+.profile-page {
   display: flex;
   justify-content: center;
-  align-items: center;
-  transition: background-color 0.3s ease;
+  padding: 32px 20px 48px;
 }
 
-.login-box {
-  width: 750px;
-  height: 500px;
-  background-color: var(--el-bg-color);
-  border-radius: 15px;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-  display: flex;
-  overflow: hidden;
-  transition: all 0.3s ease;
+.profile-card {
+  width: 100%;
+  max-width: 720px;
+  padding: 28px 32px 12px;
+  background: var(--el-bg-color);
+  border: 1px solid var(--el-border-color-light);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
-.login-sidebar {
-  width: 200px;
-  background-color: var(--el-color-primary);
-  padding: 20px 0;
+.profile-header {
+  margin-bottom: 24px;
 }
 
-.logo {
-  font-size: 30px;
-  font-weight: bold;
-  color: white;
-  text-align: center;
-  margin-bottom: 40px;
-  padding: 0 20px;
+.profile-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--el-text-color-primary);
 }
 
-.login-menu {
-  border-right: none;
-  background-color: transparent;
+.profile-header p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--el-text-color-secondary);
 }
 
-.login-menu .el-menu-item {
-  height: 60px;
-  line-height: 60px;
+.profile-section h3 {
+  margin: 0 0 18px;
   font-size: 16px;
-  color: var(--el-text-color-primary);
-  background-color: var(--el-bg-color);
-  border: none;
-}
-
-.login-menu .el-menu-item:hover {
-  color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-9);
-}
-
-.login-menu .el-menu-item.is-active {
-  color: var(--el-color-primary);
-  background-color: var(--el-color-primary-light-8);
-}
-
-.login-form-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: var(--el-bg-color);
-}
-
-.login-form {
-  text-align: center;
-}
-
-.login-form h2 {
-  font-size: 40px;
-  margin-bottom: 95px;
+  font-weight: 600;
   color: var(--el-text-color-primary);
 }
 
-.el-form-item {
-  margin-bottom: 16px;
+.profile-section :deep(.el-input) {
+  max-width: 360px;
 }
 
-/* 暗黑模式下的特殊样式 */
-:global(.dark) .login-box {
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+.profile-section :deep(.el-form-item) {
+  margin-bottom: 18px;
 }
 
-:global(.dark) .login-sidebar {
-  background-color: var(--el-color-primary-dark-2);
+.field-tip {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--el-text-color-secondary);
 }
 
-:global(.dark) .login-menu .el-menu-item {
-  color: rgba(255, 255, 255, 0.9);
+.profile-section :deep(.el-button) {
+  width: 120px;
 }
 
-:global(.dark) .login-menu .el-menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.15);
-}
+@media (max-width: 600px) {
+  .profile-card {
+    padding: 20px 16px 8px;
+  }
 
-:global(.dark) .login-menu .el-menu-item.is-active {
-  background-color: rgba(255, 255, 255, 0.25);
+  .profile-section :deep(.el-input) {
+    max-width: none;
+  }
 }
 </style>

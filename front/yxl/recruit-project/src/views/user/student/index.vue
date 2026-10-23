@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-import { User, Document, ArrowRightBold, MessageBox } from '@element-plus/icons-vue'
+import { User, Document, ArrowRightBold, MessageBox, Setting } from '@element-plus/icons-vue'
 import { useRoute } from 'vue-router'
 const activeIndex = ref('/selfMessage')
 const route = useRoute()
@@ -15,20 +15,16 @@ watch(() => route.path, () => {
 })
 </script>
 <template>
-    <el-menu :router="true" :default-active="activeIndex" class="el-menu-demo" mode="horizontal" style="
-      display: flex;
-      justify-content: space-between;
-      height: 80px;
-      user-select: none;
-    ">
-      <div style="display: flex; align-items: center">
+  <div style="width:100%; min-width:max-content;">
+    <el-menu :router="true" :default-active="activeIndex" class="fixed-menu" mode="horizontal">
+      <div class="menu-left">
         <IconSchool />
         <h1>
           <p>个人主页</p>
         </h1>
       </div>
 
-      <div style="display: flex; align-items: center">
+      <div class="menu-right">
         <el-menu-item index="/selfMessage">
           <el-icon>
             <User />
@@ -40,6 +36,12 @@ watch(() => route.path, () => {
             <Document />
           </el-icon>
           简历修改
+        </el-menu-item>
+        <el-menu-item index="/studentSetting">
+          <el-icon>
+            <Setting />
+          </el-icon>
+          修改个人信息
         </el-menu-item>
         <el-menu-item index="/makeResume">
           <el-icon>
@@ -55,6 +57,39 @@ watch(() => route.path, () => {
         </el-menu-item>
       </div>
     </el-menu>
-    <router-view></router-view>
+    <div class="content-area">
+      <router-view></router-view>
+    </div>
+  </div>
 </template>
-<style scoped lang="scss"></style>
+<style scoped lang="scss">
+.fixed-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 80px;
+  background: var(--el-bg-color);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  user-select: none;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+}
+
+.menu-right {
+  display: flex;
+  align-items: center;
+}
+
+.content-area {
+  margin-top: 80px;
+  min-height: calc(100vh - 80px);
+}
+</style>

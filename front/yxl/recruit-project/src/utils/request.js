@@ -1,8 +1,13 @@
 import { useUserStore } from '@/stores/user'
 import axios from 'axios'
 import { ElMessage, ElLoading } from 'element-plus'
+
+// 后端地址：优先读取环境变量，便于本地一键启动；未设置时保持原有线上地址
+export const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || 'http://182.92.210.198:8081'
+
 const request = axios.create({
-  baseURL: 'http://81.70.199.174:8081',
+  baseURL: API_BASE_URL,
   timeout: 5000,
   headers: { platform: 'H5' }
 })

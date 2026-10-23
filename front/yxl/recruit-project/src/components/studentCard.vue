@@ -1,10 +1,11 @@
 <script setup>
 import { ElMessage } from 'element-plus'
-import { useRouter } from 'vue-router'
 import { onMounted, ref } from 'vue'
-import { addLike, deleteLike, queryComId, queryLike } from '@/api/student';
-import { useUserStore } from '@/stores/user';
+import { useRouter } from 'vue-router'
+import { addLike, deleteLike, queryComId, queryLike } from '@/api/student'
+import { useUserStore } from '@/stores/user'
 const router = useRouter()
+const userStore = useUserStore()
 const { item } = defineProps({
   item: {
     type: Object,
@@ -12,61 +13,81 @@ const { item } = defineProps({
   }
 })
 const isLike = ref(false)
-const userStore=useUserStore()
-const com_id=ref(5)
-const stuId=item.id
-onMounted(async ()=>{
-  const res=await queryComId()
-  com_id.value=res.data.data
-  IdList.value=[
-  {
-    "comId": com_id.value,
-    "stuId": stuId,
-  }
+const com_id = ref(5)
+const stuId = item.id
+onMounted(async () => {
+  const res = await queryComId()
+  com_id.value = res.data.data
+  IdList.value = [
+    {
+      "comId": com_id.value,
+      "stuId": stuId,
+    }
   ]
-  const {data:{data:{list}}}=await queryLike({
-    "com_id":com_id.value,
-    "pageNum":pageNum,
-    "pageSize":pageSize
+  const { data: { data: { list } } } = await queryLike({
+    "com_id": com_id.value,
+    "pageNum": pageNum,
+    "pageSize": pageSize
   })
-  for(let i=0;i<list.length;i++){
-    if(list[i].stuId===stuId){
-      isLike.value=true
+  for (let i = 0; i < list.length; i++) {
+    if (list[i].stuId === stuId) {
+      isLike.value = true
     }
   }
 })
-const IdList=ref([
+const IdList = ref([
   {
     "comId": com_id.value,
     "stuId": stuId,
   }
 ])
-const pageNum=1
-const pageSize=10
+const pageNum = 1
+const pageSize = 10
+
+// 企业可以直接联系该学生
+const contactStudent = () => {
+  if (!item.userId) return
+  router.push({
+    path: '/chat',
+    query: {
+      peerId: item.userId,
+      peerType: 'student',
+      name: item.name
+    }
+  })
+}
 
 const toggleLike = async () => {
   if (isLike.value) {
-    const res=await deleteLike(IdList.value)
+    const deleteData = [{
+      comId: com_id.value,
+      stuId: stuId
+    }]
+    const res = await deleteLike(deleteData)
     ElMessage({
-      message:'取消收藏成功',
-      type:'success',
-      duration:500
+      message: '取消收藏成功',
+      type: 'success',
+      duration: 500
     })
     console.log(res)
   } else {
-    const res=await addLike(IdList.value)
+    const addData = [{
+      comId: com_id.value,
+      stuId: stuId
+    }]
+    const res = await addLike(addData)
     ElMessage({
-      message:'收藏成功',
-      type:'success',
-      duration:500
+      message: '收藏成功',
+      type: 'success',
+      duration: 500
     })
     console.log(res)
   }
   isLike.value = !isLike.value
-  if(item.isRefresh){
-    setTimeout(()=>{
+  if (item.isRefresh) {
+    setTimeout(() => {
       router.go(0)
-    },600)
+    }, 600)
   }
 }
 </script>
@@ -75,7 +96,17 @@ const toggleLike = async () => {
     <template #header>
       <div class="card-header">
         <h3>{{ item.name }}</h3>
-        <el-tag type="success"> {{ item.graduationYear }}届 </el-tag>
+        <div class="header-actions">
+          <el-tag type="success"> {{ item.graduationYear }}届 </el-tag>
+          <el-button
+            v-if="userStore.userType === 'company' && item.userId"
+            link
+            type="primary"
+            @click="contactStudent"
+          >
+            联系
+          </el-button>
+        </div>
       </div>
     </template>
     <div class="text item">
@@ -90,10 +121,10 @@ const toggleLike = async () => {
       <span>专业</span>
       <span>{{ item.major }}</span>
     </div>
-    
-    <div class="skill" >
+
+    <div class="skill">
       <h4>能力标签</h4>
-      <div class="tag-box" v-if="item.languages?.length||item.specialities?.length">
+      <div class="tag-box" v-if="item.languages?.length || item.specialities?.length">
         <el-tag v-for="(item, index) in item.specialities" :key="index" size="small" type="primary" class="tag">
           {{ item.speciality }}
         </el-tag>
@@ -115,7 +146,7 @@ const toggleLike = async () => {
           ">
           查看简历
         </el-button>
-        <el-button type="success" v-if="!isLike" @click="toggleLike" >
+        <el-button type="success" v-if="!isLike" @click="toggleLike">
           收藏简历
         </el-button>
         <el-button type="info" v-else @click="toggleLike">
@@ -130,16 +161,33 @@ const toggleLike = async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  h3{
-    margin: 3px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--el-text-color-primary);
   }
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .box-card {
   min-height: 380px;
   max-height: 380px;
-  min-width:280px;
+  min-width: 280px;
   max-width: 280px;
+  margin: 8px;
+  border-radius: 12px;
+  transition: all 0.3s;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
 }
 
 .text {
@@ -149,27 +197,32 @@ const toggleLike = async () => {
 .item {
   display: flex;
   justify-content: space-between;
-  padding: 10px;
+  padding: 12px 0;
   border-bottom: 1px solid var(--el-border-color);
-}
 
-.box-card {
-  margin: 8px;
-  border-radius: 20px;
+  span:first-child {
+    color: var(--el-text-color-secondary);
+  }
+
+  span:last-child {
+    color: var(--el-text-color-primary);
+    font-weight: 500;
+  }
 }
 
 .skill {
-  padding: 5px;
-  font-size: 15px;
+  padding: 12px 0;
 
   h4 {
-    margin: 10px 0;
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: var(--el-text-color-secondary);
   }
 
   .tag-box {
     display: flex;
     justify-content: flex-start;
-    gap: 10px;
+    gap: 8px;
     flex-wrap: wrap;
   }
 }
