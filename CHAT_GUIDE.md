@@ -3,12 +3,13 @@
 这篇文档按“从数据库到浏览器”的顺序，讲解本次新增的聊天系统。你可以把它当成一次完整的 WebSocket 实战教程：先看整体结构，再按目录顺序读代码。
 
 > 参考项目：
+>
 > - `Go-project-1 - 副本`：Hub / Client 连接管理、私聊点对点推送、回调注入
 > - `go-gin-chat-master`：Gin + WebSocket 私聊、心跳检测、消息落库
 >
 > 本项目借鉴了它们的核心思想，但适配了现有的 **net/http + database/sql + JWT + Vue 3** 技术栈，没有引入 gRPC、RabbitMQ、GORM 这些额外组件。
 
----
+***
 
 ## 1. 功能范围
 
@@ -21,20 +22,20 @@
 - 学生可以从招聘卡片直接“联系企业”
 - 企业可以从学生列表 / 收藏列表直接“联系学生”
 
----
+***
 
 ## 2. 这次补充的技术栈
 
-| 技术 | 作用 | 为什么选它 |
-|---|---|---|
-| `github.com/gorilla/websocket` | Go 的 WebSocket 实现 | 生态成熟，和 `net/http` 直接集成，参考资料多 |
-| WebSocket | 浏览器与后端的长连接 | HTTP 只能“请求-响应”，聊天需要服务端主动推送 |
-| MySQL `chat_message` 表 | 消息持久化 | 离线消息、历史记录都依赖数据库；复用项目已有 MySQL |
-| JWT（已有） | WebSocket 握手鉴权 | 复用登录 Token，不新增一套账号体系 |
-| `sync.RWMutex` + `map` | 在线连接管理 | Go 并发基础：多 goroutine 读写共享 map 必须加锁 |
-| `chan []byte` | 每个连接的发送队列 | gorilla/websocket 不允许并发写，所有写集中到一个 goroutine |
-| Vue 3 `class` 封装 | 前端 WebSocket 客户端 | 把重连、心跳、事件订阅封装起来，页面只关心业务 |
-| Element Plus | 聊天 UI | 项目已在用，减少样式成本 |
+| 技术                             | 作用                | 为什么选它                                       |
+| ------------------------------ | ----------------- | ------------------------------------------- |
+| `github.com/gorilla/websocket` | Go 的 WebSocket 实现 | 生态成熟，和 `net/http` 直接集成，参考资料多                |
+| WebSocket                      | 浏览器与后端的长连接        | HTTP 只能“请求-响应”，聊天需要服务端主动推送                  |
+| MySQL `chat_message` 表         | 消息持久化             | 离线消息、历史记录都依赖数据库；复用项目已有 MySQL                |
+| JWT（已有）                        | WebSocket 握手鉴权    | 复用登录 Token，不新增一套账号体系                        |
+| `sync.RWMutex` + `map`         | 在线连接管理            | Go 并发基础：多 goroutine 读写共享 map 必须加锁           |
+| `chan []byte`                  | 每个连接的发送队列         | gorilla/websocket 不允许并发写，所有写集中到一个 goroutine |
+| Vue 3 `class` 封装               | 前端 WebSocket 客户端  | 把重连、心跳、事件订阅封装起来，页面只关心业务                     |
+| Element Plus                   | 聊天 UI             | 项目已在用，减少样式成本                                |
 
 ### HTTP 与 WebSocket 的分工
 
@@ -49,7 +50,7 @@
 2. WebSocket 只负责“实时”，职责单一，断线也不影响历史记录；
 3. WebSocket 断开时，前端还能用 REST 发消息，不会直接丢消息。
 
----
+***
 
 ## 3. 目录结构
 
@@ -87,7 +88,7 @@ front/yxl/recruit-project/src/
 └── views/layout/home.vue       # 企业学生列表“联系学生”列
 ```
 
----
+***
 
 ## 4. 数据库设计
 
@@ -130,7 +131,7 @@ WHERE (sender_id = A AND receiver_id = B)
 
 聊天查询最常见的两个方向就是“某个会话的历史”和“我的未读”，索引与之一一对应。
 
----
+***
 
 ## 5. 一条消息的完整旅程
 
@@ -161,7 +162,7 @@ WHERE (sender_id = A AND receiver_id = B)
 - 同一条消息推给双方：接收者实时看到，发送者用于多标签页同步；
 - 前端按消息 `id` 去重，避免“REST 响应 + WebSocket 回显”重复上屏。
 
----
+***
 
 ## 6. 后端代码逐层讲解
 
@@ -231,12 +232,12 @@ default:
 
 四个核心查询：
 
-| 方法 | 作用 | 关键 SQL |
-|---|---|---|
-| `ListChatMessages` | 某个会话的历史消息 | 双向条件 + `id < beforeId` + 倒序取 N 条再翻转 |
-| `ListConversations` | 会话列表 | 用 CASE 把收发统一成 peer，按 peer 分组取 MAX(id) |
-| `ListChatPeers` | 可聊天的人 | 学生查 company，企业查 student |
-| `MarkChatRead` | 标记已读 | 把“对方发给我的未读”更新为 1 |
+| 方法                  | 作用        | 关键 SQL                                |
+| ------------------- | --------- | ------------------------------------- |
+| `ListChatMessages`  | 某个会话的历史消息 | 双向条件 + `id < beforeId` + 倒序取 N 条再翻转   |
+| `ListConversations` | 会话列表      | 用 CASE 把收发统一成 peer，按 peer 分组取 MAX(id) |
+| `ListChatPeers`     | 可聊天的人     | 学生查 company，企业查 student               |
+| `MarkChatRead`      | 标记已读      | 把“对方发给我的未读”更新为 1                      |
 
 会话列表的 SQL 是本模块最值得读的一段：
 
@@ -283,7 +284,7 @@ excluded  = /login /refresh-token /stu/statistics /chat/ws
 
 其他 `/chat/*` 接口仍然走正常的 `Authorization: Bearer`。
 
----
+***
 
 ## 7. WebSocket 消息协议
 
@@ -346,7 +347,7 @@ excluded  = /login /refresh-token /stu/statistics /chat/ws
 { "type": "error", "message": "消息内容不能为空" }
 ```
 
----
+***
 
 ## 8. 前端代码讲解
 
@@ -407,7 +408,7 @@ socket.connect()
 
 聊天页启动时读取 query，自动打开对应会话。
 
----
+***
 
 ## 9. 本地运行与双账号测试
 
@@ -426,10 +427,10 @@ socket.connect()
 
 演示账号：
 
-| 身份 | 账号 | 密码 |
-|---|---|---|
-| 学生 | x1 | x1 |
-| 企业 | q1 | q1 |
+| 身份  | 账号 | 密码 |
+| --- | -- | -- |
+| 学生  | x1 | x1 |
+| 企业  | q1 | q1 |
 | 管理员 | g1 | g1 |
 
 ### 如何测试“实时”效果
@@ -443,19 +444,19 @@ socket.connect()
 
 如果对方不在线，消息仍然会写入数据库；对方下次打开聊天页会从历史记录中看到。
 
----
+***
 
 ## 10. 与两个参考项目的对应关系
 
-| 参考项目 | 它的做法 | 本项目 |
-|---|---|---|
+| 参考项目           | 它的做法                                      | 本项目                                      |
+| -------------- | ----------------------------------------- | ---------------------------------------- |
 | `Go-project-1` | Hub + Client + 房间/私聊；gRPC + RabbitMQ 异步落库 | 保留 Hub/Client/回调注入；直接用 MySQL 同步落库，适合单机学习 |
-| `Go-project-1` | GORM | 使用项目已有的 `database/sql`，SQL 更直观 |
-| `go-gin-chat` | Gin + 全局 channel + 心跳 | 使用 `net/http` + 每个连接独立读写 goroutine |
-| `go-gin-chat` | HTML 模板 + jQuery | Vue 3 + Element Plus，组件化 |
-| 两者 | 群聊 / 房间 | 只做学生 ↔ 企业私聊，贴合招聘业务 |
+| `Go-project-1` | GORM                                      | 使用项目已有的 `database/sql`，SQL 更直观           |
+| `go-gin-chat`  | Gin + 全局 channel + 心跳                     | 使用 `net/http` + 每个连接独立读写 goroutine       |
+| `go-gin-chat`  | HTML 模板 + jQuery                          | Vue 3 + Element Plus，组件化                 |
+| 两者             | 群聊 / 房间                                   | 只做学生 ↔ 企业私聊，贴合招聘业务                       |
 
----
+***
 
 ## 11. 常见坑与排查
 
@@ -490,7 +491,7 @@ socket.connect()
 
 Vue 的 `{{ content }}` 会自动转义，所以消息按纯文本渲染是安全的。**不要**把消息改成 `v-html`，除非你自己做了内容清洗。
 
----
+***
 
 ## 12. 进阶练习（建议按顺序做）
 
@@ -513,7 +514,7 @@ location /chat/ws {
 }
 ```
 
----
+***
 
 ## 13. 推荐阅读顺序
 

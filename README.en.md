@@ -5,6 +5,8 @@ A three-sided campus recruitment system for **students, companies, and administr
 The repository uses a **single Go backend plus two front-end applications** (student/company portal and admin panel). The backend lives in `back/resume-go` and relies on MySQL + Redis + RabbitMQ, exposing REST, WebSocket chat, and an internal gRPC service.
 
 > This document is derived **strictly from the source code and SQL files**. It covers the tech stack, architecture, every endpoint, authentication, the chat engine, database design, caching, messaging, gRPC, deployment, and known issues. After reading it you should be able to run, debug, and extend the project independently.
+>
+> For a file-by-file reading order, see [important.md](important.md) (must-read / optional / skip list and a minimal reading path).
 
 ---
 
