@@ -233,7 +233,7 @@ func fmtDateTime(t *time.Time) any {
 // MarshalJSON 自定义 JobPosting 的 JSON 序列化。
 //
 // 【为什么同一个值要输出两遍（comId 和 com_id）】
-// 该项目前端经历了从 Java 版（下划线命名，如 com_id）到新前端（驼峰命名，如 comId）的演进，
+// 该项目前端经历过从下划线命名（如 com_id）到驼峰命名（如 comId）的演进，
 // 两个版本都还在用。与其让前端改字段，不如后端一次返回两套 key：
 //   - 新前端读 comId / createdAt；
 //   - 老页面仍读 com_id / created_at。
@@ -722,7 +722,7 @@ func (q *StudentQuery) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	// 数字字段同时接受 11 和 "11" 两种写法：
-	// 前端从 URL query 里拿到的 id 默认是字符串，Java 版会自动转换，这里保持同样的宽松行为。
+	// 前端从 URL query 里拿到的 id 默认是字符串，这里做宽松转换，兼容两种写法。
 	q.ID = rawIntField(raw, "id")
 	q.StuID = rawIntField(raw, "stuId")
 	q.StuIDSnake = rawIntField(raw, "stu_id")

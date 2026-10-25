@@ -1,4 +1,4 @@
--- resume-go 本地运行补充表结构（原 Java 项目中未包含在 resume.sql 里的表）
+-- resume-go 本地运行补充表结构（原基础库 resume.sql 中未包含这些表）
 SET NAMES utf8mb4;
 
 CREATE TABLE IF NOT EXISTS `job_postings` (

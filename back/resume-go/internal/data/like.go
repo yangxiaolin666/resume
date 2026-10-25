@@ -173,7 +173,7 @@ func (d *DB) QueryComIDByUserID(userID int) (*int, error) {
 // 可以直接定位到该企业那一段索引，ORDER BY f.create_time DESC 也能顺着索引读，
 // 避免额外的排序开销。
 //
-// 别名（AS stuId / userId …）沿用 Java 版本的驼峰命名，方便与旧接口字段对齐。
+// 别名（AS stuId / userId …）沿用驼峰命名，方便与前端字段对齐。
 const favoriteSelect = `SELECT f.stu_id AS stuId,
 	stu.user_id AS userId,
 	stu.gender AS gender,

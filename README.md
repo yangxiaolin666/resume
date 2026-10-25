@@ -2,7 +2,7 @@
 
 一个面向「学生 — 企业 — 管理员」三端的校园招聘系统，包含学生画像与简历、企业职位发布、学生检索与收藏、简历投递、实时聊天、数据看板、后台批量管理等功能。
 
-仓库内同时存在 **两套可互相替代的后端实现**（Java / Go）与 **两套前端应用**（学生+企业主站 / 管理后台）。两套后端共用同一套数据库、同一套 JWT 约定和同一套 HTTP 路径，前端可以无缝切换。
+仓库采用 **Go 单后端 + 两套前端应用**（学生/企业主站、管理后台）。后端位于 `back/resume-go`，使用 MySQL + Redis + RabbitMQ，并提供 WebSocket 实时聊天与内部 gRPC 服务。
 
 > 本文档以**代码与 SQL 文件为唯一事实来源**，覆盖：技术栈、架构、全部接口、鉴权原理、聊天原理、数据库设计、缓存/消息队列/gRPC、部署方式、已知问题。读完后应能独立启动、调试和二次开发本项目。
 
@@ -47,20 +47,15 @@
 | 学生身份标识 | 登录名 = 学号（`user.username`），学生档案主键 = `student.id`，学号列 = `student.stu_id`                       |
 | 企业身份标识 | 登录名 = 企业名（`user.username`），企业档案主键 = `company.id`                                             |
 | 聊天标识   | 一律使用 `(user_id, user_type)` 二元组标识一个人                                                         |
-| 两套后端   | `back/resume`（Java 17 + Spring Boot 3）、`back/resume-go`（Go + Gin），默认都监听 `8081`，**二选一运行**     |
+| 后端     | `back/resume-go`（Go 1.27 + Gin），监听 `8081`，gRPC 监听 `9091`                                  |
 | 两套前端   | `front/yxl/recruit-project`（学生+企业，Vite 5173）、`front/ljk/adminPanel`（管理端，Vite 5174/`/admin/`） |
-| 数据库    | MySQL 8（`resume` 库），两套后端共用                                                                   |
+| 数据库    | MySQL 8（`resume` 库）+ Redis 7 + RabbitMQ 3.13                                             |
 
-### 1.1 两套后端的关系
+### 1.1 后端实现
 
-- **Java 版**（`back/resume`）：项目早期实现，覆盖登录、学生画像、简历上传、职位、收藏、检索、后台管理；**没有聊天与投递**。
-- **Go 版**（`back/resume-go`）：功能超集重写，覆盖 Java 版全部接口，并新增**实时聊天（WebSocket）**、**简历投递**、**用户中心**、**Redis 缓存**、**RabbitMQ 离线通知**、**gRPC 内部服务**、**Docker/K8s 部署**。
-- 两者**刻意保持兼容**：
-  - JWT claims 字段完全一致（`userId` / `username` / `userType` / `tokenType` / `exp`），同一密钥签发，Token 可互认；
-  - HTTP 路径一致（`/login`、`/stu/**`、`/com/**`、`/admin/**`）；
-  - 统一响应体一致（`{code, message, data}`）；
-  - Go 版额外做了**驼峰/下划线双写**，以同时兼容 Java 版前端与自身 DTO。
-- 一键启动脚本 [start-all.bat](file:///d:/resume/start-all.bat) 默认启动的是 **Go 版**；`deploy.ps1` 部署的是 **Java 版**（打包 jar 后 systemd 重启）。
+- 单一后端 `back/resume-go`，按 `api → service → data/cache/mq/rpc` 分层，无 ORM，全部手写 SQL。
+- 对旧版接口保持兼容：既接受驼峰也接受下划线字段名，响应同时输出两套命名，因此现有前端无需改动。
+- 一键启动脚本 [start-all.bat](file:///d:/resume/start-all.bat) 会拉起 MySQL、Go 后端与两套前端。
 
 ```
                   ┌──────────────────────────────┐
@@ -74,9 +69,8 @@
                   └──────────────┬───────────────┘
                                  │
         ┌────────────────────────▼────────────────────────┐
-        │  API 层（二选一，均 :8081）                       │
-        │  A. Spring Boot 3.1.3 / Java 17                  │
-        │  B. Go 1.27 / Gin（含 /chat/ws、gRPC :9091）      │
+        │  API 层 :8081（Go 1.27 / Gin）                   │
+        │  含 /chat/ws、gRPC :9091                         │
         └───┬──────────────┬──────────────┬───────────────┘
             │              │              │
        ┌────▼────┐   ┌─────▼─────┐  ┌─────▼──────┐
@@ -91,23 +85,23 @@
 
 | 模块                       | 学生     | 企业   | 管理员   | 实现后端      |
 | ------------------------ | ------ | ---- | ----- | --------- |
-| 登录 / 刷新 Token / 校验 Token | ✅      | ✅    | ✅     | Java + Go |
+| 登录 / 刷新 Token / 校验 Token | ✅      | ✅    | ✅     | Go |
 | 查看/修改自己的账号资料、改昵称         | ✅      | ✅    | —     | Go        |
-| 学生完整画像（9 类信息 + 6 张子表）    | ✅      | 只读检索 | 只读检索  | Java + Go |
-| 简历上传 / 最新简历              | ✅      | —    | —     | Java + Go |
+| 学生完整画像（9 类信息 + 6 张子表）    | ✅      | 只读检索 | 只读检索  | Go |
+| 简历上传 / 最新简历              | ✅      | —    | —     | Go |
 | 简历模板制作并导出 PDF            | ✅（纯前端） | —    | —     | 前端        |
-| 职位发布 / 修改 / 上下架 / 删除     | —      | ✅    | —     | Java + Go |
-| 职位列表 / 详情                | ✅      | ✅    | —     | Java + Go |
-| 学生多条件检索（含完整画像）           | —      | ✅    | ✅     | Java + Go |
-| 收藏学生 / 取消收藏 / 判断收藏       | —      | ✅    | —     | Java + Go |
+| 职位发布 / 修改 / 上下架 / 删除     | —      | ✅    | —     | Go |
+| 职位列表 / 详情                | ✅      | ✅    | —     | Go |
+| 学生多条件检索（含完整画像）           | —      | ✅    | ✅     | Go |
+| 收藏学生 / 取消收藏 / 判断收藏       | —      | ✅    | —     | Go |
 | 简历投递 / 撤回 / 状态流转         | ✅      | ✅    | —     | Go        |
 | 实时聊天（文本/图片/简历）           | ✅      | ✅    | —（禁止） | Go        |
 | 离线消息通知 / 未读数             | ✅      | ✅    | —     | Go        |
-| 统计数据看板                   | 公开     | 公开   | —     | Java + Go |
-| Excel 批量导入学生/企业          | —      | —    | ✅     | Java + Go |
-| 批量删除/更新学生/企业             | —      | —    | ✅     | Java + Go |
-| 语言/证书/技能字典维护             | —      | —    | ✅     | Java + Go |
-| 管理员重置学生密码                | —      | —    | ✅     | Java + Go |
+| 统计数据看板                   | 公开     | 公开   | —     | Go |
+| Excel 批量导入学生/企业          | —      | —    | ✅     | Go |
+| 批量删除/更新学生/企业             | —      | —    | ✅     | Go |
+| 语言/证书/技能字典维护             | —      | —    | ✅     | Go |
+| 管理员重置学生密码                | —      | —    | ✅     | Go |
 
 ***
 
@@ -142,24 +136,7 @@
 | 请求 | axios                  | ^1.8.4  | **页面内直连，无封装**                 |
 | 插件 | @vitejs/plugin-vue-jsx | ^5.1.1  | JSX 支持                        |
 
-### 3.3 后端 A：Java（`back/resume`）
-
-| 类别    | 技术                                         | 版本            | 用途                         |
-| ----- | ------------------------------------------ | ------------- | -------------------------- |
-| 运行时   | Java                                       | 17            | —                          |
-| 框架    | Spring Boot                                | 3.1.3         | Web MVC、内嵌 Tomcat          |
-| ORM   | MyBatis（XML + 注解）                          | starter 3.0.0 | 手写 SQL                     |
-| 分页    | PageHelper                                 | 1.4.6         | `startPage` + `PageInfo`   |
-| 数据库   | MySQL Connector/J                          | 父管理           | MySQL 8                    |
-| JWT   | com.auth0:java-jwt                         | 4.4.0         | HS256 签发/校验                |
-| 密码    | spring-security-crypto                     | 父管理           | 仅用 `BCryptPasswordEncoder` |
-| 缓存    | Spring Data Redis (Lettuce)                | 父管理           | 登录计数、收藏缓存                  |
-| Excel | Apache POI (`poi-ooxml`)                   | 5.2.3         | `.xlsx` 导入                 |
-| 文档    | Knife4j OpenAPI3                           | 4.3.0         | `/doc.html`                |
-| 校验    | spring-boot-starter-validation             | 父管理           | `@NotBlank` 等              |
-| 其他    | fastjson / MinIO / Java-WebSocket / OkHttp | —             | **已声明但代码未使用**              |
-
-### 3.4 后端 B：Go（`back/resume-go`）
+### 3.3 后端：Go（`back/resume-go`）
 
 | 类别        | 技术                                 | 版本      | 用途                 |
 | --------- | ---------------------------------- | ------- | ------------------ |
@@ -176,7 +153,7 @@
 | Excel     | xuri/excelize/v2                   | v2.11.0 | `.xlsx` 导入         |
 | JSON      | bytedance/sonic（Gin 间接依赖）          | —       | 序列化加速              |
 
-### 3.5 基础设施
+### 3.4 基础设施
 
 | 组件            | 版本               | 用途                                   |
 | ------------- | ---------------- | ------------------------------------ |
@@ -191,7 +168,7 @@
 
 ### 4.1 分层
 
-**Go 版**（分层最清晰）：
+**Go 后端**：
 
 ```
 api（HTTP 绑定 / 统一响应 / 中间件）
@@ -206,15 +183,13 @@ api（HTTP 绑定 / 统一响应 / 中间件）
 - `chat` 包通过回调（`Hub.OnMessage` / `OnRegister` / `OnUnregister`）反向依赖注入业务，避免 `chat → service → chat` 循环引用。
 - 依赖强弱：MySQL **强依赖**（连不上直接退出）；Redis / RabbitMQ / gRPC **弱依赖**（失败自动降级）。
 
-**Java 版**：按业务域分包（`user` / `student` / `company` / `admin`），每域内 controller → service → mapper，公共能力放 `common`。
-
 ### 4.2 关键数据流
 
 | 场景     | 流转                                                                                        |
 | ------ | ----------------------------------------------------------------------------------------- |
 | 登录     | 前端 → `/login` → 查 `user` → bcrypt 校验 → 签发 access(2h)+refresh(7d) → 前端存 Pinia/localStorage |
 | 学生完善资料 | 前端 → `/stu/completeInfo` → 主表局部更新 + 6 张子表「先删后插」→ 重新聚合返回                                   |
-| 企业检索学生 | 前端 → `/com/detailSearch` → 主表动态条件 + PageHelper/COUNT → 批量 IN 查子表 → 聚合 DTO                 |
+| 企业检索学生 | 前端 → `/com/detailSearch` → 主表动态条件 + COUNT/LIMIT → 批量 IN 查子表 → 聚合 DTO              |
 | 聊天     | WebSocket → Hub → service 校验 → INSERT `chat_message` → 回查 → Hub 双端推送 → MQ 离线通知            |
 | 投递     | `/stu/applications` → 校验职位/简历 → INSERT（唯一键防重）→ 企业端状态流转                                    |
 | 统计看板   | `/stu/statistics`（公开）→ 5 段 `GROUP BY` 聚合                                                  |
@@ -226,21 +201,7 @@ api（HTTP 绑定 / 统一响应 / 中间件）
 ```text
 d:\resume
 ├─ back
-│  ├─ resume                     # Java 后端（Spring Boot 3）
-│  │  ├─ src/main/java/com/resume
-│  │  │  ├─ user        # 登录 / JWT
-│  │  │  ├─ student     # 学生画像 / 简历
-│  │  │  ├─ company     # 职位 / 收藏 / 检索
-│  │  │  ├─ admin       # 后台管理 / 字典
-│  │  │  ├─ common      # 拦截器 / 全局异常 / CORS
-│  │  │  ├─ model       # entity / dto / result
-│  │  │  └─ utils       # JwtUtil / PasswordUtil
-│  │  ├─ src/main/resources
-│  │  │  ├─ application.yml
-│  │  │  └─ mapper/*.xml
-│  │  ├─ resume.sql              # 基础库（user/student/company/...）
-│  │  ├─ templates/*.xlsx        # Excel 导入模板
-│  │  └─ pom.xml
+│  ├─ resume.sql                 # 基础库（user/student/company/...）
 │  └─ resume-go                  # Go 后端（Gin + WebSocket + gRPC + MQ）
 │     ├─ main.go
 │     ├─ internal
@@ -258,6 +219,7 @@ d:\resume
 │     ├─ schema.sql              # 扩展表（chat_message 等）
 │     ├─ seed_accounts.sql       # x1/q1/g1 演示账号
 │     ├─ seed_statistics.sql     # 看板演示数据
+│     ├─ templates/*.xlsx        # Excel 导入模板
 │     ├─ Dockerfile / docker-compose.yml
 │     ├─ deploy/k8s/*.yaml
 │     └─ uploads/{resume,chat}
@@ -266,9 +228,7 @@ d:\resume
 │  │  └─ src/{api,components,router,stores,utils,views}
 │  └─ ljk/adminPanel             # 管理后台
 │     └─ src/{components,router,views}
-├─ 接口文档/                      # 历史接口文档（与代码可能不一致）
 ├─ start-all.bat                 # Windows 一键启动（MySQL + Go + 两前端）
-├─ deploy.ps1                    # Java 版打包 + SFTP + systemd 重启
 └─ CHAT_GUIDE.md                 # 聊天系统学习指南
 ```
 
@@ -317,19 +277,7 @@ go run .
 
 关闭 Redis / RabbitMQ / gRPC 后可单机跑通全部核心功能（聊天仅本机实时推送，离线通知不生成）。
 
-### 6.3 手动启动 Java 后端
-
-```bash
-cd d:\resume\back\resume
-# 先改 src/main/resources/application.yml 的数据源与 Redis 配置
-mvn spring-boot:run
-# 或
-mvn clean package -DskipTests && java -jar target/resume-0.0.1-SNAPSHOT.jar
-```
-
-接口文档：<http://localhost:8081/doc.html>
-
-### 6.4 启动前端
+### 6.3 启动前端
 
 ```bash
 # 主站
@@ -355,7 +303,7 @@ npm run dev -- --port 5174
 
 开发模式下主站走 Vite 代理，不依赖 `VITE_API_BASE_URL`。
 
-### 6.5 Docker Compose（Go 版）
+### 6.4 Docker Compose（Go）
 
 ```bash
 cd d:\resume\back\resume-go
@@ -365,7 +313,7 @@ docker compose up -d --build
 起的服务：`mysql:8.0`（3306）、`redis:7-alpine`（6379）、`rabbitmq:3.13-management`（5672/15672）、`app`（8081）。
 MySQL 初始化按序挂载 `../resume.sql` → `schema.sql` → `seed_accounts.sql` → `seed_statistics.sql`；`uploads` 目录以卷挂载到 `/app/uploads`。
 
-### 6.6 数据库初始化顺序
+### 6.5 数据库初始化顺序
 
 ```text
 resume.sql           # 基础表 + 历史样例数据（user/student/company/stu_*）
@@ -380,27 +328,7 @@ seed_statistics.sql  # 看板演示数据
 
 ## 7. 配置说明
 
-### 7.1 Java：`src/main/resources/application.yml`
-
-| 配置                                          | 值                                              | 说明                |
-| ------------------------------------------- | ---------------------------------------------- | ----------------- |
-| `server.port`                               | `8081`                                         | HTTP 端口           |
-| `spring.mvc.static-path-pattern`            | `/resume/**`                                   | 静态资源前缀            |
-| `spring.web.resources.static-locations`     | `classpath:/static/` … `file:/resume/uploads/` | 静态目录              |
-| `spring.servlet.multipart.max-file-size`    | `10MB`                                         | 单文件上限             |
-| `spring.servlet.multipart.max-request-size` | `10MB`                                         | 单请求上限             |
-| `spring.datasource.url`                     | `jdbc:mysql://localhost:3306/resume`           | 数据源               |
-| `spring.datasource.username/password`       | 明文（见文件）                                        | **建议改为环境变量**      |
-| `spring.data.redis.host/port`               | `localhost` / **`6380`**                       | 注意不是默认 6379       |
-| `spring.data.redis.lettuce.pool.max-active` | `8`                                            | 连接池               |
-| `spring.jackson.property-naming-strategy`   | **`SNAKE_CASE`**                               | 全局 JSON 下划线命名（关键） |
-| `knife4j.enable`                            | `true`                                         | 接口文档开关            |
-| `mybatis.mapper-locations`                  | `classpath:mapper/*.xml`                       | XML 位置            |
-| `file.upload.resume-path`                   | `/resume/uploads/resume/`                      | 简历落盘目录            |
-
-`mybatis-config.xml` 仅开启 `mapUnderscoreToCamelCase=true`。
-
-### 7.2 Go：环境变量
+### 7.1 Go：环境变量
 
 | 变量                                           | 默认值                                  | 说明                            |
 | -------------------------------------------- | ------------------------------------ | ----------------------------- |
@@ -408,7 +336,7 @@ seed_statistics.sql  # 看板演示数据
 | `DB_HOST` / `DB_PORT`                        | `localhost` / `3306`                 | MySQL                         |
 | `DB_USER` / `DB_PASSWORD` / `DB_NAME`        | `root` / 见代码 / `resume`              | MySQL                         |
 | `UPLOAD_DIR`                                 | `uploads/resume`                     | 简历目录；聊天图片自动放同级 `chat/`        |
-| `JWT_SECRET`                                 | 固定字符串（见 config.go）                   | HS256 密钥，需与 Java 一致才能互认 Token |
+| `JWT_SECRET`                                 | 固定字符串（见 config.go）                   | HS256 密钥，生产必须改为环境变量           |
 | `REDIS_ADDR` / `REDIS_PASSWORD` / `REDIS_DB` | `localhost:6379` / 空 / `0`           | Redis                         |
 | `REDIS_ENABLED`                              | `true`                               | 关掉则纯内存模式                      |
 | `RABBITMQ_URL`                               | `amqp://guest:guest@localhost:5672/` | AMQP                          |
@@ -421,7 +349,7 @@ DSN 固定为：`user:pass@tcp(host:port)/db?charset=utf8mb4&parseTime=true&loc=
 
 连接池：`MaxOpenConns=20`、`MaxIdleConns=10`、`ConnMaxLifetime=1h`。
 
-### 7.3 前端 Vite
+### 7.2 前端 Vite
 
 主站 `vite.config.js`：
 
@@ -453,7 +381,7 @@ server: {
 | Access Token  | 2 小时 | 请求头 `Authorization: Bearer <token>` | 访问业务接口            |
 | Refresh Token | 7 天  | 请求头 `Refresh-Token: <token>`        | 换取新的 Access Token |
 
-Claims（两套后端一致）：
+Claims：
 
 ```json
 {
@@ -465,32 +393,14 @@ Claims（两套后端一致）：
 }
 ```
 
-- 算法：`HS256`，密钥为一个固定字符串（Java 在 `JwtUtil`、Go 在 `config.go`，**生产必须改为环境变量**）。
-- Java 用 `com.auth0:java-jwt`；Go 用标准库 `crypto/hmac` + `sha256` + `base64.RawURLEncoding` 手写三段式 JWT。
+- 算法：`HS256`，密钥为 `JWT_SECRET`（默认固定字符串写在 `config.go`，**生产必须改为环境变量**）。
+- 实现：标准库 `crypto/hmac` + `sha256` + `base64.RawURLEncoding` 手写三段式 JWT，无第三方库。
 - Go 的校验顺序：切三段 → 验签（`hmac.Equal` 常量时间比较）→ 解 payload → 校验 `exp`。
 - 刷新逻辑：校验签名与过期 → 要求 `tokenType == "refresh"` → 用原 claims 重新签发 Access Token。
 
 ### 8.2 请求鉴权流程
 
-**Java 版**（三个拦截器按顺序注册）：
-
-| 顺序 | 拦截器                       | 作用                                               | 拦截路径                            | 白名单                                                    |
-| -- | ------------------------- | ------------------------------------------------ | ------------------------------- | ------------------------------------------------------ |
-| 1  | `TokenRefreshInterceptor` | Token 剩余 < 30 分钟时自动续签，写入响应头 `New-Token`          | `/com/**`、`/stu/**`、`/admin/**` | `/login`、`/refresh-token`、`/stu/statistics`、Swagger 路径 |
-| 2  | `AuthInterceptor`         | 解析 `Authorization: Bearer`，校验签名与过期，写入 request 属性 | 同上                              | 同上                                                     |
-| 3  | `AdminInterceptor`        | 校验 `userType == "admin"`                         | `/admin/**`                     | 无                                                      |
-
-失败响应（HTTP 状态与 body 同时置为 401/403）：
-
-```json
-{"code":401,"message":"未提供Token","data":null}
-{"code":401,"message":"Token无效或已过期","data":null}
-{"code":403,"message":"权限不足，需要管理员权限","data":null}
-```
-
-`OPTIONS` 预检请求一律放行；`/validateToken` 不在受保护路径内。
-
-**Go 版**（Gin 中间件）：
+**Go（Gin 中间件）**：
 
 - 公开路由：`POST /login`、`POST /refresh-token`、`POST /validateToken`、`GET /stu/statistics`、`GET /chat/ws`。
 - 受保护分组 `Group("/", authMiddleware)`：其余 `/user/**`、`/stu/**`、`/com/**`、`/chat/**`。
@@ -498,19 +408,17 @@ Claims（两套后端一致）：
 - `authMiddleware` 在 Token 快过期时同样回写 `New-Token`（前端无需处理，属于“无感续期”）。
 - 失败：`401 {"code":401,"message":"未提供Token"}` / `401 "Token无效或已过期"`；非管理员访问后台 `403 "权限不足，需要管理员权限"`。
 
-> **注意**：两套后端的业务中间件都**只验签与过期，不校验** **`tokenType`**，因此 Refresh Token 也能直接访问业务接口（只有 `/refresh-token` 强制要求 refresh 类型）。
+> **注意**：业务中间件**只验签与过期，不校验** **`tokenType`**，因此 Refresh Token 也能直接访问业务接口（只有 `/refresh-token` 强制要求 refresh 类型）。
 
 ### 8.3 密码
 
 - 统一使用 **BCrypt**（默认强度 10），数据库中存 `$2a$10$...` 哈希。
 - 学生初始密码 = 学号；企业初始密码 = 企业名；管理员初始密码见 `init_admin.sql` / `seed_accounts.sql`。
 - 改密接口 `PATCH /stu/updatePwd` 需要 `old_pwd`、`new_pwd`、`re_pwd` 三个字段（下划线命名）。
-- 登录失败计数（Java）：Redis `login_attempt:{username}`，30 分钟 TTL，本意是 5 次锁定，**当前版本锁定判断被注释，实际不生效**。
 
 ### 8.4 CORS
 
-- Java：`allowedOriginPatterns("*")`、`allowCredentials(true)`、方法 `GET/POST/PUT/DELETE/OPTIONS/PATCH`、`allowedHeaders("*")`、`maxAge 3600`。
-- Go：回显 `Origin`（无 Origin 时 `*`），暴露 `New-Token`，允许头包含 `Authorization, Content-Type, Refresh-Token, X-Requested-With, platform`。
+- 回显 `Origin`（无 Origin 时 `*`），暴露 `New-Token`，允许头包含 `Authorization, Content-Type, Refresh-Token, X-Requested-With, platform`。
 - `OPTIONS` 直接返回 204。
 
 ### 8.5 前端鉴权
@@ -532,9 +440,8 @@ Claims（两套后端一致）：
 { "code": 200, "message": "操作成功", "data": { } }
 ```
 
-- Java：`Result<T>`，`success()` 的 message 为 `"操作成功"`；HTTP 状态通常也是 200，只有鉴权失败会同时置 401/403。
-- Go：`model.Result`；`respond()` **恒用 HTTP 200**，只有中间件与 WebSocket 握手会返回非 200。
-- 分页统一使用 PageHelper 兼容结构：
+- `model.Result`；`respond()` **恒用 HTTP 200**，只有中间件与 WebSocket 握手会返回非 200。
+- 分页结构：
 
 ```json
 {
@@ -554,7 +461,7 @@ Claims（两套后端一致）：
 | code          | 含义             | 典型场景                      |
 | ------------- | -------------- | ------------------------- |
 | 200           | 成功             | —                         |
-| 201           | 创建成功           | 简历上传（Java）                |
+| 201           | 创建成功           | 简历上传                      |
 | 400           | 参数错误 / 业务校验失败  | 缺字段、原密码错误、状态非法            |
 | 401           | 未认证            | 无 Token、Token 无效/过期、身份不匹配 |
 | 403           | 无权限            | 非管理员访问后台、越权操作他人职位、管理员聊天   |
@@ -572,7 +479,7 @@ Claims（两套后端一致）：
 | 500           | 服务器内部错误        | 未捕获异常、SQL 异常              |
 | 50001         | 数据库写入失败 / 密码错误 | 导入、改密                     |
 
-Java 的 `GlobalExceptionHandler` 支持 `"code:message"` 形式的运行时异常（如 `throw new RuntimeException("40005:用户名或密码错误")`），自动拆分为对应业务码。
+业务错误通过 `model.AppError{Code, Msg}` 返回，`respond()` 直接使用该 code。
 
 ***
 
@@ -593,14 +500,14 @@ Java 的 `GlobalExceptionHandler` 支持 `"code:message"` 形式的运行时异�
 | `stu_speciality`    | 专业技能标签          | 画像          |
 | `stu_resume`        | 简历文件记录          | 画像/聊天/投递    |
 | `job_postings`      | 招聘职位            | 职位模块        |
-| `job_application`   | 简历投递            | 投递模块（Go）    |
+| `job_application`   | 简历投递            | 投递模块        |
 | `com_like_stu`      | 企业收藏学生          | 收藏模块        |
 | `admin_all_skills`  | 技能字典            | 管理端         |
 | `language`          | 语言字典            | 管理端         |
 | `certificate`       | 证书字典            | 管理端         |
-| `chat_message`      | 聊天消息            | 聊天（Go）      |
-| `chat_notification` | 离线通知            | 聊天（Go）      |
-| `mq_consumed_event` | MQ 消费幂等记录       | 聊天（Go）      |
+| `chat_message`      | 聊天消息            | 聊天          |
+| `chat_notification` | 离线通知            | 聊天          |
+| `mq_consumed_event` | MQ 消费幂等记录       | 聊天          |
 | `com_collect`       | 旧版收藏表           | **未使用（遗留）** |
 | `role`              | 角色表             | **未使用（遗留）** |
 
@@ -749,26 +656,9 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 | 响应       | `{code, message, data}`                                                                                      |
 | 分页参数     | 列表类多用 `pageNum`/`pageSize`；后台用 `page`/`pageSize`                                                             |
 | 文件字段     | 简历 `resumeFile`；聊天图片 `image`；学生 Excel `stuFile`；企业 Excel `comFile`                                           |
-| JSON 命名  | **Java 后端全局 SNAKE\_CASE**（`user_id`、`page_num`、`graduation_year`…），唯一例外是登录请求体的 `userType`；Go 后端驼峰/下划线双兼容、双输出 |
+| JSON 命名  | 请求同时接受驼峰与下划线（`userId` / `user_id`）；响应双写两套键，兼容旧前端                                                              |
 
-**Java 版 JSON 命名示例**：
-
-```json
-// POST /login 响应（Java）
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": {
-    "user_id": 11,
-    "username": "x1",
-    "user_type": "student",
-    "token": "...",
-    "refresh_token": "..."
-  }
-}
-```
-
-**Go 版登录响应**：
+**登录响应示例**：
 
 ```json
 {
@@ -789,9 +679,9 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 
 | 方法   | 路径               | 说明        | 参数                                                             | 返回                                            | 实现        |
 | ---- | ---------------- | --------- | -------------------------------------------------------------- | --------------------------------------------- | --------- |
-| POST | `/login`         | 登录        | JSON：`username`、`password`、`userType`（`student/company/admin`） | access + refresh                              | Java + Go |
-| POST | `/refresh-token` | 刷新 access | Header `Refresh-Token`                                         | `{token}`                                     | Java + Go |
-| POST | `/validateToken` | 校验 Token  | Body `{token}`（Go 也接受裸文本）                                      | `{valid,message,userId,userType,needRefresh}` | Java + Go |
+| POST | `/login`         | 登录        | JSON：`username`、`password`、`userType`（`student/company/admin`） | access + refresh                              | Go |
+| POST | `/refresh-token` | 刷新 access | Header `Refresh-Token`                                         | `{token}`                                     | Go |
+| POST | `/validateToken` | 校验 Token  | Body `{token}`（Go 也接受裸文本）                                      | `{valid,message,userId,userType,needRefresh}` | Go |
 | GET  | `/user/me`       | 当前用户资料    | 无                                                              | `{userId,username,userType,displayName}`      | Go        |
 | PUT  | `/user/name`     | 改昵称/企业名   | `{name}`（≤20 字）                                                | `UserProfile`                                 | Go        |
 
@@ -801,11 +691,11 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 
 | 方法     | 路径                      | 说明        | 参数                           | 返回                                          | 实现        |
 | ------ | ----------------------- | --------- | ---------------------------- | ------------------------------------------- | --------- |
-| GET    | `/stu/getAllSkill`      | 技能字典      | 无                            | 逗号分隔字符串                                     | Java + Go |
-| PUT    | `/stu/completeInfo`     | 保存完整画像    | `StudentCompleteInfoDTO`（见下） | `StudentDetailDTO`                          | Java + Go |
-| POST   | `/stu/uploadResume`     | 上传简历      | `multipart`，字段 `resumeFile`  | `{resumeId,resumeName,resumeUrl}`（code=201） | Java + Go |
-| GET    | `/stu/statistics`       | 画像统计（免登录） | 无                            | 5 组聚合数据                                     | Java + Go |
-| PATCH  | `/stu/updatePwd`        | 修改密码      | `{old_pwd,new_pwd,re_pwd}`   | null                                        | Java + Go |
+| GET    | `/stu/getAllSkill`      | 技能字典      | 无                            | 逗号分隔字符串                                     | Go |
+| PUT    | `/stu/completeInfo`     | 保存完整画像    | `StudentCompleteInfoDTO`（见下） | `StudentDetailDTO`                          | Go |
+| POST   | `/stu/uploadResume`     | 上传简历      | `multipart`，字段 `resumeFile`  | `{resumeId,resumeName,resumeUrl}`（code=201） | Go |
+| GET    | `/stu/statistics`       | 画像统计（免登录） | 无                            | 5 组聚合数据                                     | Go |
+| PATCH  | `/stu/updatePwd`        | 修改密码      | `{old_pwd,new_pwd,re_pwd}`   | null                                        | Go |
 | GET    | `/stu/resume/latest`    | 最新简历      | 无                            | `{url,name}`；无则 404                         | Go        |
 | POST   | `/stu/applications`     | 投递职位      | `{jobId,resumeUrl?}`         | `JobApplication`                            | Go        |
 | GET    | `/stu/applications`     | 我的投递      | 无                            | `{list:[...]}`                              | Go        |
@@ -832,7 +722,7 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 }
 ```
 
-（Java 版字段为下划线：`graduation_year`、`cert_names`、`internship`…；`certificates[].cert_name`。Go 版兼容驼峰与下划线。）
+（Go 后端同时接受驼峰与下划线字段名，因此 `graduation_year`、`cert_name` 等写法也可用。）
 
 业务校验：年龄 16–60（`42201`）；毕业年份 ∈ `[今年-50, 今年+10]`（`42202`）；关联表“先删后插”，学号/姓名不可改。
 
@@ -850,17 +740,17 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 
 ### 11.4 企业端：职位
 
-| 方法     | 路径                             | 说明         | 参数                                                               | 返回                     | 实现           | <br />    |
-| ------ | ------------------------------ | ---------- | ---------------------------------------------------------------- | ---------------------- | ------------ | :-------- |
-| POST   | `/com/jobPosting`              | 发布职位       | `{title,description,external_link,status}`；`com_id` 由 Token 反查覆盖 | `JobPosting`           | Java + Go    | <br />    |
-| PUT    | `/com/jobPosting/{id}`         | 修改职位       | 同上（局部更新）                                                         | `JobPosting`           | Java + Go    | <br />    |
-| PATCH  | `/com/jobPosting/{id}/status`  | 上下架        | \`{status:"active                                                | inactive"}\`           | `JobPosting` | Java + Go |
-| DELETE | `/com/jobPosting/{id}`         | 删除职位       | 路径 id                                                            | `{success,message}`    | Java + Go    | <br />    |
-| GET    | `/com/jobPostings`             | 职位分页       | `pageNum`、`pageSize`、`status`、`keyword`、`comId`                  | `PageInfo<JobPosting>` | Java + Go    | <br />    |
-| GET    | `/com/jobPosting/{id}`         | 职位详情       | 路径 id                                                            | `JobPosting`           | Java + Go    | <br />    |
-| GET    | `/com/myJobPostings`           | 本企业职位（不分页） | `status?`                                                        | `JobPosting[]`         | Java + Go    | <br />    |
-| GET    | `/com/applications`            | 收到的投递      | `jobId?`、`status?`                                               | `{list}`               | Go           | <br />    |
-| PATCH  | `/com/applications/:id/status` | 投递状态流转     | `{status}`                                                       | `JobApplication`       | Go           | <br />    |
+| 方法     | 路径                             | 说明         | 参数                                                               | 返回                     | 实现 |
+| ------ | ------------------------------ | ---------- | ---------------------------------------------------------------- | ---------------------- | -- |
+| POST   | `/com/jobPosting`              | 发布职位       | `{title,description,external_link,status}`；`com_id` 由 Token 反查覆盖 | `JobPosting`           | Go |
+| PUT    | `/com/jobPosting/{id}`         | 修改职位       | 同上（局部更新）                                                         | `JobPosting`           | Go |
+| PATCH  | `/com/jobPosting/{id}/status`  | 上下架        | `{status:"active"}` 或 `{status:"inactive"}`                       | `JobPosting`           | Go |
+| DELETE | `/com/jobPosting/{id}`         | 删除职位       | 路径 id                                                            | `{success,message}`    | Go |
+| GET    | `/com/jobPostings`             | 职位分页       | `pageNum`、`pageSize`、`status`、`keyword`、`comId`                  | `PageInfo<JobPosting>` | Go |
+| GET    | `/com/jobPosting/{id}`         | 职位详情       | 路径 id                                                            | `JobPosting`           | Go |
+| GET    | `/com/myJobPostings`           | 本企业职位（不分页） | `status?`                                                        | `JobPosting[]`         | Go |
+| GET    | `/com/applications`            | 收到的投递      | `jobId?`、`status?`                                               | `{list}`               | Go |
+| PATCH  | `/com/applications/:id/status` | 投递状态流转     | `{status}`                                                       | `JobApplication`       | Go |
 
 越权控制：写操作先由 userId 查 `company.id`，再比对目标职位的 `com_id`，不一致返回 403。
 
@@ -870,12 +760,12 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 
 | 方法     | 路径                        | 说明          | 参数                                   | 返回                      | 实现        |
 | ------ | ------------------------- | ----------- | ------------------------------------ | ----------------------- | --------- |
-| GET    | `/com/QueryComIdByUserId` | 当前用户的企业 ID  | 无                                    | int                     | Java + Go |
-| POST   | `/com/LikeAdd`            | 批量收藏        | `[{stuId,comId}]`                    | null；有重复则 500 + 提示      | Java + Go |
-| POST   | `/com/LikeQuery`          | 收藏分页        | `{com_id,comName?,pageNum,pageSize}` | `PageInfo<StuFavorite>` | Java + Go |
-| DELETE | `/com/LikeDelete`         | 批量取消        | `[{stuId,comId}]`                    | null                    | Java + Go |
-| GET    | `/com/LikeIf`             | 是否已收藏（查库）   | `com_id`、`stu_id`                    | bool                    | Java + Go |
-| GET    | `/com/LikeIfByRedis`      | 批量判断（Redis） | `stuIdList=1,2,3`                    | `{stuId:true}`          | Java + Go |
+| GET    | `/com/QueryComIdByUserId` | 当前用户的企业 ID  | 无                                    | int                     | Go |
+| POST   | `/com/LikeAdd`            | 批量收藏        | `[{stuId,comId}]`                    | null；有重复则 500 + 提示      | Go |
+| POST   | `/com/LikeQuery`          | 收藏分页        | `{com_id,comName?,pageNum,pageSize}` | `PageInfo<StuFavorite>` | Go |
+| DELETE | `/com/LikeDelete`         | 批量取消        | `[{stuId,comId}]`                    | null                    | Go |
+| GET    | `/com/LikeIf`             | 是否已收藏（查库）   | `com_id`、`stu_id`                    | bool                    | Go |
+| GET    | `/com/LikeIfByRedis`      | 批量判断（Redis） | `stuIdList=1,2,3`                    | `{stuId:true}`          | Go |
 
 `StuFavorite` 字段：`stuId`、`studentName`、`gender`、`major`、`degree`、`graduationYear`、`languages`、`level`、`specialities`、`post`（语言/技能/岗位由 `GROUP_CONCAT` 拼成字符串）。
 
@@ -883,9 +773,9 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 
 | 方法   | 路径                       | 说明       | 参数                | 返回                           | 实现        |
 | ---- | ------------------------ | -------- | ----------------- | ---------------------------- | --------- |
-| POST | `/com/search`            | 学生列表（精简） | `StudentQueryDTO` | `PageInfo<Student>`          | Java + Go |
-| POST | `/com/detailSearch`      | 学生详情（聚合） | 同上                | `PageInfo<StudentDetailDTO>` | Java + Go |
-| POST | `/admin/searchStuDetail` | 后台学生详情检索 | 同上                | 同上                           | Java + Go |
+| POST | `/com/search`            | 学生列表（精简） | `StudentQueryDTO` | `PageInfo<Student>`          | Go |
+| POST | `/com/detailSearch`      | 学生详情（聚合） | 同上                | `PageInfo<StudentDetailDTO>` | Go |
+| POST | `/admin/searchStuDetail` | 后台学生详情检索 | 同上                | 同上                           | Go |
 
 `StudentQueryDTO` 支持字段：
 
@@ -932,7 +822,7 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 }
 ```
 
-### 11.8 聊天（Go 专属）
+### 11.8 聊天
 
 | 方法   | 路径                           | 说明           | 参数                                                     | 返回                              |
 | ---- | ---------------------------- | ------------ | ------------------------------------------------------ | ------------------------------- |
@@ -953,10 +843,10 @@ chat_message / chat_notification：以 (user_id, user_type) 逻辑关联 user，
 
 | 路径                           | 说明                                                                         |
 | ---------------------------- | -------------------------------------------------------------------------- |
-| `GET /uploads/resume/<file>` | 简历文件（Go；Java 映射到 `file:/resume/uploads/`）                                  |
-| `GET /uploads/chat/<file>`   | 聊天图片（Go）                                                                   |
-| `GET /resume/uploads/<file>` | 旧前缀兼容（两套后端）                                                                |
-| 其他                           | Go `NoRoute` → `{code:404,message:"接口不存在"}`（HTTP 200）；Java 走 Spring 默认 404 |
+| `GET /uploads/resume/<file>` | 简历文件                                                          |
+| `GET /uploads/chat/<file>` | 聊天图片                                                          |
+| `GET /resume/uploads/<file>` | 旧前缀兼容                                                        |
+| 其他                           | `NoRoute` → `{code:404,message:"接口不存在"}`（HTTP 200）              |
 
 ### 11.10 接口调用示例
 
@@ -1340,30 +1230,29 @@ socket.connect()
 
 ### 13.1 简历上传链路
 
-| 环节   | Java                                       | Go                                         |
-| ---- | ------------------------------------------ | ------------------------------------------ |
-| 字段   | `resumeFile`                               | `resumeFile`                               |
-| 大小   | ≤10MB（`41301`）                             | ≤10MB（`41301`）                             |
-| 类型   | `.pdf/.doc/.docx`（`41501`）                 | 同左                                         |
-| 命名   | `{学号}_{yyyyMMddHHmmss}_{UUID前8位}{ext}`     | `{学号}_{yyyyMMddHHmmss}_{8位hex}{ext}`       |
-| 落盘   | `file.upload.resume-path`                  | `UPLOAD_DIR`                               |
-| 入库   | `stu_resume(stu_id=student.id, resume=路径)` | 同左（追加版本）                                   |
-| 返回   | `{resumeId,resumeName,resumeUrl}`，code=201 | 同左，`resumeUrl=/api/resume/download/{name}` |
-| 最新简历 | `ORDER BY id DESC LIMIT 1`                 | `GET /stu/resume/latest`                   |
+| 环节   | 实现                                         |
+| ---- | ------------------------------------------ |
+| 字段   | `resumeFile`                               |
+| 大小   | ≤10MB（`41301`）                             |
+| 类型   | `.pdf/.doc/.docx`（`41501`）                 |
+| 命名   | `{学号}_{yyyyMMddHHmmss}_{8位hex}{ext}`       |
+| 落盘   | `UPLOAD_DIR`（默认 `uploads/resume`）          |
+| 入库   | `stu_resume(stu_id=student.id, resume=路径)`，追加版本 |
+| 返回   | `{resumeId,resumeName,resumeUrl}`，code=201 |
+| 最新简历 | `GET /stu/resume/latest`（`ORDER BY id DESC LIMIT 1`） |
 
 安全点：**不使用用户原始文件名**，扩展名统一转小写后白名单校验，防止重名覆盖与 `../` 路径穿越。
 
 ### 13.2 访问地址
 
-| 后端   | 可用地址                                                                         |
-| ---- | ---------------------------------------------------------------------------- |
-| Go   | `/uploads/resume/<file>`、`/uploads/chat/<file>`、旧前缀 `/resume/uploads/<file>` |
-| Java | `/resume/uploads/**`、`/uploads/**`（映射到 `file:/resume/uploads/`）              |
+| 可用地址                                                                         |
+| ---------------------------------------------------------------------------- |
+| `/uploads/resume/<file>`、`/uploads/chat/<file>`、旧前缀 `/resume/uploads/<file>` |
 
 **已知不一致**：
 
-- Java 返回的 `resume_url` 是 `/api/resume/download/<file>`，但代码中**没有该下载接口**；
-- Go 的上传接口也返回 `/api/resume/download/...`，同样未注册路由；不过“最新简历”“投递记录”“聊天发简历”走 `publicResumeURL()`，会转换成 `/uploads/resume/<base>`，是可访问的；
+- 上传接口返回的 `resumeUrl` 是 `/api/resume/download/<file>`，但**没有注册该下载路由**；
+- “最新简历”“投递记录”“聊天发简历”走 `publicResumeURL()`，会转换成 `/uploads/resume/<base>`，是可访问的；
 - 数据库中历史数据可能是 `uploads\resume\xxx.pdf`（反斜杠），前端 `fileUrl()` 会统一替换为 `/` 并补全前缀。
 
 ***
@@ -1372,7 +1261,7 @@ socket.connect()
 
 ### 14.1 动态条件 SQL
 
-以 Go `data/studentWhere(q)` 为例（Java 的 `SearchMapper.xml` 等价）：
+以 `data/studentWhere(q)` 为例：
 
 | 条件   | 实现                                                                                                     |
 | ---- | ------------------------------------------------------------------------------------------------------ |
@@ -1391,9 +1280,8 @@ socket.connect()
 
 ### 14.2 分页
 
-- **Java**：PageHelper `startPage(pageNum,pageSize)` 后紧接查询，自动改写为 `COUNT` + `LIMIT`，返回 `PageInfo`。
-- **Go**：手写 `SELECT COUNT(*) FROM (主查询) t` + `LIMIT ? OFFSET ?`，并复刻 PageHelper 的 `PageInfo` 字段。
-- **聊天历史**：不用 OFFSET，用 `id < beforeId` 的游标分页。
+- 列表分页：手写 `SELECT COUNT(*) FROM (主查询) t` + `LIMIT ? OFFSET ?`，返回前端期望的 `PageInfo` 字段。
+- 聊天历史：不用 OFFSET，用 `id < beforeId` 的游标分页。
 
 ### 14.3 避免 N+1
 
@@ -1423,7 +1311,7 @@ SELECT COUNT(*) AS value, speciality AS name FROM stu_speciality GROUP BY specia
 SELECT COUNT(*) AS value, post AS name FROM stu_job GROUP BY post ORDER BY value DESC;
 ```
 
-Go 版每段查询后显式 `rows.Close()`，避免同一函数多次查询占满连接池。
+每段查询后显式 `rows.Close()`，避免同一函数多次查询占满连接池。
 
 ***
 
@@ -1432,7 +1320,7 @@ Go 版每段查询后显式 `rows.Close()`，避免同一函数多次查询占�
 ### 15.1 数据模型
 
 - 主存储：`com_like_stu(stu_id, com_id, create_time)`，唯一键 `(stu_id, com_id)` 防重复。
-- 缓存：Redis Set `resume:favorite:{userId}`（Go）/ `user:favorite:{userId}`（Java），member 为学生 ID 字符串。
+- 缓存：Redis Set `resume:favorite:{userId}`，member 为学生 ID 字符串。
 
 ### 15.2 收藏流程
 
@@ -1444,9 +1332,7 @@ Go 版每段查询后显式 `rows.Close()`，避免同一函数多次查询占�
 
 ### 15.3 取消收藏
 
-`DELETE FROM com_like_stu WHERE (stu_id, com_id) IN ((?,?),...)`，返回未删除条数；全部不存在时提示“学生不存在”。
-
-> Java 版额外用 `RedisTemplate` 删缓存，但与写入使用的 `StringRedisTemplate` 序列化器不同、且把整个 List 当成一个 member，**取消收藏时 Redis 缓存实际不会被清除**（Go 版使用 Set 的 `SREM` 正常）。
+`DELETE FROM com_like_stu WHERE (stu_id, com_id) IN ((?,?),...)`，返回未删除条数；全部不存在时提示“学生不存在”。删除成功后同步 `SREM resume:favorite:{userId}` 清理缓存。
 
 ### 15.4 收藏列表查询
 
@@ -1476,7 +1362,7 @@ LIMIT ? OFFSET ?
 
 ## 16. 简历投递模块
 
-仅 Go 版实现。
+实现位于 `internal/service/application.go` 与 `internal/data/application.go`。
 
 ### 16.1 状态机
 
@@ -1524,20 +1410,20 @@ pending（待处理） → viewed（已查看） → interview（面试中） �
 
 **企业**（0–1 列）：企业名称 `com_name`、所在地区 `com_region`。
 
-模板文件：`back/resume/templates/学生数据导入模板.xlsx`、`企业数据导入模板.xlsx`。
+模板文件：`back/resume-go/templates/学生数据导入模板.xlsx`、`企业数据导入模板.xlsx`。
 
-### 17.2 实现差异
+### 17.2 实现说明
 
-| 项    | Java                                                      | Go           |
-| ---- | --------------------------------------------------------- | ------------ |
-| 库    | Apache POI `XSSFWorkbook`                                 | excelize v2  |
-| 只读   | 第 1 个 sheet，跳过第 1 行                                       | 同左           |
-| 单元格  | 兼容 NUMERIC/STRING/BOOLEAN，数字转 int                         | 同左           |
-| 查重   | 学生按 `stu_id`，企业按 `com_name`                               | 同左           |
-| 事务   | 整体 `@Transactional`，行级错误 `continue`                       | 事务内插入，错误逐行收集 |
-| 默认密码 | 学号 / 企业名（BCrypt）                                          | 同左           |
-| 结果   | `{successCount,failureCount,errors[{identifier,reason}]}` | 同左（驼峰）       |
-| 部分失败 | `code=200, message="部分数据导入失败"`                            | 同左           |
+| 项    | 实现                                                        |
+| ---- | --------------------------------------------------------- |
+| 库    | excelize v2                                               |
+| 读取   | 第 1 个 sheet，跳过第 1 行，按列下标取值                                |
+| 单元格  | 兼容 NUMERIC/STRING/BOOLEAN，数字转 int                         |
+| 查重   | 学生按 `stu_id`，企业按 `com_name`                               |
+| 事务   | 事务内插入，行级错误逐行收集，不中断整体流程                                    |
+| 默认密码 | 学号 / 企业名（BCrypt）                                          |
+| 结果   | `{successCount,failureCount,errors[{identifier,reason}]}` |
+| 部分失败 | `code=200, message="部分数据导入失败"`                            |
 
 导入顺序：先插 `user`（`useGeneratedKeys` 回填 `user_id`），再写 `student` / `company` 的 `user_id`。
 
@@ -1547,7 +1433,7 @@ pending（待处理） → viewed（已查看） → interview（面试中） �
 
 ## 18. Redis 缓存设计
 
-### 18.1 Key 一览（Go）
+### 18.1 Key 一览
 
 | Key                                                                        | 类型           | TTL           | 用途         |
 | -------------------------------------------------------------------------- | ------------ | ------------- | ---------- |
@@ -1557,8 +1443,6 @@ pending（待处理） → viewed（已查看） → interview（面试中） �
 | `resume:favorite:{userId}`                                                 | Set          | 无             | 企业收藏学生集合   |
 | `resume:online:{type}:{id}`                                                | string(计数)   | 5min          | 在线状态（多端计数） |
 | `resume:mq:consumed:{eventId}`                                             | string       | 24h           | MQ 快速幂等    |
-
-Java 版：`login_attempt:{username}`（30min）、`user:favorite:{userId}`（Set）。
 
 ### 18.2 三大缓存问题
 
@@ -1594,7 +1478,7 @@ service RecruitInternal {
 - 客户端 `grpc.NewClient` 懒连接 + `insecure` 凭证，2s 超时。
 - **唯一实际调用点**：`HandleChatNotify` 取发送者昵称（失败降级查库）。
 - `JobBrief` 目前无业务调用，属预留能力。
-- **与 Java 后端没有 gRPC 互通**，只在本进程内自我调用（`127.0.0.1:9091`）。
+- **只在本进程内自我调用**（`127.0.0.1:9091`），不对外暴露业务接口。
 
 ***
 
@@ -1676,22 +1560,44 @@ service RecruitInternal {
 
 见 [6.1 一键启动](#61-一键启动windows推荐)。
 
-### 22.2 Linux + systemd（Java 版）
+### 22.2 Linux + systemd（Go）
 
-仓库内 `.ssh/resume.service` 与 `.ssh/prod_application.yml` 是生产配置样例；`deploy.ps1` 的流程：
+```bash
+cd back/resume-go
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o resume-go .
+# 上传 resume-go、schema.sql、uploads/ 到 /opt/resume-go
+```
 
-1. `mvn clean package -DskipTests` 生成 `target/resume-0.0.1-SNAPSHOT.jar`；
-2. Posh-SSH 通过 SFTP 上传到 `/opt/resume/`；
-3. SSH 执行 `systemctl restart resume.service`，等待 25s 检查状态与 8081 端口；
-4. 调 `POST /login` 做健康验证。
+`/etc/systemd/system/resume-go.service` 示例：
 
-> 脚本中硬编码了服务器地址与明文密码，且已提交到仓库，**建议改为环境变量或密钥管理**。
+```ini
+[Unit]
+Description=Resume Go Backend
+After=network.target mysql.service redis.service rabbitmq-server.service
 
-### 22.3 Docker Compose（Go 版）
+[Service]
+WorkingDirectory=/opt/resume-go
+EnvironmentFile=/opt/resume-go/.env
+ExecStart=/opt/resume-go/resume-go
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+`.env` 中放 `SERVER_PORT`、`DB_*`、`JWT_SECRET`、`REDIS_*`、`RABBITMQ_*`、`GRPC_*` 等变量（见 [7.1](#71-go环境变量)）。
+
+```bash
+systemctl daemon-reload && systemctl enable --now resume-go
+curl http://127.0.0.1:8081/stu/statistics   # 健康检查
+```
+
+### 22.3 Docker Compose（Go）
 
 `docker-compose.yml` 包含 mysql / redis / rabbitmq / app 四个服务，`app` 依赖三者 `service_healthy`，`uploads` 目录以卷持久化，全部配置由环境变量注入。
 
-### 22.4 Kubernetes（Go 版）
+### 22.4 Kubernetes（Go）
 
 | 资源                           | 说明                                                                                                                                                                        |
 | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -1725,25 +1631,19 @@ location /chat/ws {
 
 ### 23.1 安全类
 
-1. **密钥/密码硬编码**：JWT 密钥、数据库密码、部署脚本密码均写在仓库中，生产必须改为环境变量/密钥管理。
+1. **密钥/密码硬编码**：JWT 密钥与数据库密码默认写在 `config.go` 中，生产必须改为环境变量/密钥管理。
 2. **Refresh Token 可当 Access Token 用**：业务中间件不校验 `tokenType`。
 3. **管理员 Token 经 URL query 传递**（`/admin/?token=...`），可能进入浏览器历史与日志；管理端也不校验 Token 有效性。
-4. **CORS 全开 +** **`allowCredentials(true)`**：生产应收紧 Origin。
-5. **WebSocket** **`CheckOrigin`** **恒 true**：生产应校验来源。
-6. Java 登录失败锁定逻辑被注释，**暴力破解无限制**。
+4. **CORS 回显任意 Origin**：生产应收紧为白名单。
+5. **WebSocket `CheckOrigin` 恒 true**：生产应校验来源。
 
 ### 23.2 功能/一致性类
 
-1. **`/api/resume/download/{name}`** **不存在**：两套后端的上传接口都返回该地址，直接访问会 404。
+1. **`/api/resume/download/{name}`** **不存在**：上传接口返回该地址，直接访问会 404；应使用 `/uploads/resume/<file>`。
 2. **没有简历内容解析**：仅做类型/大小校验与落盘，不提取 PDF 文本。
-3. **`/stu/getAllSkill`** **返回字符串而非数组**（Java/Go 一致），前端需自行 `split(',')`。
-4. **Java 全局 SNAKE\_CASE 与** **`LoginDTO.userType`** **的** **`@JsonProperty`** **例外并存**，前后端字段命名易错。
-5. **Java 的收藏缓存删除失效**：`RedisTemplate` 与 `StringRedisTemplate` 序列化器不一致，且 `remove` 传了 List 对象。
-6. **Java** **`SkillsServiceImpl.getAllSkill`** **可能抛异常**：`Set.of(split(","))` 遇重复元素抛 `IllegalArgumentException`。
-7. **Java 字典写操作用** **`@Select`** **执行 INSERT/DELETE**，可能导致 MyBatis 走 `executeQuery` 报错（Go 版正常）。
-8. **删除学生/企业不清理子表**：会残留 `stu_*`、`stu_resume`、`com_like_stu` 等孤儿数据。
-9. **`StudentDetailMapper`** **未去重**：`LEFT JOIN stu_region` 无 `DISTINCT`，多地区学生会重复行、`total` 偏大。
-10. **样例数据不一致**：`resume.sql` 中 `user_id=2` 的密码是明文，无法通过 BCrypt 校验；`student.id=5` 与部分子表 `stu_id` 不匹配。
+3. **`/stu/getAllSkill`** **返回字符串而非数组**，前端需自行 `split(',')`。
+4. **删除学生/企业不清理子表**：会残留 `stu_*`、`stu_resume`、`com_like_stu` 等孤儿数据。
+5. **样例数据不一致**：`resume.sql` 中 `user_id=2` 的密码是明文，无法通过 BCrypt 校验；`student.id=5` 与部分子表 `stu_id` 不匹配（建议以 `seed_accounts.sql` 为准）。
 
 ### 23.3 前端类
 
@@ -1783,16 +1683,11 @@ location /chat/ws {
 
 ### 24.3 新增数据库字段
 
-1. `resume.sql` / `schema.sql` 增加列；
-2. 实体 + Mapper 更新；
+1. `back/resume.sql`（基础表）或 `back/resume-go/schema.sql`（扩展表）增加列；
+2. 更新 `internal/model` 结构体与 `internal/data` 中的 SQL；
 3. 若是画像子表，记得同时更新 `completeInfo` 的“先删后插”逻辑与详情聚合。
 
-### 24.4 切换后端
-
-- 前端不用改代码：两套后端路径一致；只需保证 `VITE_API_BASE_URL` / 代理指向运行中的那一套。
-- 若使用 Java 版，聊天与投递相关页面会 404（Java 未实现）。
-
-### 24.5 调试建议
+### 24.4 调试建议
 
 | 问题     | 排查点                                                          |
 | ------ | ------------------------------------------------------------ |
@@ -1837,7 +1732,7 @@ GET  /chat/ws?token=...
 /admin/**
 ```
 
-### 25.4 仅 Go 后端
+### 25.4 聊天 / 投递 / 用户中心接口
 
 ```text
 /user/me, PUT /user/name
@@ -1861,10 +1756,6 @@ GET  /stu/resume/latest
 | Go 缓存       | `internal/cache/cache.go`                                             |
 | Go MQ       | `internal/mq/mq.go`                                                   |
 | Go gRPC     | `internal/rpc/server.go`、`client.go`、`proto/recruit/v1/recruit.proto` |
-| Java 鉴权     | `common/interceptor/*.java`、`utils/JwtUtil.java`                      |
-| Java 异常     | `common/exception/GlobalExceptionHandler.java`                        |
-| Java 检索 SQL | `resources/mapper/SearchMapper.xml`、`StudentDetailMapper.xml`         |
-| Java 收藏 SQL | `resources/mapper/ComLikeStu.xml`                                     |
 | 前端请求封装      | `front/yxl/recruit-project/src/utils/request.js`                      |
 | 前端 WS 封装    | `front/yxl/recruit-project/src/utils/chatSocket.js`                   |
 | 前端聊天页       | `front/yxl/recruit-project/src/views/chat/index.vue`                  |

@@ -2,7 +2,7 @@
 
 A three-sided campus recruitment system for **students, companies, and administrators**, covering student profiles and resumes, job posting, candidate search and bookmarking, resume applications, real-time chat, analytics dashboards, and bulk back-office management.
 
-The repository ships **two interchangeable backend implementations** (Java and Go) and **two front-end applications** (a student/company portal and an admin panel). Both backends share the same database, the same JWT contract, and the same HTTP paths, so the front ends can switch between them without code changes.
+The repository uses a **single Go backend plus two front-end applications** (student/company portal and admin panel). The backend lives in `back/resume-go` and relies on MySQL + Redis + RabbitMQ, exposing REST, WebSocket chat, and an internal gRPC service.
 
 > This document is derived **strictly from the source code and SQL files**. It covers the tech stack, architecture, every endpoint, authentication, the chat engine, database design, caching, messaging, gRPC, deployment, and known issues. After reading it you should be able to run, debug, and extend the project independently.
 
@@ -47,20 +47,15 @@ The repository ships **two interchangeable backend implementations** (Java and G
 | Student identity | Login name = student number (`user.username`); profile PK = `student.id`; student-number column = `student.stu_id` |
 | Company identity | Login name = company name (`user.username`); profile PK = `company.id` |
 | Chat identity | A person is always identified by the pair `(user_id, user_type)` |
-| Backends | `back/resume` (Java 17 + Spring Boot 3) and `back/resume-go` (Go + Gin). Both listen on `8081`; **run exactly one at a time** |
+| Backend | `back/resume-go` (Go 1.27 + Gin) on `8081`; gRPC on `9091` |
 | Front ends | `front/yxl/recruit-project` (student + company, Vite 5173) and `front/ljk/adminPanel` (admin, Vite 5174 / `/admin/`) |
-| Database | MySQL 8 (`resume` schema), shared by both backends |
+| Data stores | MySQL 8 (`resume` schema) + Redis 7 + RabbitMQ 3.13 |
 
-### 1.1 How the two backends relate
+### 1.1 Backend implementation
 
-- **Java** (`back/resume`) is the earlier implementation: login, student profile, resume upload, jobs, bookmarks, search, admin. It has **no chat and no job applications**.
-- **Go** (`back/resume-go`) is a functional superset: all Java endpoints plus **real-time chat (WebSocket)**, **job applications**, **user centre**, **Redis cache**, **RabbitMQ offline notifications**, **internal gRPC**, and **Docker/Kubernetes** assets.
-- They are deliberately compatible:
-  - Identical JWT claims (`userId`, `username`, `userType`, `tokenType`, `exp`) signed with the same secret, so tokens are mutually accepted.
-  - Identical HTTP paths (`/login`, `/stu/**`, `/com/**`, `/admin/**`).
-  - Identical response envelope (`{code, message, data}`).
-  - Go additionally emits **both camelCase and snake_case** keys to serve old and new front ends.
-- [start-all.bat](file:///d:/resume/start-all.bat) starts the **Go** backend; `deploy.ps1` deploys the **Java** backend (jar + systemd).
+- A single backend (`back/resume-go`) layered as `api → service → data/cache/mq/rpc`, with raw SQL and no ORM.
+- Backward compatible with the legacy API: requests accept both camelCase and snake_case, and responses emit both, so existing front ends need no changes.
+- [start-all.bat](file:///d:/resume/start-all.bat) starts MySQL, the Go backend, and both front ends.
 
 ```
                   ┌──────────────────────────────┐
@@ -74,9 +69,8 @@ The repository ships **two interchangeable backend implementations** (Java and G
                   └──────────────┬───────────────┘
                                  │
         ┌────────────────────────▼────────────────────────┐
-        │  API layer (pick one, both :8081)                │
-        │  A. Spring Boot 3.1.3 / Java 17                  │
-        │  B. Go 1.27 / Gin (also /chat/ws, gRPC :9091)    │
+        │  API layer :8081 (Go 1.27 / Gin)                 │
+        │  includes /chat/ws and gRPC :9091                │
         └───┬──────────────┬──────────────┬───────────────┘
             │              │              │
        ┌────▼────┐   ┌─────▼─────┐  ┌─────▼──────┐
@@ -92,23 +86,23 @@ The repository ships **two interchangeable backend implementations** (Java and G
 
 | Module | Student | Company | Admin | Backend |
 |---|---|---|---|---|
-| Login / refresh / validate token | ✅ | ✅ | ✅ | Java + Go |
+| Login / refresh / validate token | ✅ | ✅ | ✅ | Go |
 | View/update own account, rename | ✅ | ✅ | — | Go |
-| Full student profile (9 sections + 6 child tables) | ✅ | read-only search | read-only search | Java + Go |
-| Resume upload / latest resume | ✅ | — | — | Java + Go |
+| Full student profile (9 sections + 6 child tables) | ✅ | read-only search | read-only search | Go |
+| Resume upload / latest resume | ✅ | — | — | Go |
 | Resume template editor + PDF export | ✅ (client-side) | — | — | Front end |
-| Create / edit / activate / delete jobs | — | ✅ | — | Java + Go |
-| Job list / detail | ✅ | ✅ | — | Java + Go |
-| Multi-criteria student search (with details) | — | ✅ | ✅ | Java + Go |
-| Bookmark / unbookmark / check bookmark | — | ✅ | — | Java + Go |
+| Create / edit / activate / delete jobs | — | ✅ | — | Go |
+| Job list / detail | ✅ | ✅ | — | Go |
+| Multi-criteria student search (with details) | — | ✅ | ✅ | Go |
+| Bookmark / unbookmark / check bookmark | — | ✅ | — | Go |
 | Apply / withdraw / status workflow | ✅ | ✅ | — | Go |
 | Real-time chat (text/image/resume) | ✅ | ✅ | — (blocked) | Go |
 | Offline notifications / unread counts | ✅ | ✅ | — | Go |
-| Analytics dashboard | public | public | — | Java + Go |
-| Excel import of students/companies | — | — | ✅ | Java + Go |
-| Bulk delete/update | — | — | ✅ | Java + Go |
-| Language/certificate/skill dictionaries | — | — | ✅ | Java + Go |
-| Reset student password | — | — | ✅ | Java + Go |
+| Analytics dashboard | public | public | — | Go |
+| Excel import of students/companies | — | — | ✅ | Go |
+| Bulk delete/update | — | — | ✅ | Go |
+| Language/certificate/skill dictionaries | — | — | ✅ | Go |
+| Reset student password | — | — | ✅ | Go |
 
 ---
 
@@ -143,24 +137,7 @@ The repository ships **two interchangeable backend implementations** (Java and G
 | HTTP | axios | ^1.8.4 | **Called directly inside the page, no wrapper** |
 | Plugin | @vitejs/plugin-vue-jsx | ^5.1.1 | JSX support |
 
-### 3.3 Backend A — Java (`back/resume`)
-
-| Area | Technology | Version | Purpose |
-|---|---|---|---|
-| Runtime | Java | 17 | — |
-| Framework | Spring Boot | 3.1.3 | Web MVC, embedded Tomcat |
-| ORM | MyBatis (XML + annotations) | starter 3.0.0 | Hand-written SQL |
-| Pagination | PageHelper | 1.4.6 | `startPage` + `PageInfo` |
-| Database | MySQL Connector/J | managed | MySQL 8 |
-| JWT | com.auth0:java-jwt | 4.4.0 | HS256 sign/verify |
-| Password | spring-security-crypto | managed | Only `BCryptPasswordEncoder` |
-| Cache | Spring Data Redis (Lettuce) | managed | Login counters, bookmark cache |
-| Excel | Apache POI (`poi-ooxml`) | 5.2.3 | `.xlsx` import |
-| Docs | Knife4j OpenAPI3 | 4.3.0 | `/doc.html` |
-| Validation | spring-boot-starter-validation | managed | `@NotBlank` etc. |
-| Unused | fastjson / MinIO / Java-WebSocket / OkHttp | — | **Declared but never used** |
-
-### 3.4 Backend B — Go (`back/resume-go`)
+### 3.3 Backend — Go (`back/resume-go`)
 
 | Area | Technology | Version | Purpose |
 |---|---|---|---|
@@ -177,7 +154,7 @@ The repository ships **two interchangeable backend implementations** (Java and G
 | Excel | xuri/excelize/v2 | v2.11.0 | `.xlsx` import |
 | JSON | bytedance/sonic (Gin indirect) | — | Faster serialization |
 
-### 3.5 Infrastructure
+### 3.4 Infrastructure
 
 | Component | Version | Purpose |
 |---|---|---|
@@ -192,7 +169,7 @@ The repository ships **two interchangeable backend implementations** (Java and G
 
 ### 4.1 Layering
 
-**Go** (cleanest layering):
+**Go backend**:
 
 ```
 api (HTTP binding / response envelope / middleware)
@@ -207,15 +184,13 @@ api (HTTP binding / response envelope / middleware)
 - The `chat` package calls back into business logic via injected hooks (`Hub.OnMessage` / `OnRegister` / `OnUnregister`), avoiding a `chat → service → chat` import cycle.
 - Dependency strength: MySQL is **hard** (exit on failure); Redis / RabbitMQ / gRPC are **soft** (auto-degrade).
 
-**Java**: package-by-domain (`user` / `student` / `company` / `admin`), each with controller → service → mapper, with shared utilities under `common`.
-
 ### 4.2 Key data flows
 
 | Scenario | Flow |
 |---|---|
 | Login | Front end → `/login` → `user` lookup → bcrypt check → sign access (2h) + refresh (7d) → Pinia/localStorage |
 | Profile update | `/stu/completeInfo` → partial update of main row + delete-then-insert on 6 child tables → re-aggregate and return |
-| Candidate search | `/com/detailSearch` → dynamic WHERE + pagination → batch `IN` queries on child tables → assemble DTOs |
+| Candidate search | `/com/detailSearch` → dynamic WHERE + COUNT/LIMIT → batch `IN` queries on child tables → assemble DTOs |
 | Chat | WebSocket → Hub → service validation → `INSERT chat_message` → re-select → push to both sides → MQ offline notify |
 | Application | `/stu/applications` → validate job/resume → `INSERT` (unique key blocks duplicates) → company status workflow |
 | Dashboard | `/stu/statistics` (public) → five `GROUP BY` aggregates |
@@ -227,21 +202,7 @@ api (HTTP binding / response envelope / middleware)
 ```text
 d:\resume
 ├─ back
-│  ├─ resume                     # Java backend (Spring Boot 3)
-│  │  ├─ src/main/java/com/resume
-│  │  │  ├─ user        # login / JWT
-│  │  │  ├─ student     # profile / resume
-│  │  │  ├─ company     # jobs / bookmarks / search
-│  │  │  ├─ admin       # back office / dictionaries
-│  │  │  ├─ common      # interceptors / exception handler / CORS
-│  │  │  ├─ model       # entity / dto / result
-│  │  │  └─ utils       # JwtUtil / PasswordUtil
-│  │  ├─ src/main/resources
-│  │  │  ├─ application.yml
-│  │  │  └─ mapper/*.xml
-│  │  ├─ resume.sql              # base schema (user/student/company/...)
-│  │  ├─ templates/*.xlsx        # Excel import templates
-│  │  └─ pom.xml
+│  ├─ resume.sql                 # base schema (user/student/company/...)
 │  └─ resume-go                  # Go backend (Gin + WebSocket + gRPC + MQ)
 │     ├─ main.go
 │     ├─ internal
@@ -259,6 +220,7 @@ d:\resume
 │     ├─ schema.sql              # extended schema (chat_message, ...)
 │     ├─ seed_accounts.sql       # x1/q1/g1 demo accounts
 │     ├─ seed_statistics.sql     # dashboard demo data
+│     ├─ templates/*.xlsx        # Excel import templates
 │     ├─ Dockerfile / docker-compose.yml
 │     ├─ deploy/k8s/*.yaml
 │     └─ uploads/{resume,chat}
@@ -267,9 +229,7 @@ d:\resume
 │  │  └─ src/{api,components,router,stores,utils,views}
 │  └─ ljk/adminPanel             # admin panel
 │     └─ src/{components,router,views}
-├─ 接口文档/                      # legacy API docs (may drift from code)
 ├─ start-all.bat                 # Windows one-click start (MySQL + Go + both UIs)
-├─ deploy.ps1                    # Java build + SFTP + systemd restart
 └─ CHAT_GUIDE.md                 # chat system tutorial
 ```
 
@@ -316,19 +276,7 @@ go run .
 
 With Redis/RabbitMQ/gRPC disabled, all core features still work; chat pushes only within this process and offline notifications are not generated.
 
-### 6.3 Run the Java backend manually
-
-```bash
-cd d:\resume\back\resume
-# edit src/main/resources/application.yml first (datasource + Redis)
-mvn spring-boot:run
-# or
-mvn clean package -DskipTests && java -jar target/resume-0.0.1-SNAPSHOT.jar
-```
-
-API docs: http://localhost:8081/doc.html
-
-### 6.4 Run the front ends
+### 6.3 Run the front ends
 
 ```bash
 # Portal
@@ -354,7 +302,7 @@ Front-end environment variables (defaults apply when no `.env` exists):
 
 In development the portal uses the Vite proxy and does not need `VITE_API_BASE_URL`.
 
-### 6.5 Docker Compose (Go)
+### 6.4 Docker Compose (Go)
 
 ```bash
 cd d:\resume\back\resume-go
@@ -364,7 +312,7 @@ docker compose up -d --build
 Services: `mysql:8.0` (3306), `redis:7-alpine` (6379), `rabbitmq:3.13-management` (5672/15672), `app` (8081).
 MySQL initialisation mounts, in order: `../resume.sql` → `schema.sql` → `seed_accounts.sql` → `seed_statistics.sql`; `uploads` is mounted at `/app/uploads`.
 
-### 6.6 Database initialisation order
+### 6.5 Database initialisation order
 
 ```text
 resume.sql           # base tables + legacy sample rows (user/student/company/stu_*)
@@ -379,27 +327,7 @@ seed_statistics.sql  # dashboard demo data
 
 ## 7. Configuration
 
-### 7.1 Java — `src/main/resources/application.yml`
-
-| Key | Value | Notes |
-|---|---|---|
-| `server.port` | `8081` | HTTP port |
-| `spring.mvc.static-path-pattern` | `/resume/**` | Static path prefix |
-| `spring.web.resources.static-locations` | `classpath:/static/` … `file:/resume/uploads/` | Static directories |
-| `spring.servlet.multipart.max-file-size` | `10MB` | Per-file limit |
-| `spring.servlet.multipart.max-request-size` | `10MB` | Per-request limit |
-| `spring.datasource.url` | `jdbc:mysql://localhost:3306/resume` | Datasource |
-| `spring.datasource.username/password` | plaintext (see file) | **Externalise in production** |
-| `spring.data.redis.host/port` | `localhost` / **`6380`** | Note: not the default 6379 |
-| `spring.data.redis.lettuce.pool.max-active` | `8` | Pool size |
-| `spring.jackson.property-naming-strategy` | **`SNAKE_CASE`** | Global snake_case JSON (critical) |
-| `knife4j.enable` | `true` | API docs |
-| `mybatis.mapper-locations` | `classpath:mapper/*.xml` | Mapper location |
-| `file.upload.resume-path` | `/resume/uploads/resume/` | Resume storage directory |
-
-`mybatis-config.xml` only enables `mapUnderscoreToCamelCase=true`.
-
-### 7.2 Go — environment variables
+### 7.1 Go — environment variables
 
 | Variable | Default | Notes |
 |---|---|---|
@@ -407,7 +335,7 @@ seed_statistics.sql  # dashboard demo data
 | `DB_HOST` / `DB_PORT` | `localhost` / `3306` | MySQL |
 | `DB_USER` / `DB_PASSWORD` / `DB_NAME` | `root` / see source / `resume` | MySQL |
 | `UPLOAD_DIR` | `uploads/resume` | Resume dir; chat images go to sibling `chat/` |
-| `JWT_SECRET` | fixed string (see `config.go`) | Must match Java to share tokens |
+| `JWT_SECRET` | fixed string (see `config.go`) | HS256 secret; externalise in production |
 | `REDIS_ADDR` / `REDIS_PASSWORD` / `REDIS_DB` | `localhost:6379` / empty / `0` | Redis |
 | `REDIS_ENABLED` | `true` | `false` = pure in-memory mode |
 | `RABBITMQ_URL` | `amqp://guest:guest@localhost:5672/` | AMQP |
@@ -420,7 +348,7 @@ DSN: `user:pass@tcp(host:port)/db?charset=utf8mb4&parseTime=true&loc=Local` (`lo
 
 Pool: `MaxOpenConns=20`, `MaxIdleConns=10`, `ConnMaxLifetime=1h`.
 
-### 7.3 Vite configuration
+### 7.2 Vite configuration
 
 Portal `vite.config.js`:
 
@@ -451,7 +379,7 @@ Admin `vite.config.js`: `base` is `/admin/` in production, **no proxy** — it c
 | Access Token | 2 hours | `Authorization: Bearer <token>` | Business APIs |
 | Refresh Token | 7 days | `Refresh-Token: <token>` | Exchange for a new access token |
 
-Claims (identical in both backends):
+Claims:
 
 ```json
 {
@@ -463,32 +391,14 @@ Claims (identical in both backends):
 }
 ```
 
-- Algorithm: `HS256` with a fixed secret (Java `JwtUtil`, Go `config.go`) — **must be externalised in production**.
-- Java uses `com.auth0:java-jwt`; Go hand-rolls the three-part JWT with `crypto/hmac`, `sha256`, and `base64.RawURLEncoding`.
+- Algorithm: `HS256` with the `JWT_SECRET` (default hard-coded in `config.go`; **externalise in production**).
+- Implemented with stdlib `crypto/hmac`, `sha256`, and `base64.RawURLEncoding` — no third-party JWT library.
 - Go verification order: split into three parts → verify signature (`hmac.Equal`, constant-time) → decode payload → validate `exp`.
 - Refresh: verify signature/expiry → require `tokenType == "refresh"` → re-sign an access token from the original claims.
 
 ### 8.2 Request authentication
 
-**Java** (three interceptors, registered in order):
-
-| Order | Interceptor | Purpose | Paths | Whitelist |
-|---|---|---|---|---|
-| 1 | `TokenRefreshInterceptor` | If the token expires in under 30 minutes, issue a new one into the `New-Token` response header | `/com/**`, `/stu/**`, `/admin/**` | `/login`, `/refresh-token`, `/stu/statistics`, Swagger paths |
-| 2 | `AuthInterceptor` | Parse `Authorization: Bearer`, verify signature and expiry, expose request attributes | same | same |
-| 3 | `AdminInterceptor` | Require `userType == "admin"` | `/admin/**` | none |
-
-Failure responses (HTTP status and body both set to 401/403):
-
-```json
-{"code":401,"message":"未提供Token","data":null}
-{"code":401,"message":"Token无效或已过期","data":null}
-{"code":403,"message":"权限不足，需要管理员权限","data":null}
-```
-
-`OPTIONS` pre-flight is always allowed; `/validateToken` sits outside the protected paths.
-
-**Go** (Gin middleware):
+**Go (Gin middleware)**:
 
 - Public: `POST /login`, `POST /refresh-token`, `POST /validateToken`, `GET /stu/statistics`, `GET /chat/ws`.
 - Protected group `Group("/", authMiddleware)`: all remaining `/user/**`, `/stu/**`, `/com/**`, `/chat/**`.
@@ -496,19 +406,17 @@ Failure responses (HTTP status and body both set to 401/403):
 - `authMiddleware` also writes `New-Token` when the access token is near expiry (transparent renewal).
 - Failures: `401 {"code":401,"message":"未提供Token"}` / `401 "Token无效或已过期"`; non-admin hitting the back office gets `403 "权限不足，需要管理员权限"`.
 
-> **Note**: both backends verify signature and expiry only — **`tokenType` is not enforced** on business routes, so a refresh token also works there (only `/refresh-token` requires the refresh type).
+> **Note**: middleware verifies signature and expiry only — **`tokenType` is not enforced** on business routes, so a refresh token also works there (only `/refresh-token` requires the refresh type).
 
 ### 8.3 Passwords
 
 - **BCrypt** (default cost 10); stored as `$2a$10$...`.
 - Student initial password = student number; company initial password = company name; admin initial password is defined in `init_admin.sql` / `seed_accounts.sql`.
 - `PATCH /stu/updatePwd` requires `old_pwd`, `new_pwd`, `re_pwd` (snake_case).
-- Java login throttling: Redis key `login_attempt:{username}`, 30-minute TTL, intended to lock after 5 failures — **the check is commented out in the current code**.
 
 ### 8.4 CORS
 
-- Java: `allowedOriginPatterns("*")`, `allowCredentials(true)`, methods `GET/POST/PUT/DELETE/OPTIONS/PATCH`, `allowedHeaders("*")`, `maxAge 3600`.
-- Go: echoes `Origin` (`*` when absent), exposes `New-Token`, allows `Authorization, Content-Type, Refresh-Token, X-Requested-With, platform`.
+- Echoes `Origin` (`*` when absent), exposes `New-Token`, allows `Authorization, Content-Type, Refresh-Token, X-Requested-With, platform`.
 - `OPTIONS` returns 204 immediately.
 
 ### 8.5 Front-end authentication
@@ -530,9 +438,8 @@ Admin login chain: portal `/login` (`userType=admin`) → token → redirect to 
 { "code": 200, "message": "操作成功", "data": { } }
 ```
 
-- Java: `Result<T>`; `success()` uses `"操作成功"`. HTTP status is usually 200; only auth failures set 401/403.
-- Go: `model.Result`; `respond()` **always uses HTTP 200** — only middleware and the WebSocket handshake can return non-200.
-- Pagination mirrors PageHelper:
+- `model.Result`; `respond()` **always uses HTTP 200** — only middleware and the WebSocket handshake can return non-200.
+- Pagination shape:
 
 ```json
 {
@@ -552,7 +459,7 @@ Admin login chain: portal `/login` (`userType=admin`) → token → redirect to 
 | code | Meaning | Typical case |
 |---|---|---|
 | 200 | Success | — |
-| 201 | Created | Resume upload (Java) |
+| 201 | Created | Resume upload |
 | 400 | Bad request / validation failure | Missing field, wrong old password, illegal status |
 | 401 | Unauthenticated | Missing/invalid/expired token, role mismatch |
 | 403 | Forbidden | Non-admin on admin routes, editing someone else's job, admin chatting |
@@ -570,7 +477,7 @@ Admin login chain: portal `/login` (`userType=admin`) → token → redirect to 
 | 500 | Internal server error | Uncaught exception, SQL error |
 | 50001 | DB write failure / wrong password | Import, password reset |
 
-Java's `GlobalExceptionHandler` understands runtime exceptions in `"code:message"` form (e.g. `throw new RuntimeException("40005:用户名或密码错误")`) and splits them into the business code.
+Business errors are returned as `model.AppError{Code, Msg}`; `respond()` uses that code directly.
 
 ---
 
@@ -747,25 +654,9 @@ chat_message / chat_notification: logically linked to user via (user_id, user_ty
 | Envelope | `{code, message, data}` |
 | Pagination | Lists use `pageNum`/`pageSize`; admin uses `page`/`pageSize` |
 | File fields | Resume `resumeFile`; chat image `image`; student Excel `stuFile`; company Excel `comFile` |
-| JSON naming | **Java uses global SNAKE_CASE** (`user_id`, `page_num`, `graduation_year`, …) except the login request field `userType`; Go accepts and emits both camelCase and snake_case |
+| JSON naming | Requests accept both camelCase and snake_case (`userId` / `user_id`); responses emit both to stay compatible with older clients |
 
-**Java response example**:
-
-```json
-{
-  "code": 200,
-  "message": "操作成功",
-  "data": {
-    "user_id": 11,
-    "username": "x1",
-    "user_type": "student",
-    "token": "...",
-    "refresh_token": "..."
-  }
-}
-```
-
-**Go login response**:
+**Login response example**:
 
 ```json
 {
@@ -786,9 +677,9 @@ chat_message / chat_notification: logically linked to user via (user_id, user_ty
 
 | Method | Path | Description | Parameters | Returns | Backend |
 |---|---|---|---|---|---|
-| POST | `/login` | Login | JSON: `username`, `password`, `userType` (`student/company/admin`) | access + refresh | Java + Go |
-| POST | `/refresh-token` | Refresh access | Header `Refresh-Token` | `{token}` | Java + Go |
-| POST | `/validateToken` | Validate token | Body `{token}` (Go also accepts raw text) | `{valid,message,userId,userType,needRefresh}` | Java + Go |
+| POST | `/login` | Login | JSON: `username`, `password`, `userType` (`student/company/admin`) | access + refresh | Go |
+| POST | `/refresh-token` | Refresh access | Header `Refresh-Token` | `{token}` | Go |
+| POST | `/validateToken` | Validate token | Body `{token}` (Go also accepts raw text) | `{valid,message,userId,userType,needRefresh}` | Go |
 | GET | `/user/me` | Current user profile | none | `{userId,username,userType,displayName}` | Go |
 | PUT | `/user/name` | Rename self | `{name}` (≤20 chars) | `UserProfile` | Go |
 
@@ -798,11 +689,11 @@ Login failures: `code=40005, message="用户名或密码错误"`; role mismatch:
 
 | Method | Path | Description | Parameters | Returns | Backend |
 |---|---|---|---|---|---|
-| GET | `/stu/getAllSkill` | Skill dictionary | none | Comma-separated string | Java + Go |
-| PUT | `/stu/completeInfo` | Save full profile | `StudentCompleteInfoDTO` (below) | `StudentDetailDTO` | Java + Go |
-| POST | `/stu/uploadResume` | Upload resume | `multipart`, field `resumeFile` | `{resumeId,resumeName,resumeUrl}` (code=201) | Java + Go |
-| GET | `/stu/statistics` | Profile statistics (public) | none | Five aggregates | Java + Go |
-| PATCH | `/stu/updatePwd` | Change password | `{old_pwd,new_pwd,re_pwd}` | null | Java + Go |
+| GET | `/stu/getAllSkill` | Skill dictionary | none | Comma-separated string | Go |
+| PUT | `/stu/completeInfo` | Save full profile | `StudentCompleteInfoDTO` (below) | `StudentDetailDTO` | Go |
+| POST | `/stu/uploadResume` | Upload resume | `multipart`, field `resumeFile` | `{resumeId,resumeName,resumeUrl}` (code=201) | Go |
+| GET | `/stu/statistics` | Profile statistics (public) | none | Five aggregates | Go |
+| PATCH | `/stu/updatePwd` | Change password | `{old_pwd,new_pwd,re_pwd}` | null | Go |
 | GET | `/stu/resume/latest` | Latest resume | none | `{url,name}`; 404 if none | Go |
 | POST | `/stu/applications` | Apply to a job | `{jobId,resumeUrl?}` | `JobApplication` | Go |
 | GET | `/stu/applications` | My applications | none | `{list:[...]}` | Go |
@@ -829,7 +720,7 @@ Login failures: `code=40005, message="用户名或密码错误"`; role mismatch:
 }
 ```
 
-(Java expects snake_case: `graduation_year`, `certificates[].cert_name`, etc. Go accepts both.)
+(The backend also accepts snake_case such as `graduation_year` and `certificates[].cert_name`.)
 
 Validation: age 16–60 (`42201`); graduation year within `[currentYear-50, currentYear+10]` (`42202`); child tables use delete-then-insert; student number and name are immutable.
 
@@ -849,13 +740,13 @@ Validation: age 16–60 (`42201`); graduation year within `[currentYear-50, curr
 
 | Method | Path | Description | Parameters | Returns | Backend |
 |---|---|---|---|---|---|
-| POST | `/com/jobPosting` | Create job | `{title,description,external_link,status}`; `com_id` overwritten from token | `JobPosting` | Java + Go |
-| PUT | `/com/jobPosting/{id}` | Update job | same (partial) | `JobPosting` | Java + Go |
-| PATCH | `/com/jobPosting/{id}/status` | Activate/deactivate | `{status:"active|inactive"}` | `JobPosting` | Java + Go |
-| DELETE | `/com/jobPosting/{id}` | Delete job | path id | `{success,message}` | Java + Go |
-| GET | `/com/jobPostings` | Paginated jobs | `pageNum`, `pageSize`, `status`, `keyword`, `comId` | `PageInfo<JobPosting>` | Java + Go |
-| GET | `/com/jobPosting/{id}` | Job detail | path id | `JobPosting` | Java + Go |
-| GET | `/com/myJobPostings` | My jobs (no paging) | `status?` | `JobPosting[]` | Java + Go |
+| POST | `/com/jobPosting` | Create job | `{title,description,external_link,status}`; `com_id` overwritten from token | `JobPosting` | Go |
+| PUT | `/com/jobPosting/{id}` | Update job | same (partial) | `JobPosting` | Go |
+| PATCH | `/com/jobPosting/{id}/status` | Activate/deactivate | `{status:"active"}` or `{status:"inactive"}` | `JobPosting` | Go |
+| DELETE | `/com/jobPosting/{id}` | Delete job | path id | `{success,message}` | Go |
+| GET | `/com/jobPostings` | Paginated jobs | `pageNum`, `pageSize`, `status`, `keyword`, `comId` | `PageInfo<JobPosting>` | Go |
+| GET | `/com/jobPosting/{id}` | Job detail | path id | `JobPosting` | Go |
+| GET | `/com/myJobPostings` | My jobs (no paging) | `status?` | `JobPosting[]` | Go |
 | GET | `/com/applications` | Received applications | `jobId?`, `status?` | `{list}` | Go |
 | PATCH | `/com/applications/:id/status` | Advance status | `{status}` | `JobApplication` | Go |
 
@@ -867,12 +758,12 @@ Authorization: write operations resolve `company.id` from the token's `userId` a
 
 | Method | Path | Description | Parameters | Returns | Backend |
 |---|---|---|---|---|---|
-| GET | `/com/QueryComIdByUserId` | Company id of current user | none | int | Java + Go |
-| POST | `/com/LikeAdd` | Bulk bookmark | `[{stuId,comId}]` | null; duplicates → 500 + message | Java + Go |
-| POST | `/com/LikeQuery` | Paginated bookmarks | `{com_id,comName?,pageNum,pageSize}` | `PageInfo<StuFavorite>` | Java + Go |
-| DELETE | `/com/LikeDelete` | Bulk unbookmark | `[{stuId,comId}]` | null | Java + Go |
-| GET | `/com/LikeIf` | Is bookmarked (DB) | `com_id`, `stu_id` | bool | Java + Go |
-| GET | `/com/LikeIfByRedis` | Bulk check (Redis) | `stuIdList=1,2,3` | `{stuId:true}` | Java + Go |
+| GET | `/com/QueryComIdByUserId` | Company id of current user | none | int | Go |
+| POST | `/com/LikeAdd` | Bulk bookmark | `[{stuId,comId}]` | null; duplicates → 500 + message | Go |
+| POST | `/com/LikeQuery` | Paginated bookmarks | `{com_id,comName?,pageNum,pageSize}` | `PageInfo<StuFavorite>` | Go |
+| DELETE | `/com/LikeDelete` | Bulk unbookmark | `[{stuId,comId}]` | null | Go |
+| GET | `/com/LikeIf` | Is bookmarked (DB) | `com_id`, `stu_id` | bool | Go |
+| GET | `/com/LikeIfByRedis` | Bulk check (Redis) | `stuIdList=1,2,3` | `{stuId:true}` | Go |
 
 `StuFavorite`: `stuId`, `studentName`, `gender`, `major`, `degree`, `graduationYear`, `languages`, `level`, `specialities`, `post` (aggregated by `GROUP_CONCAT`).
 
@@ -880,9 +771,9 @@ Authorization: write operations resolve `company.id` from the token's `userId` a
 
 | Method | Path | Description | Parameters | Returns | Backend |
 |---|---|---|---|---|---|
-| POST | `/com/search` | Student list (basic) | `StudentQueryDTO` | `PageInfo<Student>` | Java + Go |
-| POST | `/com/detailSearch` | Student list (full profile) | same | `PageInfo<StudentDetailDTO>` | Java + Go |
-| POST | `/admin/searchStuDetail` | Admin detail search | same | same | Java + Go |
+| POST | `/com/search` | Student list (basic) | `StudentQueryDTO` | `PageInfo<Student>` | Go |
+| POST | `/com/detailSearch` | Student list (full profile) | same | `PageInfo<StudentDetailDTO>` | Go |
+| POST | `/admin/searchStuDetail` | Admin detail search | same | same | Go |
 
 `StudentQueryDTO` fields:
 
@@ -929,7 +820,7 @@ Bulk result:
 }
 ```
 
-### 11.8 Chat (Go only)
+### 11.8 Chat
 
 | Method | Path | Description | Parameters | Returns |
 |---|---|---|---|---|
@@ -950,10 +841,10 @@ Bulk result:
 
 | Path | Notes |
 |---|---|
-| `GET /uploads/resume/<file>` | Resume file (Go; Java maps `file:/resume/uploads/`) |
-| `GET /uploads/chat/<file>` | Chat image (Go) |
-| `GET /resume/uploads/<file>` | Legacy prefix (both backends) |
-| Anything else | Go `NoRoute` → `{code:404,message:"接口不存在"}` (HTTP 200); Java falls through to Spring's default 404 |
+| `GET /uploads/resume/<file>` | Resume file |
+| `GET /uploads/chat/<file>` | Chat image |
+| `GET /resume/uploads/<file>` | Legacy prefix |
+| Anything else | `NoRoute` → `{code:404,message:"接口不存在"}` (HTTP 200) |
 
 ### 11.10 Request examples
 
@@ -1336,30 +1227,29 @@ Details:
 
 ### 13.1 Upload pipeline
 
-| Step | Java | Go |
-|---|---|---|
-| Field | `resumeFile` | `resumeFile` |
-| Size | ≤10MB (`41301`) | ≤10MB (`41301`) |
-| Types | `.pdf/.doc/.docx` (`41501`) | same |
-| Naming | `{studentNo}_{yyyyMMddHHmmss}_{first 8 of UUID}{ext}` | `{studentNo}_{yyyyMMddHHmmss}_{8-hex}{ext}` |
-| Storage | `file.upload.resume-path` | `UPLOAD_DIR` |
-| DB | `stu_resume(stu_id=student.id, resume=path)` | same (append-only) |
-| Response | `{resumeId,resumeName,resumeUrl}`, code=201 | same, `resumeUrl=/api/resume/download/{name}` |
-| Latest | `ORDER BY id DESC LIMIT 1` | `GET /stu/resume/latest` |
+| Step | Implementation |
+|---|---|
+| Field | `resumeFile` |
+| Size | ≤10MB (`41301`) |
+| Types | `.pdf/.doc/.docx` (`41501`) |
+| Naming | `{studentNo}_{yyyyMMddHHmmss}_{8-hex}{ext}` |
+| Storage | `UPLOAD_DIR` (default `uploads/resume`) |
+| DB | `stu_resume(stu_id=student.id, resume=path)`, append-only |
+| Response | `{resumeId,resumeName,resumeUrl}`, code=201 |
+| Latest | `GET /stu/resume/latest` (`ORDER BY id DESC LIMIT 1`) |
 
 Security: the **original filename is never reused**; extensions are lower-cased and whitelisted, preventing overwrite and `../` traversal.
 
 ### 13.2 Serving URLs
 
-| Backend | Working URLs |
-|---|---|
-| Go | `/uploads/resume/<file>`, `/uploads/chat/<file>`, legacy `/resume/uploads/<file>` |
-| Java | `/resume/uploads/**`, `/uploads/**` mapped to `file:/resume/uploads/` |
+| Working URLs |
+|---|
+| `/uploads/resume/<file>`, `/uploads/chat/<file>`, legacy `/resume/uploads/<file>` |
 
 **Known inconsistencies**:
 
-- Java returns `resume_url = /api/resume/download/<file>`, but **no such endpoint exists**.
-- Go's upload endpoint also returns `/api/resume/download/...`, which is also unregistered; however "latest resume", applications, and chat resume messages go through `publicResumeURL()`, converting to `/uploads/resume/<base>`, which works.
+- The upload endpoint returns `resumeUrl = /api/resume/download/<file>`, but **that route is not registered**.
+- "Latest resume", applications, and chat resume messages go through `publicResumeURL()`, which converts to `/uploads/resume/<base>` and works.
 - Legacy DB rows may contain `uploads\resume\xxx.pdf` (backslashes); the client `fileUrl()` normalises them.
 
 ---
@@ -1368,7 +1258,7 @@ Security: the **original filename is never reused**; extensions are lower-cased 
 
 ### 14.1 Dynamic WHERE
 
-Go `data/studentWhere(q)` (Java `SearchMapper.xml` is equivalent):
+`data/studentWhere(q)`, for example:
 
 | Condition | Implementation |
 |---|---|
@@ -1387,9 +1277,8 @@ All values are bound with `?` — no SQL injection.
 
 ### 14.2 Pagination
 
-- **Java**: PageHelper `startPage(pageNum,pageSize)` rewrites the next query into `COUNT` + `LIMIT` and returns `PageInfo`.
-- **Go**: explicit `SELECT COUNT(*) FROM (main query) t` + `LIMIT ? OFFSET ?`, reproducing PageHelper's `PageInfo` shape.
-- **Chat history**: cursor pagination with `id < beforeId`.
+- List pagination: explicit `SELECT COUNT(*) FROM (main query) t` + `LIMIT ? OFFSET ?`, returning the `PageInfo` shape the front end expects.
+- Chat history: cursor pagination with `id < beforeId`.
 
 ### 14.3 Avoiding N+1
 
@@ -1428,7 +1317,7 @@ Go closes each `rows` explicitly to avoid exhausting the pool across sequential 
 ### 15.1 Model
 
 - Primary store: `com_like_stu(stu_id, com_id, create_time)` with unique key `(stu_id, com_id)`.
-- Cache: Redis Set `resume:favorite:{userId}` (Go) / `user:favorite:{userId}` (Java), members are student-id strings.
+- Cache: Redis Set `resume:favorite:{userId}`, members are student-id strings.
 
 ### 15.2 Bookmark flow
 
@@ -1440,9 +1329,7 @@ Go closes each `rows` explicitly to avoid exhausting the pool across sequential 
 
 ### 15.3 Unbookmark
 
-`DELETE FROM com_like_stu WHERE (stu_id, com_id) IN ((?,?),...)`, returning the number of rows not deleted; if none existed, return "student does not exist".
-
-> Java additionally removes the Redis cache with `RedisTemplate`, but writes use `StringRedisTemplate` (different serializers) and it passes the whole List as one member, so **the Java cache is never actually invalidated**. Go uses `SREM` correctly.
+`DELETE FROM com_like_stu WHERE (stu_id, com_id) IN ((?,?),...)`, returning the number of rows not deleted; if none existed, return "student does not exist". Successful deletes also run `SREM resume:favorite:{userId}`.
 
 ### 15.4 Bookmark list query
 
@@ -1472,7 +1359,7 @@ Correlated subqueries + `GROUP_CONCAT` avoid the Cartesian-product row inflation
 
 ## 16. Resume Application Module
 
-Go only.
+Implemented in `internal/service/application.go` and `internal/data/application.go`.
 
 ### 16.1 State machine
 
@@ -1520,20 +1407,20 @@ Constants: `pending`, `viewed`, `interview`, `offer`, `rejected`.
 
 **Companies** (columns 0–1): company name `com_name`, region `com_region`.
 
-Templates: `back/resume/templates/学生数据导入模板.xlsx`, `企业数据导入模板.xlsx`.
+Templates: `back/resume-go/templates/学生数据导入模板.xlsx`, `企业数据导入模板.xlsx`.
 
-### 17.2 Implementation differences
+### 17.2 Implementation
 
-| Item | Java | Go |
-|---|---|---|
-| Library | Apache POI `XSSFWorkbook` | excelize v2 |
-| Sheet | First sheet only, skip row 1 | same |
-| Cells | NUMERIC/STRING/BOOLEAN, numeric → int | same |
-| Dedup | Students by `stu_id`, companies by `com_name` | same |
-| Transaction | `@Transactional`, row errors `continue` | transaction, per-row error collection |
-| Default password | Student number / company name (BCrypt) | same |
-| Result | `{successCount,failureCount,errors[{identifier,reason}]}` | same (camelCase) |
-| Partial failure | `code=200, message="部分数据导入失败"` | same |
+| Item | Implementation |
+|---|---|
+| Library | excelize v2 |
+| Reading | First sheet only, skip row 1, read by column index |
+| Cells | NUMERIC/STRING/BOOLEAN, numeric → int |
+| Dedup | Students by `stu_id`, companies by `com_name` |
+| Transaction | Insert inside a transaction; row-level errors collected without aborting |
+| Default password | Student number / company name (BCrypt) |
+| Result | `{successCount,failureCount,errors[{identifier,reason}]}` |
+| Partial failure | `code=200, message="部分数据导入失败"` |
 
 Insert order: `user` first (`useGeneratedKeys` fills `user_id`), then `student` / `company` with that `user_id`.
 
@@ -1543,7 +1430,7 @@ Insert order: `user` first (`useGeneratedKeys` fills `user_id`), then `student` 
 
 ## 18. Redis Cache Design
 
-### 18.1 Keys (Go)
+### 18.1 Keys
 
 | Key | Type | TTL | Purpose |
 |---|---|---|---|
@@ -1553,8 +1440,6 @@ Insert order: `user` first (`useGeneratedKeys` fills `user_id`), then `student` 
 | `resume:favorite:{userId}` | Set | none | Company bookmark set |
 | `resume:online:{type}:{id}` | string(counter) | 5min | Presence (multi-device counter) |
 | `resume:mq:consumed:{eventId}` | string | 24h | Fast MQ idempotency |
-
-Java: `login_attempt:{username}` (30min), `user:favorite:{userId}` (Set).
 
 ### 18.2 Cache concerns
 
@@ -1590,7 +1475,7 @@ service RecruitInternal {
 - Client: `grpc.NewClient` (lazy) with `insecure` credentials and 2s timeouts.
 - **Only real caller**: `HandleChatNotify` for the sender's display name (falls back to DB).
 - `JobBrief` has no callers yet (reserved).
-- **No gRPC interop with the Java backend** — the service calls itself at `127.0.0.1:9091`.
+- **Calls itself in-process only** (`127.0.0.1:9091`); it is not an external business API.
 
 ---
 
@@ -1672,16 +1557,38 @@ service RecruitInternal {
 
 See [6.1 One-click start](#61-one-click-start-windows-recommended).
 
-### 22.2 Linux + systemd (Java)
+### 22.2 Linux + systemd (Go)
 
-`.ssh/resume.service` and `.ssh/prod_application.yml` are production samples. `deploy.ps1`:
+```bash
+cd back/resume-go
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o resume-go .
+# upload resume-go, schema.sql, and uploads/ to /opt/resume-go
+```
 
-1. `mvn clean package -DskipTests` → `target/resume-0.0.1-SNAPSHOT.jar`;
-2. SFTP upload to `/opt/resume/` via Posh-SSH;
-3. `systemctl restart resume.service`, wait 25s, check status and port 8081;
-4. `POST /login` as a health check.
+Example `/etc/systemd/system/resume-go.service`:
 
-> The script contains a hard-coded server address and plaintext password and is committed to the repository — **move these to environment variables or a secret manager**.
+```ini
+[Unit]
+Description=Resume Go Backend
+After=network.target mysql.service redis.service rabbitmq-server.service
+
+[Service]
+WorkingDirectory=/opt/resume-go
+EnvironmentFile=/opt/resume-go/.env
+ExecStart=/opt/resume-go/resume-go
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Put `SERVER_PORT`, `DB_*`, `JWT_SECRET`, `REDIS_*`, `RABBITMQ_*`, `GRPC_*` in `.env` (see [7.1](#71-go--environment-variables)).
+
+```bash
+systemctl daemon-reload && systemctl enable --now resume-go
+curl http://127.0.0.1:8081/stu/statistics   # health check
+```
 
 ### 22.3 Docker Compose (Go)
 
@@ -1721,25 +1628,19 @@ location /chat/ws {
 
 ### 23.1 Security
 
-1. **Hard-coded secrets**: JWT secret, DB password, and deployment credentials are committed; externalise them.
+1. **Hard-coded secrets**: the JWT secret and DB password default to values in `config.go`; externalise them.
 2. **Refresh token usable as access token**: `tokenType` is not enforced.
 3. **Admin token passed in the URL** (`/admin/?token=...`) — leaks into history/logs; the admin app never validates it.
-4. **CORS wide open with `allowCredentials(true)`**.
+4. **CORS echoes any Origin** — restrict to an allow-list in production.
 5. **WebSocket `CheckOrigin` always true**.
-6. Java login lockout is commented out — **no brute-force protection**.
 
 ### 23.2 Functional / consistency
 
-1. **`/api/resume/download/{name}` does not exist** — both backends return it from the upload endpoint; direct access 404s.
+1. **`/api/resume/download/{name}` does not exist** — the upload endpoint returns it, but direct access 404s; use `/uploads/resume/<file>`.
 2. **No resume parsing**: only type/size validation and storage; no PDF text extraction.
-3. **`/stu/getAllSkill` returns a string, not an array** (both backends); clients must `split(',')`.
-4. **Java mixes global SNAKE_CASE with `@JsonProperty("userType")`** on `LoginDTO`.
-5. **Java bookmark cache invalidation is broken** (serializer mismatch + wrong `remove` argument).
-6. **Java `SkillsServiceImpl.getAllSkill` may throw**: `Set.of(split(","))` rejects duplicates.
-7. **Java dictionary writes use `@Select` for INSERT/DELETE**, which can fail because MyBatis executes them as queries.
-8. **Deleting students/companies leaves orphan rows** in `stu_*`, `stu_resume`, `com_like_stu`.
-9. **`StudentDetailMapper` lacks `DISTINCT`** — students with multiple regions appear multiple times and inflate `total`.
-10. **Sample data inconsistencies**: `user_id=2` has a plaintext password (cannot pass BCrypt); `student.id=5` does not match some child rows.
+3. **`/stu/getAllSkill` returns a string, not an array**; clients must `split(',')`.
+4. **Deleting students/companies leaves orphan rows** in `stu_*`, `stu_resume`, `com_like_stu`.
+5. **Sample data inconsistencies**: `user_id=2` has a plaintext password (cannot pass BCrypt); `student.id=5` does not match some child rows (prefer `seed_accounts.sql`).
 
 ### 23.3 Front end
 
@@ -1779,16 +1680,11 @@ location /chat/ws {
 
 ### 24.3 Add a database column
 
-1. Add it in `resume.sql` / `schema.sql`.
-2. Update the entity and mapper.
+1. Add it in `back/resume.sql` (base tables) or `back/resume-go/schema.sql` (extended tables).
+2. Update the `internal/model` struct and the SQL in `internal/data`.
 3. For profile child tables, also update the delete-then-insert logic and the detail aggregation.
 
-### 24.4 Switch backends
-
-- No front-end changes: paths are identical; just point `VITE_API_BASE_URL` or the proxy at the running backend.
-- With Java, chat and application pages will 404 (not implemented).
-
-### 24.5 Troubleshooting
+### 24.4 Troubleshooting
 
 | Symptom | Check |
 |---|---|
@@ -1833,7 +1729,7 @@ GET  /chat/ws?token=...
 /admin/**
 ```
 
-### 25.4 Go-only endpoints
+### 25.4 Chat / application / user-centre endpoints
 
 ```text
 /user/me, PUT /user/name
@@ -1857,10 +1753,6 @@ GET  /stu/resume/latest
 | Cache | `internal/cache/cache.go` |
 | MQ | `internal/mq/mq.go` |
 | gRPC | `internal/rpc/server.go`, `client.go`, `proto/recruit/v1/recruit.proto` |
-| Java auth | `common/interceptor/*.java`, `utils/JwtUtil.java` |
-| Java exceptions | `common/exception/GlobalExceptionHandler.java` |
-| Java search SQL | `resources/mapper/SearchMapper.xml`, `StudentDetailMapper.xml` |
-| Java bookmark SQL | `resources/mapper/ComLikeStu.xml` |
 | Portal HTTP wrapper | `front/yxl/recruit-project/src/utils/request.js` |
 | Portal WS wrapper | `front/yxl/recruit-project/src/utils/chatSocket.js` |
 | Portal chat page | `front/yxl/recruit-project/src/views/chat/index.vue` |

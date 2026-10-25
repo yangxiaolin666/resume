@@ -29,7 +29,7 @@ import (
 )
 
 // Claims 是 JWT 第二段（payload）里携带的业务字段。
-// 与 Java 版 JwtUtil 生成的 payload 保持一致，这样新旧两套后端签发的 Token 可以互相识别。
+// 字段设计保持稳定，历史上签发的 Token 仍然可以识别。
 //
 // 字段含义：
 //   - UserID/Username/UserType：告诉后端「这是谁、什么角色」，避免每次请求都查用户表；

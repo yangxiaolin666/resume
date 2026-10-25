@@ -59,9 +59,7 @@ func corsMiddleware() gin.HandlerFunc {
 	}
 }
 
-// authMiddleware 解析 Authorization 头里的 JWT。
-//
-// 把原来 Java 版的 TokenRefreshInterceptor + AuthInterceptor 合并成了一个：
+// authMiddleware 解析 Authorization 头里的 JWT，同时负责无感续期：
 //   - Token 快过期时，通过响应头 New-Token 下发新 Token，前端无感刷新；
 //   - Token 无效直接返回 401。
 func (a *API) authMiddleware() gin.HandlerFunc {
